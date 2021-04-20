@@ -97,6 +97,7 @@ extension Array where Iterator.Element == CGPoint {
         
         return []
     }
+}
 
 extension Array where Element == RouteStep {
     // Find the longest contiguous series of RouteSteps connected to the first one.
