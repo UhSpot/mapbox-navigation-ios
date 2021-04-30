@@ -385,13 +385,6 @@ open class NavigationMapView: UIView {
         
         mostRecentUserCourseViewLocation = location
         
-        // While animating to overview mode, don't animate the puck.
-        let duration: TimeInterval = animated && navigationCamera.state != .transitionToOverview ? 1 : 0
-        UIView.animate(withDuration: duration, delay: 0, options: [.curveLinear]) { [weak self] in
-            guard let screenCoordinate = self?.mapView.screenCoordinate(for: location.coordinate) else { return }
-            self?.userCourseView.center = CGPoint(x: screenCoordinate.x, y: screenCoordinate.y)
-        }
-        
         if customizedPuckType != nil {
             let locationProvider = mapView.location.locationProvider
             mapView.location.locationProvider(locationProvider!, didUpdateLocations: [location])
@@ -413,6 +406,13 @@ open class NavigationMapView: UIView {
                 }
             }
         } else {
+            // While animating to overview mode, don't animate the puck.
+            let duration: TimeInterval = animated && navigationCamera.state != .transitionToOverview ? 1 : 0
+            UIView.animate(withDuration: duration, delay: 0, options: [.curveLinear]) { [weak self] in
+                guard let screenCoordinate = self?.mapView.screenCoordinate(for: location.coordinate) else { return }
+                self?.userCourseView.center = CGPoint(x: screenCoordinate.x, y: screenCoordinate.y)
+            }
+            
             userCourseView.update(location: location,
                                   pitch: mapView.pitch,
                                   direction: mapView.bearing,
