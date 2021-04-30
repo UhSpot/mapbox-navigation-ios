@@ -375,6 +375,7 @@ open class NavigationMapView: UIView {
         if let customizedPuckType = customizedPuckType {
             let locationProvider = mapView.location.locationProvider
             mapView.location.locationProvider(locationProvider!, didUpdateLocations: [location])
+            mapView.location.locationProvider.stopUpdatingLocation()
         } else {
             userCourseView.update(location: location,
                                   pitch: mapView.pitch,
