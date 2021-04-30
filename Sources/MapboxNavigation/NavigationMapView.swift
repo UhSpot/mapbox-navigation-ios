@@ -135,6 +135,15 @@ open class NavigationMapView: UIView {
         }
     }
     
+    public var customizedPuckType: PuckType? {
+        didSet {
+            userCourseView.isHidden = true
+            mapView.update{
+                $0.location.puckType = customizedPuckType
+            }
+        }
+    }
+    
     /**
      A manager object, used to init and maintain predictive caching.
      */
@@ -363,11 +372,16 @@ open class NavigationMapView: UIView {
             self?.userCourseView.center = CGPoint(x: screenCoordinate.x, y: screenCoordinate.y)
         }
         
-        userCourseView.update(location: location,
-                              pitch: mapView.pitch,
-                              direction: mapView.bearing,
-                              animated: animated,
-                              navigationCameraState: navigationCamera.state)
+        if let customizedPuckType = customizedPuckType {
+            let locationProvider = mapView.location.locationProvider
+            mapView.location.locationProvider(locationProvider!, didUpdateLocations: [location])
+        } else {
+            userCourseView.update(location: location,
+                                  pitch: mapView.pitch,
+                                  direction: mapView.bearing,
+                                  animated: animated,
+                                  navigationCameraState: navigationCamera.state)
+        }
     }
     
     // MARK: Feature addition/removal methods
