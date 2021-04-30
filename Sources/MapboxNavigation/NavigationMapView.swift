@@ -135,11 +135,31 @@ open class NavigationMapView: UIView {
         }
     }
     
-    public var customizedPuckType: PuckType? {
+    var customizedPuckType: PuckType? {
         didSet {
-            userCourseView.isHidden = true
+            userCourseView.isHidden = ( customizedPuckType != nil )
             mapView.update{
                 $0.location.puckType = customizedPuckType
+            }
+        }
+    }
+    
+    public var customizedPuck3DConfiguration: Puck3DConfiguration? {
+        didSet {
+            if let configuration = customizedPuck3DConfiguration {
+                customizedPuckType = .puck3D(configuration)
+            } else {
+                customizedPuckType = nil
+            }
+        }
+    }
+    
+    public var customizedPuck2DConfiguration: Puck2DConfiguration? {
+        didSet {
+            if let configuration = customizedPuck2DConfiguration {
+                customizedPuckType = .puck2D(configuration)
+            } else {
+                customizedPuckType = nil
             }
         }
     }
@@ -372,10 +392,26 @@ open class NavigationMapView: UIView {
             self?.userCourseView.center = CGPoint(x: screenCoordinate.x, y: screenCoordinate.y)
         }
         
-        if let customizedPuckType = customizedPuckType {
+        if customizedPuckType != nil {
             let locationProvider = mapView.location.locationProvider
             mapView.location.locationProvider(locationProvider!, didUpdateLocations: [location])
             mapView.location.locationProvider.stopUpdatingLocation()
+            
+            if let _ = try? mapView.style.getLayer(with: "puck", type: LocationIndicatorLayer.self).get() {
+                let _ = mapView.style.styleManager.setStyleLayerPropertyForLayerId("puck", property: "bearing", value: location.course)
+            } else {
+                if let model = customizedPuck3DConfiguration?.model,
+                   var orientation = model.orientation,
+                   orientation.count == 3 {
+                    let validDirection = location.course
+                    if let initialPuckOrientation = customizedPuck3DConfiguration?.modelRotation as? [Double]? {
+                        orientation[2] = initialPuckOrientation![2] + validDirection
+                    } else {
+                        orientation[2] = validDirection
+                    }
+                    customizedPuck3DConfiguration!.model.orientation = orientation
+                }
+            }
         } else {
             userCourseView.update(location: location,
                                   pitch: mapView.pitch,
