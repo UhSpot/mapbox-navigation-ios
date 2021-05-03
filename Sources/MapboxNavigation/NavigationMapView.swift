@@ -144,6 +144,9 @@ open class NavigationMapView: UIView {
         }
     }
     
+    /**
+     The `customizedPuck3DConfiguration` used to provide the customized `Puck3DConfiguration` when users switch to use the puck from `MapboxMaps` instead of the `userCourseView`. If user want to set the puck back to  `userCourseView`, just set the `customizedPuck3DConfiguration = nil`.
+     */
     public var customizedPuck3DConfiguration: Puck3DConfiguration? {
         didSet {
             if let configuration = customizedPuck3DConfiguration {
@@ -154,6 +157,9 @@ open class NavigationMapView: UIView {
         }
     }
     
+    /**
+     The `customizedPuck2DConfiguration` used to provide the customized `customizedPuck2DConfiguration` when users switch to use the puck from `MapboxMaps` instead of the `userCourseView`. It could use the default value as `Puck2DConfiguration()`. If user want to set the puck back to  `userCourseView`, just set the `customizedPuck2DConfiguration = nil`.
+     */
     public var customizedPuck2DConfiguration: Puck2DConfiguration? {
         didSet {
             if let configuration = customizedPuck2DConfiguration {
