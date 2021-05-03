@@ -198,28 +198,42 @@ extension NavigationMapView {
         if traveledDifference == 0.0 {
             return
         }
-        let startDate = Date()
-        vanishingRouteLineUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true, block: { timer in
-            let timePassedInMilliseconds = Date().timeIntervalSince(startDate) * 1000
-            if timePassedInMilliseconds >= 980 {
-                timer.invalidate()
-                return
-            }
-            
-            let newFractionTraveled = self.preFractionTraveled + traveledDifference * timePassedInMilliseconds.truncatingRemainder(dividingBy: 1000) / 1000
-            
+
+        if customizedPuckType == nil {
+            let startDate = Date()
+            vanishingRouteLineUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true, block: { timer in
+                let timePassedInMilliseconds = Date().timeIntervalSince(startDate) * 1000
+                if timePassedInMilliseconds >= 980 {
+                    timer.invalidate()
+                    return
+                }
+                
+                let newFractionTraveled = self.preFractionTraveled + traveledDifference * timePassedInMilliseconds.truncatingRemainder(dividingBy: 1000) / 1000
+                
+                let congestionSegments = routeProgress.route.congestionFeatures(legIndex: self.currentLegIndex, roadClassesWithOverriddenCongestionLevels: self.roadClassesWithOverriddenCongestionLevels)
+                let mainRouteLayerGradient = self.routeLineGradient(congestionSegments,
+                                                                    fractionTraveled: newFractionTraveled)
+                self.mapView.style.updateLayer(id: mainRouteLayerIdentifier, type: LineLayer.self) { (lineLayer) in
+                    lineLayer.paint?.lineGradient = .expression(Expression.routeLineGradientExpression(mainRouteLayerGradient))
+                }
+                
+                let mainRouteCasingLayerGradient = self.routeLineGradient(fractionTraveled: newFractionTraveled)
+                self.mapView.style.updateLayer(id: mainRouteCasingLayerIdentifier, type: LineLayer.self) { (lineLayer) in
+                    lineLayer.paint?.lineGradient = .expression(Expression.routeLineGradientExpression(mainRouteCasingLayerGradient))
+                }
+            })
+        } else {
             let congestionSegments = routeProgress.route.congestionFeatures(legIndex: self.currentLegIndex, roadClassesWithOverriddenCongestionLevels: self.roadClassesWithOverriddenCongestionLevels)
             let mainRouteLayerGradient = self.routeLineGradient(congestionSegments,
-                                                                fractionTraveled: newFractionTraveled)
+                                                                fractionTraveled: fractionTraveled)
             self.mapView.style.updateLayer(id: mainRouteLayerIdentifier, type: LineLayer.self) { (lineLayer) in
                 lineLayer.paint?.lineGradient = .expression(Expression.routeLineGradientExpression(mainRouteLayerGradient))
             }
-            
-            let mainRouteCasingLayerGradient = self.routeLineGradient(fractionTraveled: newFractionTraveled)
+            let mainRouteCasingLayerGradient = self.routeLineGradient(fractionTraveled: fractionTraveled)
             self.mapView.style.updateLayer(id: mainRouteCasingLayerIdentifier, type: LineLayer.self) { (lineLayer) in
                 lineLayer.paint?.lineGradient = .expression(Expression.routeLineGradientExpression(mainRouteCasingLayerGradient))
             }
-        })
+        }
     }
     
     func routeLineGradient(_ congestionFeatures: [Feature]? = nil, fractionTraveled: Double, isMain: Bool = true) -> [Double: UIColor] {
