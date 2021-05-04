@@ -179,6 +179,7 @@ open class StyleManager {
         guard currentStyleType != styleType else { return }
         
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(timeOfDayChanged), object: nil)
+        ImageRepository.shared.resetImageCache(nil)
         
         for style in styles {
             if style.styleType == styleType {
