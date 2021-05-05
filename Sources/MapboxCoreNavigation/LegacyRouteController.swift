@@ -520,6 +520,7 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
             guard forcedStepIndex < routeProgress.currentLeg.steps.count else { return }
             routeProgress.currentLegProgress.stepIndex = forcedStepIndex
         } else {
+            guard routeProgress.currentLegProgress.stepIndex < routeProgress.currentLeg.steps.endIndex - 1 else { return }
             routeProgress.currentLegProgress.stepIndex += 1
         }
 
