@@ -63,7 +63,7 @@
 * Added the `Directions.calculateOffline(options:completionHandler:)` and `Directions.calculateWithCache(options:completionHandler:)` methods, which incorporate routing tiles from the predictive cache when possible to avoid relying on a network connection to calculate the route. `RouteController` now also uses the predictive cache when rerouting. ([#2848](https://github.com/mapbox/mapbox-navigation-ios/pull/2848)) 
 * Fixed an issue where `PassiveLocationDataSource` and `RouteController` did not use the access token and host specified by `PassiveLocationDataSource.directions` and `RouteController.directions`, respectively. Added the `PredictiveCacheOptions.credentials` property for specifying the access token and host used for prefetching resources. ([#2876](https://github.com/mapbox/mapbox-navigation-ios/pull/2876))
 * The top banner can now show a wider variety of turn lane configurations, such as combination U-turn/left turn lanes and combination through/slight right turn lanes. ([#2882](https://github.com/mapbox/mapbox-navigation-ios/pull/2882))
-* Route Duration Annotations feature now supports a list of fonts to be used. This allows for fallback fonts to be specified and more languages to be supported.  ([#2873](https://github.com/mapbox/mapbox-navigation-ios/pull/2873))
+* The duration annotations added by the `NavigationMapView.showRouteDurations(along:)` method are now set in the fonts you specify using the `NavigationMapView.routeDurationAnnotationFontNames` property. Use this property to specify a list of fallback fonts for better language support. ([#2873](https://github.com/mapbox/mapbox-navigation-ios/pull/2873))
 
 ## v1.3.0
 
