@@ -63,6 +63,8 @@
 * Added the `Directions.calculateOffline(options:completionHandler:)` and `Directions.calculateWithCache(options:completionHandler:)` methods, which incorporate routing tiles from the predictive cache when possible to avoid relying on a network connection to calculate the route. `RouteController` now also uses the predictive cache when rerouting. ([#2848](https://github.com/mapbox/mapbox-navigation-ios/pull/2848)) 
 * Fixed an issue where `PassiveLocationDataSource` and `RouteController` did not use the access token and host specified by `PassiveLocationDataSource.directions` and `RouteController.directions`, respectively. Added the `PredictiveCacheOptions.credentials` property for specifying the access token and host used for prefetching resources. ([#2876](https://github.com/mapbox/mapbox-navigation-ios/pull/2876))
 * The top banner can now show a wider variety of turn lane configurations, such as combination U-turn/left turn lanes and combination through/slight right turn lanes. ([#2882](https://github.com/mapbox/mapbox-navigation-ios/pull/2882))
+* Route Duration Annotations feature now supports a list of fonts to be used. This allows for fallback fonts to be specified and more languages to be supported.  ([#2873](https://github.com/mapbox/mapbox-navigation-ios/pull/2873)):
+* Fix an issue where the supplied list of routes was ignored in `showRouteDurations(along:)`.  ([#2873](https://github.com/mapbox/mapbox-navigation-ios/pull/2873))
 
 ## v1.3.0
 
@@ -100,7 +102,7 @@
 * Fixed an issue where the route line periodically peeked out from behind the user puck even though `NavigationViewController.routeLineTracksTraversal` was enabled. ([#2737](https://github.com/mapbox/mapbox-navigation-ios/pull/2737))
 * Created the `UserHaloCourseView` similar to `UserCourseView` for approximate location on iOS 14 during the navigation to represent user location. Allow the switch between `UserHaloCourseView` and `UserCourseView` when precise mode is changed. ([#2664](https://github.com/mapbox/mapbox-navigation-ios/pull/2664))
 * Added option to show route duration callouts when previewing route alternatives ([#2734](https://github.com/mapbox/mapbox-navigation-ios/pull/2734)):
-  * `NavigationMapView.showRouteDurations(along routes:)` to show duration annotation callouts on the map for the provided routes.
+  * `NavigationMapView.showRouteDurations(along:)` to show duration annotation callouts on the map for the provided routes.
   * `NavigationMapView.removeRouteDurations()` to remove any route duration annotations currently displayed on the map.
 
 ### Instruction banners
