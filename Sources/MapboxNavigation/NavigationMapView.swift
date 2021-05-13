@@ -204,7 +204,7 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
         if let anchorPoint = navigationMapViewDelegate?.navigationMapViewUserAnchorPoint(self), anchorPoint != .zero {
             return anchorPoint
         }
-        let contentFrame = bounds.inset(by: contentInset)
+      let contentFrame = UIEdgeInsetsInsetRect(bounds, contentInset)
         return CGPoint(x: contentFrame.midX, y: contentFrame.midY)
     }
     
@@ -322,14 +322,7 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
         }
     }
     
-    open override func mapViewDidFinishRenderingFrameFullyRendered(_ fullyRendered: Bool) {
-        super.mapViewDidFinishRenderingFrameFullyRendered(fullyRendered)
-        
-        guard shouldPositionCourseViewFrameByFrame else { return }
-        guard let location = userLocationForCourseTracking else { return }
-        
-        userCourseView.center = convert(location.coordinate, toPointTo: self)
-    }
+   
     
     /**
      Updates the map view’s preferred frames per second to the appropriate value for the current route progress.
@@ -401,7 +394,7 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
             centerUserCourseView()
             
             let newCamera = camera ?? MGLMapCamera(lookingAtCenter: location.coordinate, altitude: altitude, pitch: 45, heading: location.course)
-            let function: CAMediaTimingFunction? = animated ? CAMediaTimingFunction(name: .linear) : nil
+            let function: CAMediaTimingFunction? = animated ? CAMediaTimingFunction(name: "linear") : nil
             setCamera(newCamera, withDuration: duration, animationTimingFunction: function, completionHandler: nil)
         } else {
             // Animate course view updates in overview mode
