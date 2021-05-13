@@ -943,6 +943,125 @@
 		C5EF397420599120009A2C50 /* straight-line.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "straight-line.json"; sourceTree = "<group>"; };
 		C5F4D21820DC468B0059FABF /* CongestionLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CongestionLevel.swift; sourceTree = "<group>"; };
 		C5FFAC1420D96F5B009E7F98 /* CarPlayNavigationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CarPlayNavigationViewController.swift; sourceTree = "<group>"; };
+		CE617073264D87CC00100EDA /* UhSpotNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "\U0010UhSpotNavigationView.swift"; sourceTree = "<group>"; };
+		CE617074264D87CC00100EDA /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
+		CE617075264D87CC00100EDA /* AVAudioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioSession.swift; sourceTree = "<group>"; };
+		CE617076264D87CC00100EDA /* BottomBannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBannerViewController.swift; sourceTree = "<group>"; };
+		CE617077264D87CC00100EDA /* BottomBannerViewLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomBannerViewLayout.swift; sourceTree = "<group>"; };
+		CE617078264D87CC00100EDA /* Bundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bundle.swift; sourceTree = "<group>"; };
+		CE617079264D87CC00100EDA /* Cache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
+		CE61707A264D87CC00100EDA /* CarPayCompassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPayCompassView.swift; sourceTree = "<group>"; };
+		CE61707B264D87CC00100EDA /* CarPlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayManager.swift; sourceTree = "<group>"; };
+		CE61707C264D87CC00100EDA /* CarPlayManagerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayManagerDelegate.swift; sourceTree = "<group>"; };
+		CE61707D264D87CC00100EDA /* CarPlayMapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayMapViewController.swift; sourceTree = "<group>"; };
+		CE61707E264D87CC00100EDA /* CarPlayNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayNavigationViewController.swift; sourceTree = "<group>"; };
+		CE61707F264D87CC00100EDA /* CarPlaySearchController+CPSearchTemplateDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CarPlaySearchController+CPSearchTemplateDelegate.swift"; sourceTree = "<group>"; };
+		CE617080264D87CC00100EDA /* CarPlaySearchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySearchController.swift; sourceTree = "<group>"; };
+		CE617081264D87CC00100EDA /* CGPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGPoint.swift; sourceTree = "<group>"; };
+		CE617082264D87CC00100EDA /* CGSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGSize.swift; sourceTree = "<group>"; };
+		CE617083264D87CD00100EDA /* CLLocationManager+MGLNavigationAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CLLocationManager+MGLNavigationAdditions.h"; sourceTree = "<group>"; };
+		CE617084264D87CD00100EDA /* CongestionLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CongestionLevel.swift; sourceTree = "<group>"; };
+		CE617085264D87CD00100EDA /* Constants+InstructionsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Constants+InstructionsCard.swift"; sourceTree = "<group>"; };
+		CE617086264D87CD00100EDA /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		CE617087264D87CD00100EDA /* CPMapTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPMapTemplate.swift; sourceTree = "<group>"; };
+		CE617088264D87CD00100EDA /* CPTrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPTrip.swift; sourceTree = "<group>"; };
+		CE617089264D87CD00100EDA /* DataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataCache.swift; sourceTree = "<group>"; };
+		CE61708A264D87CD00100EDA /* DateComponentsFormatter+MGLNavigationAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateComponentsFormatter+MGLNavigationAdditions.swift"; sourceTree = "<group>"; };
+		CE61708B264D87CD00100EDA /* DayStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayStyle.swift; sourceTree = "<group>"; };
+		CE61708C264D87CD00100EDA /* DialogViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DialogViewController.swift; sourceTree = "<group>"; };
+		CE61708D264D87CD00100EDA /* Dictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dictionary.swift; sourceTree = "<group>"; };
+		CE61708E264D87CD00100EDA /* EndOfRouteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndOfRouteViewController.swift; sourceTree = "<group>"; };
+		CE61708F264D87CD00100EDA /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		CE617090264D87CD00100EDA /* ExitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitView.swift; sourceTree = "<group>"; };
+		CE617091264D87CD00100EDA /* FeedbackCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCollectionViewCell.swift; sourceTree = "<group>"; };
+		CE617092264D87CD00100EDA /* FeedbackItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackItem.swift; sourceTree = "<group>"; };
+		CE617093264D87CD00100EDA /* FeedbackSubtypeCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSubtypeCollectionViewCell.swift; sourceTree = "<group>"; };
+		CE617094264D87CD00100EDA /* FeedbackSubtypeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSubtypeViewController.swift; sourceTree = "<group>"; };
+		CE617095264D87CD00100EDA /* FeedbackViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackViewController.swift; sourceTree = "<group>"; };
+		CE617096264D87CD00100EDA /* GenericRouteShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericRouteShield.swift; sourceTree = "<group>"; };
+		CE617097264D87CD00100EDA /* HighwayShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighwayShield.swift; sourceTree = "<group>"; };
+		CE617098264D87CD00100EDA /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
+		CE617099264D87CD00100EDA /* ImageDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDownload.swift; sourceTree = "<group>"; };
+		CE61709A264D87CD00100EDA /* ImageDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDownloader.swift; sourceTree = "<group>"; };
+		CE61709B264D87CD00100EDA /* ImageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRepository.swift; sourceTree = "<group>"; };
+		CE61709C264D87CD00100EDA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CE61709D264D87CD00100EDA /* InstructionLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionLabel.swift; sourceTree = "<group>"; };
+		CE61709E264D87CD00100EDA /* InstructionPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionPresenter.swift; sourceTree = "<group>"; };
+		CE61709F264D87CD00100EDA /* InstructionsBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsBannerView.swift; sourceTree = "<group>"; };
+		CE6170A0264D87CD00100EDA /* InstructionsCardCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsCardCell.swift; sourceTree = "<group>"; };
+		CE6170A1264D87CD00100EDA /* InstructionsCardCollectionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsCardCollectionDelegate.swift; sourceTree = "<group>"; };
+		CE6170A2264D87CD00100EDA /* InstructionsCardContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsCardContainerView.swift; sourceTree = "<group>"; };
+		CE6170A3264D87CD00100EDA /* InstructionsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsCardView.swift; sourceTree = "<group>"; };
+		CE6170A4264D87CD00100EDA /* InstructionsCardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsCardViewController.swift; sourceTree = "<group>"; };
+		CE6170A5264D87CD00100EDA /* JunctionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunctionView.swift; sourceTree = "<group>"; };
+		CE6170A6264D87CD00100EDA /* LanesStyleKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanesStyleKit.swift; sourceTree = "<group>"; };
+		CE6170A7264D87CD00100EDA /* LanesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanesView.swift; sourceTree = "<group>"; };
+		CE6170A8264D87CD00100EDA /* LaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneView.swift; sourceTree = "<group>"; };
+		CE6170A9264D87CD00100EDA /* ManeuversStyleKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManeuversStyleKit.swift; sourceTree = "<group>"; };
+		CE6170AA264D87CD00100EDA /* ManeuverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManeuverView.swift; sourceTree = "<group>"; };
+		CE6170AB264D87CD00100EDA /* MapboxNavigation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MapboxNavigation.h; sourceTree = "<group>"; };
+		CE6170AC264D87CD00100EDA /* MapboxSpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapboxSpeechSynthesizer.swift; sourceTree = "<group>"; };
+		CE6170AD264D87CD00100EDA /* Match.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Match.swift; sourceTree = "<group>"; };
+		CE6170AE264D87CD00100EDA /* MGLAccountManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MGLAccountManager.swift; sourceTree = "<group>"; };
+		CE6170AF264D87CD00100EDA /* MGLMapView+MGLNavigationAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MGLMapView+MGLNavigationAdditions.h"; sourceTree = "<group>"; };
+		CE6170B0264D87CD00100EDA /* MGLMapView+MGLNavigationAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MGLMapView+MGLNavigationAdditions.m"; sourceTree = "<group>"; };
+		CE6170B1264D87CD00100EDA /* MGLMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MGLMapView.swift; sourceTree = "<group>"; };
+		CE6170B2264D87CD00100EDA /* MGLShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MGLShape.swift; sourceTree = "<group>"; };
+		CE6170B3264D87CD00100EDA /* MGLStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MGLStyle.swift; sourceTree = "<group>"; };
+		CE6170B4264D87CD00100EDA /* MGLVectorTileSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MGLVectorTileSource.swift; sourceTree = "<group>"; };
+		CE6170B5264D87CD00100EDA /* MultiplexedSpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplexedSpeechSynthesizer.swift; sourceTree = "<group>"; };
+		CE6170B6264D87CD00100EDA /* navigation-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "navigation-Bridging-Header.h"; sourceTree = "<group>"; };
+		CE6170B7264D87CD00100EDA /* NavigationComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationComponent.swift; sourceTree = "<group>"; };
+		CE6170B8264D87CD00100EDA /* NavigationCustomizable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationCustomizable.swift; sourceTree = "<group>"; };
+		CE6170B9264D87CD00100EDA /* NavigationMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationMapView.swift; sourceTree = "<group>"; };
+		CE6170BA264D87CD00100EDA /* NavigationMapViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationMapViewDelegate.swift; sourceTree = "<group>"; };
+		CE6170BB264D87CD00100EDA /* NavigationOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOptions.swift; sourceTree = "<group>"; };
+		CE6170BC264D87CD00100EDA /* NavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationView.swift; sourceTree = "<group>"; };
+		CE6170BD264D87CD00100EDA /* NavigationViewControllerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationViewControllerDelegate.swift; sourceTree = "<group>"; };
+		CE6170BE264D87CD00100EDA /* NavigationViewLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationViewLayout.swift; sourceTree = "<group>"; };
+		CE6170BF264D87CD00100EDA /* NextBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextBannerView.swift; sourceTree = "<group>"; };
+		CE6170C0264D87CD00100EDA /* NightStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightStyle.swift; sourceTree = "<group>"; };
+		CE6170C1264D87CD00100EDA /* NSAttributedString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAttributedString.swift; sourceTree = "<group>"; };
+		CE6170C2264D87CD00100EDA /* PassiveLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassiveLocationManager.swift; sourceTree = "<group>"; };
+		CE6170C3264D87CD00100EDA /* RatingControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingControl.swift; sourceTree = "<group>"; };
+		CE6170C4264D87CD00100EDA /* RecentItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentItem.swift; sourceTree = "<group>"; };
+		CE6170C6264D87CD00100EDA /* RNPlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RNPlaceholder.swift; sourceTree = "<group>"; };
+		CE6170C7264D87CD00100EDA /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
+		CE6170C8264D87CD00100EDA /* RouteMapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapViewController.swift; sourceTree = "<group>"; };
+		CE6170C9264D87CD00100EDA /* RouteVoiceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteVoiceController.swift; sourceTree = "<group>"; };
+		CE6170CA264D87CD00100EDA /* SpeechSynthesizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSynthesizing.swift; sourceTree = "<group>"; };
+		CE6170CB264D87CD00100EDA /* SpeedLimitStyleKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedLimitStyleKit.swift; sourceTree = "<group>"; };
+		CE6170CC264D87CD00100EDA /* SpeedLimitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedLimitView.swift; sourceTree = "<group>"; };
+		CE6170CD264D87CD00100EDA /* StatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusView.swift; sourceTree = "<group>"; };
+		CE6170CE264D87CD00100EDA /* StepsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsViewController.swift; sourceTree = "<group>"; };
+		CE6170CF264D87CD00100EDA /* String.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
+		CE6170D0264D87CD00100EDA /* Style.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Style.swift; sourceTree = "<group>"; };
+		CE6170D1264D87CD00100EDA /* StyleKitMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleKitMarker.swift; sourceTree = "<group>"; };
+		CE6170D2264D87CD00100EDA /* StyleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleManager.swift; sourceTree = "<group>"; };
+		CE6170D3264D87CD00100EDA /* StyleType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleType.swift; sourceTree = "<group>"; };
+		CE6170D4264D87CD00100EDA /* SystemSpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSpeechSynthesizer.swift; sourceTree = "<group>"; };
+		CE6170D5264D87CD00100EDA /* TopBannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBannerViewController.swift; sourceTree = "<group>"; };
+		CE6170D6264D87CD00100EDA /* Transitioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transitioning.swift; sourceTree = "<group>"; };
+		CE6170D7264D87CD00100EDA /* Turf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Turf.swift; sourceTree = "<group>"; };
+		CE6170D8264D87CD00100EDA /* UhSpotNavigationManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UhSpotNavigationManager.m; sourceTree = "<group>"; };
+		CE6170D9264D87CD00100EDA /* UhSpotNavigationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UhSpotNavigationManager.swift; sourceTree = "<group>"; };
+		CE6170DA264D87CD00100EDA /* UhSpotNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UhSpotNavigationViewController.swift; sourceTree = "<group>"; };
+		CE6170DB264D87CD00100EDA /* UICollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UICollectionView.swift; sourceTree = "<group>"; };
+		CE6170DC264D87CD00100EDA /* UIDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIDevice.swift; sourceTree = "<group>"; };
+		CE6170DD264D87CD00100EDA /* UIEdgeInsets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIEdgeInsets.swift; sourceTree = "<group>"; };
+		CE6170DE264D87CD00100EDA /* UIFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIFont.swift; sourceTree = "<group>"; };
+		CE6170DF264D87CD00100EDA /* UIGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIGestureRecognizer.swift; sourceTree = "<group>"; };
+		CE6170E0264D87CD00100EDA /* UIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIImage.swift; sourceTree = "<group>"; };
+		CE6170E1264D87CD00100EDA /* UIScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIScreen.swift; sourceTree = "<group>"; };
+		CE6170E2264D87CD00100EDA /* UIStackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIStackView.swift; sourceTree = "<group>"; };
+		CE6170E3264D87CD00100EDA /* UIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIView.swift; sourceTree = "<group>"; };
+		CE6170E4264D87CD00100EDA /* UIViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewController.swift; sourceTree = "<group>"; };
+		CE6170E5264D87CD00100EDA /* UserCourseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCourseView.swift; sourceTree = "<group>"; };
+		CE6170E6264D87CD00100EDA /* UserHaloCourseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserHaloCourseView.swift; sourceTree = "<group>"; };
+		CE6170E7264D87CD00100EDA /* VanishingRouteLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VanishingRouteLine.swift; sourceTree = "<group>"; };
+		CE6170E8264D87CD00100EDA /* VisualInstruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualInstruction.swift; sourceTree = "<group>"; };
+		CE6170E9264D87CD00100EDA /* VisualInstructionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualInstructionComponent.swift; sourceTree = "<group>"; };
+		CE6170EA264D87CD00100EDA /* WaypointStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointStyle.swift; sourceTree = "<group>"; };
 		CFD47D8F20FD85EC00BC1E49 /* MGLAccountManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MGLAccountManager.swift; sourceTree = "<group>"; };
 		DA0557202154EF4700A1F2AA /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
 		DA0557242155040700A1F2AA /* RouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteTests.swift; sourceTree = "<group>"; };
@@ -1760,6 +1879,7 @@
 				DA5C24DC25C35097005487F2 /* CMapboxCoreNavigation */,
 				C5ADFBCB1DDCC7840011824B /* MapboxCoreNavigation */,
 				351BEBD81E5BCC28006FE110 /* MapboxNavigation */,
+				CE617072264D87CC00100EDA /* UhSpotNavigation */,
 				C5ADFBD61DDCC7840011824B /* MapboxCoreNavigationTests */,
 				35B711D01E5E7AD2001EDA8D /* MapboxNavigationTests */,
 				35CDA80721908F2F0072B675 /* Bench */,
@@ -1851,6 +1971,140 @@
 			);
 			name = MapboxCoreNavigationTests;
 			path = Tests/MapboxCoreNavigationTests;
+			sourceTree = "<group>";
+		};
+		CE617072264D87CC00100EDA /* UhSpotNavigation */ = {
+			isa = PBXGroup;
+			children = (
+				CE617073264D87CC00100EDA /* UhSpotNavigationView.swift */,
+				CE617074264D87CC00100EDA /* Array.swift */,
+				CE617075264D87CC00100EDA /* AVAudioSession.swift */,
+				CE617076264D87CC00100EDA /* BottomBannerViewController.swift */,
+				CE617077264D87CC00100EDA /* BottomBannerViewLayout.swift */,
+				CE617078264D87CC00100EDA /* Bundle.swift */,
+				CE617079264D87CC00100EDA /* Cache.swift */,
+				CE61707A264D87CC00100EDA /* CarPayCompassView.swift */,
+				CE61707B264D87CC00100EDA /* CarPlayManager.swift */,
+				CE61707C264D87CC00100EDA /* CarPlayManagerDelegate.swift */,
+				CE61707D264D87CC00100EDA /* CarPlayMapViewController.swift */,
+				CE61707E264D87CC00100EDA /* CarPlayNavigationViewController.swift */,
+				CE61707F264D87CC00100EDA /* CarPlaySearchController+CPSearchTemplateDelegate.swift */,
+				CE617080264D87CC00100EDA /* CarPlaySearchController.swift */,
+				CE617081264D87CC00100EDA /* CGPoint.swift */,
+				CE617082264D87CC00100EDA /* CGSize.swift */,
+				CE617083264D87CD00100EDA /* CLLocationManager+MGLNavigationAdditions.h */,
+				CE617084264D87CD00100EDA /* CongestionLevel.swift */,
+				CE617085264D87CD00100EDA /* Constants+InstructionsCard.swift */,
+				CE617086264D87CD00100EDA /* Constants.swift */,
+				CE617087264D87CD00100EDA /* CPMapTemplate.swift */,
+				CE617088264D87CD00100EDA /* CPTrip.swift */,
+				CE617089264D87CD00100EDA /* DataCache.swift */,
+				CE61708A264D87CD00100EDA /* DateComponentsFormatter+MGLNavigationAdditions.swift */,
+				CE61708B264D87CD00100EDA /* DayStyle.swift */,
+				CE61708C264D87CD00100EDA /* DialogViewController.swift */,
+				CE61708D264D87CD00100EDA /* Dictionary.swift */,
+				CE61708E264D87CD00100EDA /* EndOfRouteViewController.swift */,
+				CE61708F264D87CD00100EDA /* Error.swift */,
+				CE617090264D87CD00100EDA /* ExitView.swift */,
+				CE617091264D87CD00100EDA /* FeedbackCollectionViewCell.swift */,
+				CE617092264D87CD00100EDA /* FeedbackItem.swift */,
+				CE617093264D87CD00100EDA /* FeedbackSubtypeCollectionViewCell.swift */,
+				CE617094264D87CD00100EDA /* FeedbackSubtypeViewController.swift */,
+				CE617095264D87CD00100EDA /* FeedbackViewController.swift */,
+				CE617096264D87CD00100EDA /* GenericRouteShield.swift */,
+				CE617097264D87CD00100EDA /* HighwayShield.swift */,
+				CE617098264D87CD00100EDA /* ImageCache.swift */,
+				CE617099264D87CD00100EDA /* ImageDownload.swift */,
+				CE61709A264D87CD00100EDA /* ImageDownloader.swift */,
+				CE61709B264D87CD00100EDA /* ImageRepository.swift */,
+				CE61709C264D87CD00100EDA /* Info.plist */,
+				CE61709D264D87CD00100EDA /* InstructionLabel.swift */,
+				CE61709E264D87CD00100EDA /* InstructionPresenter.swift */,
+				CE61709F264D87CD00100EDA /* InstructionsBannerView.swift */,
+				CE6170A0264D87CD00100EDA /* InstructionsCardCell.swift */,
+				CE6170A1264D87CD00100EDA /* InstructionsCardCollectionDelegate.swift */,
+				CE6170A2264D87CD00100EDA /* InstructionsCardContainerView.swift */,
+				CE6170A3264D87CD00100EDA /* InstructionsCardView.swift */,
+				CE6170A4264D87CD00100EDA /* InstructionsCardViewController.swift */,
+				CE6170A5264D87CD00100EDA /* JunctionView.swift */,
+				CE6170A6264D87CD00100EDA /* LanesStyleKit.swift */,
+				CE6170A7264D87CD00100EDA /* LanesView.swift */,
+				CE6170A8264D87CD00100EDA /* LaneView.swift */,
+				CE6170A9264D87CD00100EDA /* ManeuversStyleKit.swift */,
+				CE6170AA264D87CD00100EDA /* ManeuverView.swift */,
+				CE6170AB264D87CD00100EDA /* MapboxNavigation.h */,
+				CE6170AC264D87CD00100EDA /* MapboxSpeechSynthesizer.swift */,
+				CE6170AD264D87CD00100EDA /* Match.swift */,
+				CE6170AE264D87CD00100EDA /* MGLAccountManager.swift */,
+				CE6170AF264D87CD00100EDA /* MGLMapView+MGLNavigationAdditions.h */,
+				CE6170B0264D87CD00100EDA /* MGLMapView+MGLNavigationAdditions.m */,
+				CE6170B1264D87CD00100EDA /* MGLMapView.swift */,
+				CE6170B2264D87CD00100EDA /* MGLShape.swift */,
+				CE6170B3264D87CD00100EDA /* MGLStyle.swift */,
+				CE6170B4264D87CD00100EDA /* MGLVectorTileSource.swift */,
+				CE6170B5264D87CD00100EDA /* MultiplexedSpeechSynthesizer.swift */,
+				CE6170B6264D87CD00100EDA /* navigation-Bridging-Header.h */,
+				CE6170B7264D87CD00100EDA /* NavigationComponent.swift */,
+				CE6170B8264D87CD00100EDA /* NavigationCustomizable.swift */,
+				CE6170B9264D87CD00100EDA /* NavigationMapView.swift */,
+				CE6170BA264D87CD00100EDA /* NavigationMapViewDelegate.swift */,
+				CE6170BB264D87CD00100EDA /* NavigationOptions.swift */,
+				CE6170BC264D87CD00100EDA /* NavigationView.swift */,
+				CE6170BD264D87CD00100EDA /* NavigationViewControllerDelegate.swift */,
+				CE6170BE264D87CD00100EDA /* NavigationViewLayout.swift */,
+				CE6170BF264D87CD00100EDA /* NextBannerView.swift */,
+				CE6170C0264D87CD00100EDA /* NightStyle.swift */,
+				CE6170C1264D87CD00100EDA /* NSAttributedString.swift */,
+				CE6170C2264D87CD00100EDA /* PassiveLocationManager.swift */,
+				CE6170C3264D87CD00100EDA /* RatingControl.swift */,
+				CE6170C4264D87CD00100EDA /* RecentItem.swift */,
+				CE6170C5264D87CD00100EDA /* Resources */,
+				CE6170C6264D87CD00100EDA /* RNPlaceholder.swift */,
+				CE6170C7264D87CD00100EDA /* Route.swift */,
+				CE6170C8264D87CD00100EDA /* RouteMapViewController.swift */,
+				CE6170C9264D87CD00100EDA /* RouteVoiceController.swift */,
+				CE6170CA264D87CD00100EDA /* SpeechSynthesizing.swift */,
+				CE6170CB264D87CD00100EDA /* SpeedLimitStyleKit.swift */,
+				CE6170CC264D87CD00100EDA /* SpeedLimitView.swift */,
+				CE6170CD264D87CD00100EDA /* StatusView.swift */,
+				CE6170CE264D87CD00100EDA /* StepsViewController.swift */,
+				CE6170CF264D87CD00100EDA /* String.swift */,
+				CE6170D0264D87CD00100EDA /* Style.swift */,
+				CE6170D1264D87CD00100EDA /* StyleKitMarker.swift */,
+				CE6170D2264D87CD00100EDA /* StyleManager.swift */,
+				CE6170D3264D87CD00100EDA /* StyleType.swift */,
+				CE6170D4264D87CD00100EDA /* SystemSpeechSynthesizer.swift */,
+				CE6170D5264D87CD00100EDA /* TopBannerViewController.swift */,
+				CE6170D6264D87CD00100EDA /* Transitioning.swift */,
+				CE6170D7264D87CD00100EDA /* Turf.swift */,
+				CE6170D8264D87CD00100EDA /* UhSpotNavigationManager.m */,
+				CE6170D9264D87CD00100EDA /* UhSpotNavigationManager.swift */,
+				CE6170DA264D87CD00100EDA /* UhSpotNavigationViewController.swift */,
+				CE6170DB264D87CD00100EDA /* UICollectionView.swift */,
+				CE6170DC264D87CD00100EDA /* UIDevice.swift */,
+				CE6170DD264D87CD00100EDA /* UIEdgeInsets.swift */,
+				CE6170DE264D87CD00100EDA /* UIFont.swift */,
+				CE6170DF264D87CD00100EDA /* UIGestureRecognizer.swift */,
+				CE6170E0264D87CD00100EDA /* UIImage.swift */,
+				CE6170E1264D87CD00100EDA /* UIScreen.swift */,
+				CE6170E2264D87CD00100EDA /* UIStackView.swift */,
+				CE6170E3264D87CD00100EDA /* UIView.swift */,
+				CE6170E4264D87CD00100EDA /* UIViewController.swift */,
+				CE6170E5264D87CD00100EDA /* UserCourseView.swift */,
+				CE6170E6264D87CD00100EDA /* UserHaloCourseView.swift */,
+				CE6170E7264D87CD00100EDA /* VanishingRouteLine.swift */,
+				CE6170E8264D87CD00100EDA /* VisualInstruction.swift */,
+				CE6170E9264D87CD00100EDA /* VisualInstructionComponent.swift */,
+				CE6170EA264D87CD00100EDA /* WaypointStyle.swift */,
+			);
+			path = UhSpotNavigation;
+			sourceTree = "<group>";
+		};
+		CE6170C5264D87CD00100EDA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		DA5C24DC25C35097005487F2 /* CMapboxCoreNavigation */ = {
