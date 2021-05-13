@@ -204,7 +204,7 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
         if let anchorPoint = navigationMapViewDelegate?.navigationMapViewUserAnchorPoint(self), anchorPoint != .zero {
             return anchorPoint
         }
-        let contentFrame = bounds.inset(by: contentInset)
+        let contentFrame = UIEdgeInsetsInsetRect(bounds, contentInset)
         return CGPoint(x: contentFrame.midX, y: contentFrame.midY)
     }
     
@@ -401,7 +401,7 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
             centerUserCourseView()
             
             let newCamera = camera ?? MGLMapCamera(lookingAtCenter: location.coordinate, altitude: altitude, pitch: 45, heading: location.course)
-            let function: CAMediaTimingFunction? = animated ? CAMediaTimingFunction(name: .linear) : nil
+            let function: CAMediaTimingFunction? = animated ? CAMediaTimingFunction(name: ".linear") : nil
             setCamera(newCamera, withDuration: duration, animationTimingFunction: function, completionHandler: nil)
         } else {
             // Animate course view updates in overview mode
