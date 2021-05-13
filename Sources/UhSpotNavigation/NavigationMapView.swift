@@ -4,7 +4,7 @@ import MapboxDirections
 import MapboxCoreNavigation
 import Turf
 
-//let identifierNamespace = Bundle.mapboxNavigation.bundleIdentifier ?? ""
+let identifierNamespace = Bundle.mapboxNavigation.bundleIdentifier ?? ""
 
 private enum RouteDurationAnnotationTailPosition: Int {
     case left
