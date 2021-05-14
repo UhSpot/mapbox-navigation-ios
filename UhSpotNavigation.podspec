@@ -36,14 +36,14 @@ Pod::Spec.new do |s|
   
     # ――― Resources ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   
-    s.resources = ['Sources/MapboxNavigation/Resources/*/*', 'Sources/MapboxNavigation/Resources/*']
+    s.resources = ['Sources/UhSpotNavigation/Resources/*/*', 'Sources/UhSpotNavigation/Resources/*']
   
     # ――― Project Settings ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   
     s.requires_arc = true
-    s.module_name = "MapboxNavigation"
+    s.module_name = "UhSpotNavigation"
   
-    s.dependency "MapboxCoreNavigation", "#{s.version.to_s}"
+    s.dependency "MapboxCoreNavigation"
     s.dependency "Mapbox-iOS-SDK", "~> 6.0"
     s.dependency "Solar", "~> 2.1"
     s.dependency "MapboxSpeech", "~> 1.0"
