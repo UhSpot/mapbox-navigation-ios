@@ -1058,6 +1058,7 @@
 		CEF73F13264EE471004A78EA /* VisualInstruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualInstruction.swift; sourceTree = "<group>"; };
 		CEF73F14264EE471004A78EA /* VisualInstructionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualInstructionComponent.swift; sourceTree = "<group>"; };
 		CEF73F15264EE471004A78EA /* WaypointStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaypointStyle.swift; sourceTree = "<group>"; };
+		CEF73F1D264F0ED6004A78EA /* UhSpotNavigation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UhSpotNavigation.h; sourceTree = "<group>"; };
 		CFD47D8F20FD85EC00BC1E49 /* MGLAccountManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MGLAccountManager.swift; sourceTree = "<group>"; };
 		DA0557202154EF4700A1F2AA /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
 		DA0557242155040700A1F2AA /* RouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteTests.swift; sourceTree = "<group>"; };
@@ -2088,6 +2089,7 @@
 				CEF73F13264EE471004A78EA /* VisualInstruction.swift */,
 				CEF73F14264EE471004A78EA /* VisualInstructionComponent.swift */,
 				CEF73F15264EE471004A78EA /* WaypointStyle.swift */,
+				CEF73F1D264F0ED6004A78EA /* UhSpotNavigation.h */,
 			);
 			name = UhSpotNavigation;
 			path = Sources/UhSpotNavigation;
