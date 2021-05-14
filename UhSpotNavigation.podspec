@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
     # ―――  Spec Metadata  ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   
     s.name = "UhSpotNavigation"
-    s.version = '1.4.0'
+    s.version = '1.4.1'
     s.summary = "Complete turn-by-turn navigation interface for iOS."
   
     s.description  = <<-DESC
@@ -43,7 +43,7 @@ Pod::Spec.new do |s|
     s.requires_arc = true
     s.module_name = "UhSpotNavigation"
   
-    s.dependency "MapboxCoreNavigation", "#{s.version.to_s}"
+    s.dependency "MapboxCoreNavigation", "=1.4.0"
     s.dependency "Mapbox-iOS-SDK", "< 6.2.2"
     s.dependency "Solar", "~> 2.1"
     s.dependency "MapboxSpeech", "~> 1.0"
