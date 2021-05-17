@@ -19,3 +19,4 @@ Carthage/Checkouts
 .build
 
 Examples/Swift/Navigation_Example.mobileprovision
+Sources/UhSpotNavigation/NavigationViewController.swift
