@@ -62,7 +62,7 @@ class RouteMapViewController: UIViewController {
     var detailedFeedbackEnabled: Bool = false
 
     var pendingCamera: MGLMapCamera? {
-        guard let parent = parent as? NavigationViewController else {
+        guard let parent = parent as? UhSpotNavigationViewController else {
             return nil
         }
         return parent.pendingCamera
