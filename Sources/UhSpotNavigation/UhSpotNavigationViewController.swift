@@ -420,7 +420,7 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
     
     // MARK: Containerization
     
-    func embed(_ child: UIViewController, in container: UIView, constrainedBy constraints: ((NavigationViewController, UIViewController) -> [NSLayoutConstraint])?) {
+    func embed(_ child: UIViewController, in container: UIView, constrainedBy constraints: ((UhSpotNavigationViewController, UIViewController) -> [NSLayoutConstraint])?) {
         child.willMove(toParent: self)
         addChild(child)
         container.addSubview(child.view)
