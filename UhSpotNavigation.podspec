@@ -49,7 +49,7 @@ Pod::Spec.new do |s|
     s.dependency "MapboxSpeech", "~> 1.0"
     s.dependency "MapboxMobileEvents", "~> 0.10.2" # Always specify a patch release if pre-v1.0
 
-    s.swift_version = "4.0"
+    s.swift_version = "5.0"
 
     # https://github.com/mapbox/mapbox-navigation-ios/issues/2665
     s.user_target_xcconfig = {
