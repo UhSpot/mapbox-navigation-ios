@@ -1,5 +1,5 @@
 import UIKit
-import CoreLocation
+
 /**
  A protocol that represents a `UIView` which tracks the user’s location and course on a `NavigationMapView`.
  */
@@ -124,7 +124,7 @@ public class UserPuckCourseView: UIView, CourseUpdatable {
                            selector: #selector(refreshPuckStaleState),
                            userInfo: nil,
                            repeats: true)
-      RunLoop.current.add(staleTimer, forMode: RunLoopMode.commonModes)
+        RunLoop.current.add(staleTimer, forMode: .common)
     }
     
     @objc func refreshPuckStaleState() {

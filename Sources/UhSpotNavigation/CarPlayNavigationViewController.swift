@@ -1,5 +1,4 @@
 import Foundation
-import Mapbox
 import MapboxDirections
 import MapboxCoreNavigation
 import CarPlay
@@ -227,7 +226,7 @@ public class CarPlayNavigationViewController: UIViewController, NavigationMapVie
         var insets = mapView.safeArea
         if !overviewing {
             // Puck position calculation - position it just above the bottom of the content area.
-          var contentFrame = UIEdgeInsetsInsetRect(mapView.bounds, insets)
+            var contentFrame = mapView.bounds.inset(by: insets)
 
             // Avoid letting the puck go partially off-screen, and add a comfortable padding beyond that.
             let courseViewBounds = mapView.userCourseView.bounds

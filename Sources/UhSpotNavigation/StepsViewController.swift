@@ -182,9 +182,9 @@ public class StepsViewController: UIViewController {
      Dismisses the `StepsViewController`.
      */
     public func dismiss(completion: CompletionHandler? = nil) {
-      willMove(toParentViewController: nil)
+        willMove(toParent: nil)
         view.removeFromSuperview()
-      removeFromParentViewController()
+        removeFromParent()
         completion?()
     }
 }

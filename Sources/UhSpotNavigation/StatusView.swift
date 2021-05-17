@@ -109,7 +109,7 @@ public class StatusView: UIControl {
     }
     
     func commonInit() {
-      let activityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: .white)
+        let activityIndicatorView = UIActivityIndicatorView(style: .white)
         activityIndicatorView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(activityIndicatorView)
         self.activityIndicatorView = activityIndicatorView

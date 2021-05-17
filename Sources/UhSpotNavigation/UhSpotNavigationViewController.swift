@@ -420,16 +420,15 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
     
     // MARK: Containerization
     
-    func embed(_ child: UIViewController, in container: UIView, constrainedBy constraints: ((UhSpotNavigationViewController, UIViewController) -> [NSLayoutConstraint])?) {
-      child.willMove(toParentViewController: self)
-      addChildViewController(child)
+    func embed(_ child: UIViewController, in container: UIView, constrainedBy constraints: ((NavigationViewController, UIViewController) -> [NSLayoutConstraint])?) {
+        child.willMove(toParent: self)
+        addChild(child)
         container.addSubview(child.view)
         if let childConstraints: [NSLayoutConstraint] = constraints?(self, child) {
             view.addConstraints(childConstraints)
         }
-      child.didMove(toParentViewController: self)
+        child.didMove(toParent: self)
     }
-    
     // MARK: Route controller notifications
     
     func scheduleLocalNotification(about step: RouteStep, identifier: String) {

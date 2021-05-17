@@ -17,8 +17,8 @@ public extension AVAudioSession {
     
     func tryUnduckAudio() -> Error? {
         do {
-          try setActive(false,
-                        with: [.notifyOthersOnDeactivation])
+            try setActive(false,
+                          options: [.notifyOthersOnDeactivation])
         } catch {
             return error
         }

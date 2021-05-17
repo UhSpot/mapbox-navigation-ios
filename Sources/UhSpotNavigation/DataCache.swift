@@ -8,7 +8,7 @@ public class DataCache: BimodalDataCache {
         memoryCache = NSCache<NSString, NSData>()
         memoryCache.name = "In-Memory Data Cache"
         
-      NotificationCenter.default.addObserver(self, selector: #selector(DataCache.clearMemory), name: NSNotification.Name.UIApplicationDidReceiveMemoryWarning, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(DataCache.clearMemory), name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
     }
 
     // MARK: Data cache

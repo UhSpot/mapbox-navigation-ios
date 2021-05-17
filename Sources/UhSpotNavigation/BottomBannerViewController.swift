@@ -138,13 +138,13 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
     }
     
     private func resumeNotifications() {
-      NotificationCenter.default.addObserver(self, selector: #selector(removeTimer), name: NSNotification.Name.UIApplicationDidEnterBackground, object: nil)
-      NotificationCenter.default.addObserver(self, selector: #selector(resetETATimer), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(removeTimer), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(resetETATimer), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
     
     private func suspendNotifications() {
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIApplicationDidEnterBackground, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
     func commonInit() {

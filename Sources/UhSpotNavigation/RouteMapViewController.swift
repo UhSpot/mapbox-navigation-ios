@@ -152,7 +152,7 @@ class RouteMapViewController: UIViewController {
         
         bottomContainer.backgroundColor = .clear
         
-      view.bringSubview(toFront: topBannerContainerView)
+        view.bringSubviewToFront(topBannerContainerView)
     }
 
     override func loadView() {
@@ -229,25 +229,25 @@ class RouteMapViewController: UIViewController {
     }
 
     func resumeNotifications() {
-      NotificationCenter.default.addObserver(self, selector: #selector(applicationWillEnterForeground(notification:)), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
-      NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange(_:)), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationWillEnterForeground(notification:)), name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange(_:)), name: UIDevice.orientationDidChangeNotification, object: nil)
         subscribeToKeyboardNotifications()
     }
 
     func suspendNotifications() {
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
         unsubscribeFromKeyboardNotifications()
     }
 
     func embed(_ child: UIViewController, in container: UIView, constrainedBy constraints: ((RouteMapViewController, UIViewController) -> [NSLayoutConstraint])?) {
-      child.willMove(toParentViewController: self)
-      addChildViewController(child)
+        child.willMove(toParent: self)
+        addChild(child)
         container.addSubview(child.view)
         if let childConstraints: [NSLayoutConstraint] = constraints?(self, child) {
             view.addConstraints(childConstraints)
         }
-      child.didMove(toParentViewController: self)
+        child.didMove(toParent: self)
     }
     
     @objc func recenter(_ sender: AnyObject) {
@@ -430,7 +430,7 @@ class RouteMapViewController: UIViewController {
             insets += UIEdgeInsets(floatLiteral: Double(routeLineWidths.max() ?? 0))
         } else if mapView.tracksUserCourse {
             // Puck position calculation - position it just above the bottom of the content area.
-          var contentFrame = UIEdgeInsetsInsetRect(mapView.bounds, insets)
+            var contentFrame = mapView.bounds.inset(by: insets)
 
             // Avoid letting the puck go partially off-screen, and add a comfortable padding beyond that.
             let courseViewBounds = mapView.userCourseView.bounds
@@ -451,10 +451,10 @@ class RouteMapViewController: UIViewController {
 
     func embedEndOfRoute() {
         let endOfRoute = endOfRouteViewController
-      addChildViewController(endOfRoute)
+        addChild(endOfRoute)
         navigationView.endOfRouteView = endOfRoute.view
         navigationView.constrainEndOfRoute()
-      endOfRoute.didMove(toParentViewController: self)
+        endOfRoute.didMove(toParent: self)
 
         endOfRoute.dismissHandler = { [weak self] (stars, comment) in
             guard let rating = self?.rating(for: stars) else { return }
@@ -466,8 +466,8 @@ class RouteMapViewController: UIViewController {
 
     func unembedEndOfRoute() {
         let endOfRoute = endOfRouteViewController
-      endOfRoute.willMove(toParentViewController: nil)
-      endOfRoute.removeFromParentViewController()
+        endOfRoute.willMove(toParent: nil)
+        endOfRoute.removeFromParent()
     }
 
     func showEndOfRoute(duration: TimeInterval = 1.0, completion: ((Bool) -> Void)? = nil) {
@@ -908,19 +908,19 @@ extension RouteMapViewController: NavigationViewDelegate {
 
 extension RouteMapViewController {
     fileprivate func subscribeToKeyboardNotifications() {
-      NotificationCenter.default.addObserver(self, selector: #selector(RouteMapViewController.keyboardWillShow(notification:)), name:NSNotification.Name.UIKeyboardWillShow, object: nil)
-      NotificationCenter.default.addObserver(self, selector: #selector(RouteMapViewController.keyboardWillHide(notification:)), name:NSNotification.Name.UIKeyboardWillHide, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(RouteMapViewController.keyboardWillShow(notification:)), name:UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(RouteMapViewController.keyboardWillHide(notification:)), name:UIResponder.keyboardWillHideNotification, object: nil)
     }
     fileprivate func unsubscribeFromKeyboardNotifications() {
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillShow, object: nil)
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     @objc fileprivate func keyboardWillShow(notification: NSNotification) {
         guard navigationView.endOfRouteView != nil else { return }
         guard let userInfo = notification.userInfo else { return }
-      guard let curveValue = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? Int else { return }
-      guard let duration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? Double else { return }
-      guard let keyBoardRect = userInfo[UIKeyboardFrameEndUserInfoKey] as? CGRect else { return }
+        guard let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int else { return }
+        guard let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
+        guard let keyBoardRect = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
 
         let keyboardHeight = keyBoardRect.size.height
 
@@ -938,8 +938,8 @@ extension RouteMapViewController {
     @objc fileprivate func keyboardWillHide(notification: NSNotification) {
         guard navigationView.endOfRouteView != nil else { return }
         guard let userInfo = notification.userInfo else { return }
-      guard let curveValue = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? Int else { return }
-      guard let duration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? Double else { return }
+        guard let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int else { return }
+        guard let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
         
         navigationView.endOfRouteShowConstraint?.constant = 0
 
