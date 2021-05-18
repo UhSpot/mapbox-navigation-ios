@@ -350,7 +350,7 @@ open class TopBannerViewController: UIViewController {
         
         informationStackView.removeArrangedSubview(view)
         view.removeFromSuperview()
-        addInstructionsBanner()
+        //addInstructionsBanner()
         previewInstructionsView = nil
         
         if showingSecondaryChildren {
@@ -450,7 +450,7 @@ extension TopBannerViewController: StepsViewControllerDelegate {
     
     public func didDismissStepsViewController(_ viewController: StepsViewController) {
         dismissStepsTable()
-        instructionsBannerView.showStepIndicator = true
+//        instructionsBannerView.showStepIndicator = true
     }
 }
 
