@@ -31,23 +31,11 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
     /**
      The label that displays the estimated time until the user arrives at the final destination.
      */
-    open var timeRemainingLabel: TimeRemainingLabel!
+    //open var timeRemainingLabel: TimeRemainingLabel!
     
-    /**
-     The label that represents the user's remaining distance.
-     */
-    open var distanceRemainingLabel: DistanceRemainingLabel!
-    
-    /**
-     The label that displays the user's estimate time of arrival.
-     */
-    open var arrivalTimeLabel: ArrivalTimeLabel!
-    
-    /**
-     The button that, by default, allows the user to cancel the navigation session.
-     */
-    open var cancelButton: CancelButton!
-    
+
+
+
     /**
      A vertical divider that seperates the cancel button and informative labels.
      */
@@ -78,15 +66,15 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
         didSet {
             switch congestionLevel {
             case .unknown:
-                timeRemainingLabel.textColor = timeRemainingLabel.trafficUnknownColor
+               print("oopsie")
             case .low:
-                timeRemainingLabel.textColor = timeRemainingLabel.trafficLowColor
+                print("oopsie")
             case .moderate:
-                timeRemainingLabel.textColor = timeRemainingLabel.trafficModerateColor
+                print("oopsie")
             case .heavy:
-                timeRemainingLabel.textColor = timeRemainingLabel.trafficHeavyColor
+                print("oopsie")
             case .severe:
-                timeRemainingLabel.textColor = timeRemainingLabel.trafficSevereColor
+                print("oopsie")
             }
         }
     }
@@ -134,7 +122,6 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
         super.viewDidLoad()
         setupRootViews()
         setupBottomBanner()
-        cancelButton.addTarget(self, action: #selector(BottomBannerViewController.cancel(_:)), for: .touchUpInside)
     }
     
     private func resumeNotifications() {
@@ -159,9 +146,9 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
     
     override open func prepareForInterfaceBuilder() {
         super.prepareForInterfaceBuilder()
-        timeRemainingLabel.text = "22 min"
-        distanceRemainingLabel.text = "4 mi"
-        arrivalTimeLabel.text = "10:09"
+        //timeRemainingLabel.text = "22 min"
+        //distanceRemainingLabel.text = "4 mi"
+        //arrivalTimeLabel.text = "10:09"
     }
     
     public func navigationService(_ service: NavigationService, didRerouteAlong route: Route, at location: CLLocation?, proactive: Bool) {
@@ -194,20 +181,14 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
     
     func updateETA(routeProgress: RouteProgress) {
         guard let arrivalDate = NSCalendar.current.date(byAdding: .second, value: Int(routeProgress.durationRemaining), to: Date()) else { return }
-        arrivalTimeLabel.text = dateFormatter.string(from: arrivalDate)
-
-        if routeProgress.durationRemaining < 5 {
-            distanceRemainingLabel.text = nil
-        } else {
-            distanceRemainingLabel.text = distanceFormatter.string(from: routeProgress.distanceRemaining)
-        }
+       
 
         dateComponentsFormatter.unitsStyle = routeProgress.durationRemaining < 3600 ? .short : .abbreviated
 
         if let hardcodedTime = dateComponentsFormatter.string(from: 61), routeProgress.durationRemaining < 60 {
-            timeRemainingLabel.text = String.localizedStringWithFormat(NSLocalizedString("LESS_THAN", bundle: .mapboxNavigation, value: "<%@", comment: "Format string for a short distance or time less than a minimum threshold; 1 = duration remaining"), hardcodedTime)
+           // timeRemainingLabel.text = String.localizedStringWithFormat(NSLocalizedString("LESS_THAN", bundle: .mapboxNavigation, value: "<%@", comment: "Format string for a short distance or time less than a minimum threshold; 1 = duration remaining"), hardcodedTime)
         } else {
-            timeRemainingLabel.text = dateComponentsFormatter.string(from: routeProgress.durationRemaining)
+         //   timeRemainingLabel.text = dateComponentsFormatter.string(from: routeProgress.durationRemaining)
         }
         
         guard let congestionForRemainingLeg = routeProgress.averageCongestionLevelRemainingOnLeg else { return }
