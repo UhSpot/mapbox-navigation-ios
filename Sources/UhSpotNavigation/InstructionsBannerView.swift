@@ -73,7 +73,6 @@ open class BaseInstructionsBannerView: UIControl {
     
     public weak var delegate: InstructionsBannerViewDelegate? {
         didSet {
-           print("oopsie woopsie")
         }
     }
     
@@ -91,7 +90,6 @@ open class BaseInstructionsBannerView: UIControl {
     
     public var distance: CLLocationDistance? {
         didSet {
-            print("oopsie woopsie")
         }
     }
     
@@ -150,7 +148,6 @@ open class BaseInstructionsBannerView: UIControl {
     }
         
     @objc func tappedInstructionsBanner(_ sender: Any) {
-        print("oopsie woopsie")
     }
     
     /**
