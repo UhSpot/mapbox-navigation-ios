@@ -385,8 +385,8 @@ class RouteMapViewController: UIViewController {
     }
     
     func contentInset(forOverviewing overviewing: Bool) -> UIEdgeInsets {
-        let instructionBannerHeight = 0.0
-        let bottomBannerHeight = 0.0
+        let instructionBannerHeight: CGFloat = 0.0
+        let bottomBannerHeight: CGFloat = 0.0
         
         // Inset by the safe area to avoid notches.
         var insets = mapView.safeArea
