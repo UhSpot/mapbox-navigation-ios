@@ -173,7 +173,6 @@ open class NavigationView: UIView {
         let children: [UIView] = [
             mapView,
             topBannerContainerView,
-            floatingStackView,
             resumeButton,
             wayNameView,
             speedLimitView,
