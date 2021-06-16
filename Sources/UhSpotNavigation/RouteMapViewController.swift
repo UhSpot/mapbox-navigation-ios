@@ -200,7 +200,6 @@ class RouteMapViewController: UIViewController {
     @objc func recenter(_ sender: AnyObject) {
         mapView.tracksUserCourse = true
         mapView.enableFrameByFrameCourseViewTracking(for: 3)
-        isInOverviewMode = false
         
         mapView.updateCourseTracking(location: mapView.userLocationForCourseTracking)
         updateCameraAltitude(for: router.routeProgress)
