@@ -126,15 +126,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
      */
     public var sendsNotifications: Bool = true
     
-    /**
-     Shows a button that allows drivers to report feedback such as accidents, closed roads,  poor instructions, etc. Defaults to `true`.
-     */
-    public var showsReportFeedback: Bool = false {
-        didSet {
-            mapViewController?.reportButton.isHidden = !showsReportFeedback
-            showsEndOfRouteFeedback = showsReportFeedback
-        }
-    }
     
     /**
      Shows End of route Feedback UI when the route controller arrives at the final destination. Defaults to `true.`
@@ -343,7 +334,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
                 return map.view.constraintsForPinning(to: parent.view)
             }
             mapViewController.view.pinInSuperview()
-            mapViewController.reportButton.isHidden = true
         }
         
         // Initialize voice controller if it hasn't been overridden.
