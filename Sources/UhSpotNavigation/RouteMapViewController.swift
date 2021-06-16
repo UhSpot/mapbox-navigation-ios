@@ -37,9 +37,6 @@ class RouteMapViewController: UIViewController {
     }()
 
     private struct Actions {
-        static let overview: Selector = #selector(RouteMapViewController.toggleOverview(_:))
-        static let mute: Selector = #selector(RouteMapViewController.toggleMute(_:))
-        static let feedback: Selector = #selector(RouteMapViewController.feedback(_:))
         static let recenter: Selector = #selector(RouteMapViewController.recenter(_:))
     }
 
@@ -49,13 +46,6 @@ class RouteMapViewController: UIViewController {
     var destination: Waypoint?
 
     var showsEndOfRoute: Bool = true
-    var showsSpeedLimits: Bool = true {
-        didSet {
-            navigationView.speedLimitView.isAlwaysHidden = !showsSpeedLimits
-        }
-    }
-
-    var detailedFeedbackEnabled: Bool = false
 
     var pendingCamera: MGLMapCamera? {
         guard let parent = parent as? UhSpotNavigationViewController else {
@@ -85,20 +75,6 @@ class RouteMapViewController: UIViewController {
     var router: Router { return navService.router }
     let distanceFormatter = DistanceFormatter()
     var arrowCurrentStep: RouteStep?
-    var isInOverviewMode = false {
-        didSet {
-            if isInOverviewMode {
-                navigationView.overviewButton.isHidden = true
-                navigationView.resumeButton.isHidden = false
-                navigationView.wayNameView.isHidden = true
-                mapView.logoView.isHidden = true
-            } else {
-                navigationView.overviewButton.isHidden = false
-                navigationView.resumeButton.isHidden = true
-                mapView.logoView.isHidden = false
-            }
-        }
-    }
     var currentLegIndexMapped = 0
     var currentStepIndexMapped = 0
 
@@ -157,7 +133,6 @@ class RouteMapViewController: UIViewController {
         }
         
         makeGestureRecognizersResetFrameRate()
-        navigationView.overviewButton.addTarget(self, action: Actions.overview, for: .touchUpInside)
         navigationView.resumeButton.addTarget(self, action: Actions.recenter, for: .touchUpInside)
         resumeNotifications()
     }
@@ -244,34 +219,6 @@ class RouteMapViewController: UIViewController {
         
         guard isViewLoaded && view.window != nil else { return }
         mapView.addArrow(route: router.routeProgress.route, legIndex: legIndex, stepIndex: stepIndex)
-    }
-
-    @objc func toggleOverview(_ sender: Any) {
-        mapView.enableFrameByFrameCourseViewTracking(for: 3)
-        if let shape = router.route.shape,
-           let userLocation = router.location {
-            mapView.setOverheadCameraView(from: userLocation, along: shape, for: contentInset(forOverviewing: true))
-        }
-        isInOverviewMode = true
-        updateMapViewComponents()
-    }
-
-    @objc func toggleMute(_ sender: UIButton) {
-        sender.isSelected = !sender.isSelected
-
-        let muted = sender.isSelected
-        NavigationSettings.shared.voiceMuted = muted
-    }
-
-    @objc func feedback(_ sender: Any) {
-        showFeedback()
-    }
-
-    func showFeedback(source: FeedbackSource = .user) {
-        guard let parent = parent else { return }
-        let feedbackViewController = FeedbackViewController(eventsManager: navService.eventsManager)
-        feedbackViewController.detailedFeedbackEnabled = detailedFeedbackEnabled
-        parent.present(feedbackViewController, animated: true, completion: nil)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -365,18 +312,18 @@ class RouteMapViewController: UIViewController {
         
         let defaultOffset: CGFloat = 10.0
         let x: CGFloat = defaultOffset
-        let y: CGFloat = defaultOffset
+        let y: CGFloat = defaultOffset + 20.0
         
         mapView.logoViewPosition = .bottomLeft
         if #available(iOS 11.0, *) {
-            mapView.logoViewMargins = CGPoint(x: x, y: y - view.safeAreaInsets.bottom)
+            mapView.logoViewMargins = CGPoint(x: x, y: y)
         } else {
             mapView.logoViewMargins = CGPoint(x: x, y: y)
         }
         
         mapView.attributionButtonPosition = .bottomRight
         if #available(iOS 11.0, *) {
-            mapView.attributionButtonMargins = CGPoint(x: x, y: y - view.safeAreaInsets.bottom)
+            mapView.attributionButtonMargins = CGPoint(x: x, y: y)
         } else {
             mapView.attributionButtonMargins = CGPoint(x: x, y: y)
         }
@@ -428,8 +375,6 @@ class RouteMapViewController: UIViewController {
 
         endOfRoute.dismissHandler = { [weak self] (stars, comment) in
             guard let rating = self?.rating(for: stars) else { return }
-            let feedback = EndOfRouteFeedback(rating: rating, comment: comment)
-            self?.navService.endNavigation(feedback: feedback)
             self?.delegate?.mapViewControllerDidDismiss(self!, byCanceling: false)
         }
     }
@@ -528,9 +473,6 @@ extension RouteMapViewController: NavigationComponent {
             mapView.updateTraveledRouteLine(location.coordinate)
             mapView.updateRoute(progress)
         }
-        
-        navigationView.speedLimitView.signStandard = progress.currentLegProgress.currentStep.speedLimitSignStandard
-        navigationView.speedLimitView.speedLimit = progress.currentLegProgress.currentSpeedLimit
     }
     
     public func navigationService(_ service: NavigationService, didPassSpokenInstructionPoint instruction: SpokenInstruction, routeProgress: RouteProgress) {

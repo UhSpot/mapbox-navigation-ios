@@ -128,26 +128,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
     
     
     /**
-     Shows End of route Feedback UI when the route controller arrives at the final destination. Defaults to `true.`
-     */
-    public var showsEndOfRouteFeedback: Bool = true {
-        didSet {
-            mapViewController?.showsEndOfRoute = showsEndOfRouteFeedback
-        }
-    }
-    
-    /**
-     Shows the current speed limit on the map view.
-     
-     The default value of this property is `true`.
-     */
-    public var showsSpeedLimits: Bool = true {
-        didSet {
-            mapViewController?.showsSpeedLimits = showsSpeedLimits
-        }
-    }
-    
-    /**
      If true, the map style and UI will automatically be updated given the time of day.
      */
     public var automaticallyAdjustsStyleForTimeOfDay = true {
@@ -182,14 +162,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
         }
     }
 
-    /**
-     Controls whether or not the FeedbackViewController shows a second level of detail for feedback items.
-     */
-    public var detailedFeedbackEnabled: Bool = false {
-        didSet {
-            mapViewController?.detailedFeedbackEnabled = detailedFeedbackEnabled
-        }
-    }
     
     var isConnectedToCarPlay: Bool {
         if #available(iOS 12.0, *) {
@@ -656,18 +628,7 @@ extension UhSpotNavigationViewController: NavigationServiceDelegate {
         let componentsWantAdvance = navigationComponents.allSatisfy { $0.navigationService(service, didArriveAt: waypoint) }
         let advancesToNextLeg = componentsWantAdvance && (delegate?.navigationViewController(self, didArriveAt: waypoint) ?? defaultBehavior)
         
-        if service.routeProgress.isFinalLeg && advancesToNextLeg && showsEndOfRouteFeedback {
-            // In case of final destination present end of route view first and then re-center final destination.
-            showEndOfRouteFeedback { [weak self] _ in
-                self?.frameDestinationArrival(for: service.router.location)
-            }
-        }
         return advancesToNextLeg
-    }
-    
-    public func showEndOfRouteFeedback(duration: TimeInterval = 1.0, completionHandler: ((Bool) -> Void)? = nil) {
-        guard let mapController = mapViewController else { return }
-        mapController.showEndOfRoute(duration: duration, completion: completionHandler)
     }
 
     public func navigationService(_ service: NavigationService, willBeginSimulating progress: RouteProgress, becauseOf reason: SimulationIntent) {
