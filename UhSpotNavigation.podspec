@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
     # ―――  Spec Metadata  ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   
     s.name = "UhSpotNavigation"
-    s.version = '0.0.3'
+    s.version = '0.0.4'
     s.summary = "Complete turn-by-turn navigation interface for iOS."
   
     s.description  = <<-DESC

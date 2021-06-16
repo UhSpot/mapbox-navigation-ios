@@ -237,7 +237,7 @@ class RouteMapViewController: UIViewController {
     }
     
     func updateMapViewContentInsets(animated: Bool = false, completion: CompletionHandler? = nil) {
-        mapView.setContentInset(contentInset(forOverviewing: isInOverviewMode), animated: animated, completionHandler: completion)
+        mapView.setContentInset(contentInset(forOverviewing: false), animated: animated, completionHandler: completion)
         mapView.setNeedsUpdateConstraints()
         
         updateMapViewComponents()
@@ -497,14 +497,8 @@ extension RouteMapViewController: NavigationComponent {
             mapView.showVoiceInstructionsOnMap(route: route)
         }
         
-        if isInOverviewMode {
-            if let shape = route.shape, let userLocation = router.location {
-                mapView.setOverheadCameraView(from: userLocation, along: shape, for: contentInset(forOverviewing: true))
-            }
-        } else {
-            mapView.tracksUserCourse = true
-            navigationView.wayNameView.isHidden = true
-        }
+        mapView.tracksUserCourse = true
+        navigationView.wayNameView.isHidden = true
     }
     
     func navigationService(_ service: NavigationService, didRefresh routeProgress: RouteProgress) {
