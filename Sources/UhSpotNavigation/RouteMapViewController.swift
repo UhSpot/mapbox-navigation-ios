@@ -158,8 +158,6 @@ class RouteMapViewController: UIViewController {
         
         makeGestureRecognizersResetFrameRate()
         navigationView.overviewButton.addTarget(self, action: Actions.overview, for: .touchUpInside)
-        navigationView.muteButton.addTarget(self, action: Actions.mute, for: .touchUpInside)
-        navigationView.reportButton.addTarget(self, action: Actions.feedback, for: .touchUpInside)
         navigationView.resumeButton.addTarget(self, action: Actions.recenter, for: .touchUpInside)
         resumeNotifications()
     }
@@ -171,7 +169,6 @@ class RouteMapViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        navigationView.muteButton.isSelected = NavigationSettings.shared.voiceMuted
         mapView.compassView.isHidden = true
 
         mapView.tracksUserCourse = true
@@ -366,6 +363,9 @@ class RouteMapViewController: UIViewController {
         
         automaticallyAdjustsScrollViewInsets = true
         
+        let defaultOffset: CGFloat = 10.0
+        let x: CGFloat = defaultOffset
+        let y: CGFloat = defaultOffset
         
         mapView.logoViewPosition = .bottomLeft
         if #available(iOS 11.0, *) {
@@ -385,8 +385,8 @@ class RouteMapViewController: UIViewController {
     }
     
     func contentInset(forOverviewing overviewing: Bool) -> UIEdgeInsets {
-        let instructionBannerHeight = 0
-        let bottomBannerHeight = 0
+        let instructionBannerHeight = 0.0
+        let bottomBannerHeight = 0.0
         
         // Inset by the safe area to avoid notches.
         var insets = mapView.safeArea
