@@ -173,32 +173,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
     
     var mapViewController: RouteMapViewController?
     
-    /**
-     The position of floating buttons in a navigation view. The default value is `MapOrnamentPosition.topTrailing`.
-     */
-    open var floatingButtonsPosition: MapOrnamentPosition? {
-        get {
-            return mapViewController?.floatingButtonsPosition
-        }
-        set {
-            if let newPosition = newValue {
-                mapViewController?.floatingButtonsPosition = newPosition
-            }
-        }
-    }
-    
-    /**
-     The  floating buttons in an array of UIButton in navigation view. The default floating buttons include the overview, mute and feedback report button. The default type of the floatingButtons is `FloatingButton`, which is declared with `FloatingButton.rounded(image:selectedImage:size:)` to be consistent.
-     */
-    open var floatingButtons: [UIButton]? {
-        get {
-            return mapViewController?.floatingButtons
-        }
-        set {
-            mapViewController?.floatingButtons = newValue
-        }
-    }
-    
     var navigationComponents: [NavigationComponent] {
         var components: [NavigationComponent] = []
         if let mvc = mapViewController {
