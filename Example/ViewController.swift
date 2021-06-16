@@ -209,6 +209,7 @@ class ViewController: UIViewController {
         let day: ActionHandler = { _ in self.startNavigation(styles: [DayStyle()]) }
         let night: ActionHandler = { _ in self.startNavigation(styles: [NightStyle()]) }
         let custom: ActionHandler = { _ in self.startCustomNavigation() }
+        let uhspot: ActionHandler = { _ in self.startUhSpotNavigation() }
         let styled: ActionHandler = { _ in self.startStyledNavigation() }
         let guidanceCards: ActionHandler = { _ in self.startGuidanceCardsNavigation() }
 
@@ -217,6 +218,7 @@ class ViewController: UIViewController {
             ("DayStyle UI", .default, day),
             ("NightStyle UI", .default, night),
             ("Custom UI", .default, custom),
+            ("UhSpot UI", .default, uhspot),
             ("Guidance Card UI", .default, guidanceCards),
             ("Styled UI", .default, styled),
             ("Cancel", .cancel, nil)
@@ -334,6 +336,21 @@ class ViewController: UIViewController {
         present(customViewController, animated: true, completion: nil)
     }
 
+    func startUhSpotNavigation() {
+        guard let route = response?.routes?.first, let responseOptions = response?.options, case let .route(routeOptions) = responseOptions else { return }
+
+        guard let customViewController = storyboard?.instantiateViewController(withIdentifier: "uhspot") as? UhSpotViewController else { return }
+
+        customViewController.userIndexedRoute = (route, 0)
+        customViewController.userRouteOptions = routeOptions
+
+        let destination = MGLPointAnnotation()
+        destination.coordinate = route.shape!.coordinates.last!
+        customViewController.destination = destination
+        customViewController.simulateLocation = simulationButton.isSelected
+
+        present(customViewController, animated: true, completion: nil)
+    }
     // MARK: Styling the default UI
 
     func startStyledNavigation() {

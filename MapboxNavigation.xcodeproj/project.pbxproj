@@ -221,6 +221,8 @@
 		3A163AE0249901C300D66A0D /* RouteStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A163ADF249901C300D66A0D /* RouteStateTests.swift */; };
 		3A163AE3249901D000D66A0D /* FixLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A163AE2249901D000D66A0D /* FixLocation.swift */; };
 		3A8187C924BDAE9C00708F19 /* URLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8187C824BDAE9C00708F19 /* URLSession.swift */; };
+		3BA34B4C267A6EC2005CEE40 /* UhSpotViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */; };
+		3BA34B4D267A6EC2005CEE40 /* UhSpotViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */; };
 		3EA9301B03F8679BEDD4795F /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EA93A10227A7DAF1861D9F5 /* Cache.swift */; };
 		3EA9369C33A8F10DAE9043AA /* ImageDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EA934C5D8DBAA19DB0F5271 /* ImageDownloader.swift */; };
 		3EA9371104016CD402547F1A /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EA938479CF48D7AD1B6369B /* ImageCache.swift */; };
@@ -791,6 +793,7 @@
 		3A163ADF249901C300D66A0D /* RouteStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteStateTests.swift; sourceTree = "<group>"; };
 		3A163AE2249901D000D66A0D /* FixLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixLocation.swift; sourceTree = "<group>"; };
 		3A8187C824BDAE9C00708F19 /* URLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSession.swift; sourceTree = "<group>"; };
+		3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UhSpotViewController.swift; sourceTree = "<group>"; };
 		3EA93170CB959F3065ACFFC3 /* SpeechAPISpy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpeechAPISpy.swift; sourceTree = "<group>"; };
 		3EA93230997B8D59E3B76C8C /* InstructionPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InstructionPresenter.swift; sourceTree = "<group>"; };
 		3EA934C5D8DBAA19DB0F5271 /* ImageDownloader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageDownloader.swift; sourceTree = "<group>"; };
@@ -1546,6 +1549,7 @@
 				3529FCF121A5C5B300AEA9AA /* ResizableView.swift */,
 				3529FCF521A5C5D900AEA9AA /* UIViewController.swift */,
 				3529FCF721A5C62400AEA9AA /* SettingsViewController.swift */,
+				3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */,
 			);
 			name = Example;
 			sourceTree = "<group>";
@@ -2919,6 +2923,7 @@
 				C51FC31720F689F800400CE7 /* CustomStyles.swift in Sources */,
 				6441B16A1EFC64E50076499F /* WaypointConfirmationViewController.swift in Sources */,
 				358D14661E5E3B7700ADE590 /* AppDelegate.swift in Sources */,
+				3BA34B4C267A6EC2005CEE40 /* UhSpotViewController.swift in Sources */,
 				3529FCF621A5C5D900AEA9AA /* UIViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3018,6 +3023,7 @@
 			files = (
 				C53F2EE420EBC95600D9798F /* ViewController.swift in Sources */,
 				C53F2EE520EBC95600D9798F /* CustomViewController.swift in Sources */,
+				3BA34B4D267A6EC2005CEE40 /* UhSpotViewController.swift in Sources */,
 				DA303CAA21B7A93400F921DC /* ResizableView.swift in Sources */,
 				C53F2EE720EBC95600D9798F /* WaypointConfirmationViewController.swift in Sources */,
 				C5DE4B6220F6B6B3007AFBE6 /* CustomStyles.swift in Sources */,

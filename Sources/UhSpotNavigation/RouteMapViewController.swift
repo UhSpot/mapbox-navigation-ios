@@ -11,9 +11,6 @@ class ArrowStrokePolyline: ArrowFillPolyline {}
 class RouteMapViewController: UIViewController {
     var navigationView: NavigationView { return view as! NavigationView }
     var mapView: NavigationMapView { return navigationView.mapView }
-    var reportButton: FloatingButton { return navigationView.reportButton }
-    var topBannerContainerView: BannerContainerView { return navigationView.topBannerContainerView }
-    var bottomBannerContainerView: BannerContainerView { return navigationView.bottomBannerContainerView }
     
     var floatingButtonsPosition: MapOrnamentPosition {
         get {
@@ -47,7 +44,6 @@ class RouteMapViewController: UIViewController {
     }
 
     var route: Route { return navService.router.route }
-    var previewInstructionsView: StepInstructionsView?
     var lastTimeUserRerouted: Date?
     private lazy var geocoder: CLGeocoder = CLGeocoder()
     var destination: Waypoint?
@@ -110,10 +106,6 @@ class RouteMapViewController: UIViewController {
      A Boolean value that determines whether the map annotates the locations at which instructions are spoken for debugging purposes.
      */
     var annotatesSpokenInstructions = false
-
-    var overheadInsets: UIEdgeInsets {
-        return UIEdgeInsets(top: topBannerContainerView.bounds.height, left: 20, bottom: bottomBannerContainerView.bounds.height, right: 20)
-    }
     
     var routeLineTracksTraversal = false {
         didSet {
@@ -130,29 +122,12 @@ class RouteMapViewController: UIViewController {
      */
     var suppressAutomaticAltitudeChanges: Bool = false
 
-    convenience init(navigationService: NavigationService, delegate: RouteMapViewControllerDelegate? = nil, topBanner: ContainerViewController, bottomBanner: ContainerViewController) {
+    convenience init(navigationService: NavigationService, delegate: RouteMapViewControllerDelegate? = nil) {
         self.init()
         self.navService = navigationService
         self.delegate = delegate
         automaticallyAdjustsScrollViewInsets = false
-        let topContainer = navigationView.topBannerContainerView
-        
-        embed(topBanner, in: topContainer) { (parent, banner) -> [NSLayoutConstraint] in
-            banner.view.translatesAutoresizingMaskIntoConstraints = false
-            return banner.view.constraintsForPinning(to: self.navigationView.topBannerContainerView)
-        }
-        
-        topContainer.backgroundColor = .clear
-        
-        let bottomContainer = navigationView.bottomBannerContainerView
-        embed(bottomBanner, in: bottomContainer) { (parent, banner) -> [NSLayoutConstraint] in
-            banner.view.translatesAutoresizingMaskIntoConstraints = false
-            return banner.view.constraintsForPinning(to: self.navigationView.bottomBannerContainerView)
-        }
-        
-        bottomContainer.backgroundColor = .clear
-        
-        view.bringSubviewToFront(topBannerContainerView)
+
     }
 
     override func loadView() {
@@ -391,11 +366,6 @@ class RouteMapViewController: UIViewController {
         
         automaticallyAdjustsScrollViewInsets = true
         
-        let bottomBannerHeight = bottomBannerContainerView.bounds.height
-        let bottomBannerVerticalOffset = UIScreen.main.bounds.height - bottomBannerHeight - bottomBannerContainerView.frame.origin.y
-        let defaultOffset: CGFloat = 10.0
-        let x: CGFloat = defaultOffset
-        let y: CGFloat = bottomBannerHeight + defaultOffset + bottomBannerVerticalOffset
         
         mapView.logoViewPosition = .bottomLeft
         if #available(iOS 11.0, *) {
@@ -415,8 +385,8 @@ class RouteMapViewController: UIViewController {
     }
     
     func contentInset(forOverviewing overviewing: Bool) -> UIEdgeInsets {
-        let instructionBannerHeight = topBannerContainerView.bounds.height
-        let bottomBannerHeight = bottomBannerContainerView.bounds.height
+        let instructionBannerHeight = 0
+        let bottomBannerHeight = 0
         
         // Inset by the safe area to avoid notches.
         var insets = mapView.safeArea
@@ -495,7 +465,7 @@ class RouteMapViewController: UIViewController {
         UIView.animate(withDuration: duration, delay: 0.0, options: [.curveLinear], animations: animate, completion: completion)
 
         guard let height = navigationView.endOfRouteHeightConstraint?.constant else { return }
-        let insets = UIEdgeInsets(top: topBannerContainerView.bounds.height, left: 20, bottom: height + 20, right: 20)
+        let insets = UIEdgeInsets(top: 0, left: 20, bottom: height + 20, right: 20)
         
         if let shape = route.shape, let userLocation = navService.router.location?.coordinate, !shape.coordinates.isEmpty {
             let slicedLineString = shape.sliced(from: userLocation)!

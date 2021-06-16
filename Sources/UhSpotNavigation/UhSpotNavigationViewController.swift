@@ -129,7 +129,7 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
     /**
      Shows a button that allows drivers to report feedback such as accidents, closed roads,  poor instructions, etc. Defaults to `true`.
      */
-    public var showsReportFeedback: Bool = true {
+    public var showsReportFeedback: Bool = false {
         didSet {
             mapViewController?.reportButton.isHidden = !showsReportFeedback
             showsEndOfRouteFeedback = showsReportFeedback
@@ -210,10 +210,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
     
     var mapViewController: RouteMapViewController?
     
-    var topViewController: ContainerViewController?
-    
-    var bottomViewController: ContainerViewController?
-    
     /**
      The position of floating buttons in a navigation view. The default value is `MapOrnamentPosition.topTrailing`.
      */
@@ -244,14 +240,6 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
         var components: [NavigationComponent] = []
         if let mvc = mapViewController {
             components.append(mvc)
-        }
-        
-        if let topViewController = topViewController {
-            components.append(topViewController)
-        }
-        
-        if let bottomViewController = bottomViewController {
-            components.append(bottomViewController)
         }
         return components
     }
@@ -311,24 +299,10 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
         styleManager = StyleManager()
         styleManager.delegate = self
         styleManager.styles = navigationOptions?.styles ?? [DayStyle(), NightStyle()]
-        
-        let bottomBanner = navigationOptions?.bottomBanner ?? {
-            let viewController: BottomBannerViewController = .init()
-            viewController.delegate = self
-            return viewController
-        }()
-        bottomViewController = bottomBanner
 
-        if let customBanner = navigationOptions?.topBanner {
-            topViewController = customBanner
-        } else {
-            let defaultBanner = TopBannerViewController(nibName: nil, bundle: nil)
-            defaultBanner.delegate = self
-            defaultBanner.statusView.addTarget(self, action: #selector(UhSpotNavigationViewController.didChangeSpeed(_:)), for: .valueChanged)
-            topViewController = defaultBanner
-        }
+
         
-        let mapViewController = RouteMapViewController(navigationService: self.navigationService, delegate: self, topBanner: topViewController!, bottomBanner: bottomBanner)
+        let mapViewController = RouteMapViewController(navigationService: self.navigationService, delegate: self)
         
         self.mapViewController = mapViewController
         mapViewController.destination = route.legs.last?.destination
@@ -369,7 +343,7 @@ open class UhSpotNavigationViewController: UIViewController, NavigationStatusPre
                 return map.view.constraintsForPinning(to: parent.view)
             }
             mapViewController.view.pinInSuperview()
-            mapViewController.reportButton.isHidden = !showsReportFeedback
+            mapViewController.reportButton.isHidden = true
         }
         
         // Initialize voice controller if it hasn't been overridden.
@@ -678,11 +652,6 @@ extension UhSpotNavigationViewController: NavigationServiceDelegate {
         }
     }
     
-    public func navigationService(_ service: NavigationService, didPassVisualInstructionPoint instruction: VisualInstructionBanner, routeProgress: RouteProgress) {
-        for component in navigationComponents {
-            component.navigationService(service, didPassVisualInstructionPoint: instruction, routeProgress: routeProgress)
-        }
-    }
     
     public func navigationService(_ service: NavigationService, willArriveAt waypoint: Waypoint, after remainingTimeInterval: TimeInterval, distance: CLLocationDistance) {
         for component in navigationComponents {
@@ -875,107 +844,10 @@ extension UhSpotNavigationViewController {
         navigationService.simulationSpeedMultiplier = Double(displayValue)
     }
 }
-// MARK: TopBannerViewControllerDelegate
-extension UhSpotNavigationViewController: TopBannerViewControllerDelegate {
-    public func topBanner(_ banner: TopBannerViewController, didSwipeInDirection direction: UISwipeGestureRecognizer.Direction) {
-        let progress = navigationService.routeProgress
-        let route = progress.route
-        switch direction {
-        case .up where banner.isDisplayingSteps:
-            banner.dismissStepsTable()
-        
-        case .down where !banner.isDisplayingSteps:
-            banner.displayStepsTable()
-            
-            if banner.isDisplayingPreviewInstructions {
-                mapViewController?.recenter(self)
-            }
-        default:
-            break
-        }
-        
-        if !banner.isDisplayingSteps {
-            switch (direction, UIApplication.shared.userInterfaceLayoutDirection) {
-            case (.right, .leftToRight), (.left, .rightToLeft):
-                guard let currentStepIndex = banner.currentPreviewStep?.1 else { return }
-                let remainingSteps = progress.remainingSteps
-                let prevStepIndex = currentStepIndex.advanced(by: -1)
-                guard prevStepIndex >= 0 else { return }
-                
-                let prevStep = remainingSteps[prevStepIndex]
-                preview(step: prevStep, in: banner, remaining: remainingSteps, route: route)
-                
-            case (.left, .leftToRight), (.right, .rightToLeft):
-                let remainingSteps = navigationService.router.routeProgress.remainingSteps
-                let currentStepIndex = banner.currentPreviewStep?.1
-                let nextStepIndex = currentStepIndex?.advanced(by: 1) ?? 0
-                guard nextStepIndex < remainingSteps.count else { return }
-                
-                let nextStep = remainingSteps[nextStepIndex]
-                preview(step: nextStep, in: banner, remaining: remainingSteps, route: route)
-            
-            default:
-                break
-            }
-        }
-    }
-    
-    public func preview(step: RouteStep, in banner: TopBannerViewController, remaining: [RouteStep], route: Route, animated: Bool = true) {
-        guard let leg = route.leg(containing: step) else { return }
-        guard let legIndex = route.legs.firstIndex(of: leg) else { return }
-        guard let stepIndex = leg.steps.firstIndex(of: step) else { return }
-        let nextStepIndex = stepIndex + 1
-        
-        let legProgress = RouteLegProgress(leg: leg, stepIndex: stepIndex)
-        guard let upcomingStep = legProgress.upcomingStep else { return }
-        
-        let previewBanner: CompletionHandler = {
-            // Since Mapbox SDK v6.2.0-beta.1 `MGLMapView.setCenter(_:zoomLevel:direction:animated:completionHandler:)` method is calling `completionHandler`
-            // synchronously, this prevents from well-timed maneuver redrawing in `ManeuverView`. Workaround is to perform asynchronous redrawing on main queue.
-            DispatchQueue.main.async {
-                banner.preview(step: legProgress.currentStep, maneuverStep: upcomingStep, distance: legProgress.currentStep.distance, steps: remaining)
-            }
-        }
-        
-        mapViewController?.center(on: upcomingStep, route: route, legIndex: legIndex, stepIndex: nextStepIndex, animated: animated, completion: previewBanner)
-    }
-    
-    public func topBanner(_ banner: TopBannerViewController, didSelect legIndex: Int, stepIndex: Int, cell: StepTableViewCell) {
-        let progress = navigationService.routeProgress
-        let legProgress = RouteLegProgress(leg: progress.route.legs[legIndex], stepIndex: stepIndex)
-        let step = legProgress.currentStep
-        self.preview(step: step, in: banner, remaining: progress.remainingSteps, route: progress.route, animated: false)
-        
-        // After selecting maneuver and dismissing steps table make sure to update contentInsets of NavigationMapView
-        // to correctly place selected maneuver in the center of the screen (taking into account top and bottom banner heights).
-        banner.dismissStepsTable { [weak self] in
-            self?.mapViewController?.updateMapViewContentInsets()
-        }
-    }
-    
-    public func topBanner(_ banner: TopBannerViewController, didDisplayStepsController: StepsViewController) {
-        mapViewController?.recenter(self)
-    }
-}
 
 fileprivate extension Route {
     func leg(containing step: RouteStep) -> RouteLeg? {
         return legs.first { $0.steps.contains(step) }
-    }
-}
-
-// MARK: - BottomBannerViewControllerDelegate
-
-// Handling cancel action in new Bottom Banner container.
-// Code duplicated with RouteMapViewController.mapViewControllerDidDismiss(_:byCanceling:)
-
-extension UhSpotNavigationViewController: BottomBannerViewControllerDelegate {
-    public func didTapCancel(_ sender: Any) {
-        if delegate?.navigationViewControllerDidDismiss(self, byCanceling: true) != nil {
-            // The receiver should handle dismissal of the NavigationViewController
-        } else {
-            dismiss(animated: true, completion: nil)
-        }
     }
 }
 
