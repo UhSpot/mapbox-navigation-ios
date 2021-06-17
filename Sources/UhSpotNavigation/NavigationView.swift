@@ -104,6 +104,7 @@ open class NavigationView: UIView {
     
     func commonInit() {
         setupViews()
+        setupConstraints()
     }
     
     
