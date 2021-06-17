@@ -113,19 +113,6 @@ open class NavigationView: UIView {
         setupViews()
     }
     
-    func clearStackViews() {
-        let oldFloatingButtons: [UIView] = floatingStackView.subviews
-        for floatingButton in oldFloatingButtons {
-            floatingStackView.removeArrangedSubview(floatingButton)
-            floatingButton.removeFromSuperview()
-        }
-    }
-    
-    func setupStackViews() {
-        if let buttons = floatingButtons {
-            floatingStackView.addArrangedSubviews(buttons)
-        }
-    }
     
     func setupViews() {
         let children: [UIView] = [

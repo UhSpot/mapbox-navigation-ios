@@ -11,12 +11,6 @@ class ArrowStrokePolyline: ArrowFillPolyline {}
 class RouteMapViewController: UIViewController {
     var navigationView: NavigationView { return view as! NavigationView }
     var mapView: NavigationMapView { return navigationView.mapView }
-    
-    lazy var endOfRouteViewController: EndOfRouteViewController = {
-        let storyboard = UIStoryboard(name: "Navigation", bundle: .mapboxNavigation)
-        let viewController = storyboard.instantiateViewController(withIdentifier: "EndOfRouteViewController") as! EndOfRouteViewController
-        return viewController
-    }()
 
     private struct Actions {
         static let recenter: Selector = #selector(RouteMapViewController.recenter(_:))
@@ -345,64 +339,6 @@ class RouteMapViewController: UIViewController {
         return insets
     }
 
-    // MARK: End Of Route
-
-    func embedEndOfRoute() {
-        let endOfRoute = endOfRouteViewController
-        addChild(endOfRoute)
-        navigationView.endOfRouteView = endOfRoute.view
-        navigationView.constrainEndOfRoute()
-        endOfRoute.didMove(toParent: self)
-
-        endOfRoute.dismissHandler = { [weak self] (stars, comment) in
-            guard let rating = self?.rating(for: stars) else { return }
-            self?.delegate?.mapViewControllerDidDismiss(self!, byCanceling: false)
-        }
-    }
-
-    func unembedEndOfRoute() {
-        let endOfRoute = endOfRouteViewController
-        endOfRoute.willMove(toParent: nil)
-        endOfRoute.removeFromParent()
-    }
-
-    func showEndOfRoute(duration: TimeInterval = 1.0, completion: ((Bool) -> Void)? = nil) {
-        embedEndOfRoute()
-        endOfRouteViewController.destination = destination
-        navigationView.endOfRouteView?.isHidden = false
-
-        view.layoutIfNeeded() //flush layout queue
-        navigationView.endOfRouteHideConstraint?.isActive = false
-        navigationView.endOfRouteShowConstraint?.isActive = true
-
-        mapView.enableFrameByFrameCourseViewTracking(for: duration)
-        mapView.setNeedsUpdateConstraints()
-
-        let animate = {
-            self.view.layoutIfNeeded()
-            self.navigationView.floatingStackView.alpha = 0.0
-        }
-
-        let noAnimation = { animate(); completion?(true) }
-
-        guard duration > 0.0 else { return noAnimation() }
-
-        navigationView.mapView.tracksUserCourse = false
-        UIView.animate(withDuration: duration, delay: 0.0, options: [.curveLinear], animations: animate, completion: completion)
-
-        guard let height = navigationView.endOfRouteHeightConstraint?.constant else { return }
-        let insets = UIEdgeInsets(top: 0, left: 20, bottom: height + 20, right: 20)
-        
-        if let shape = route.shape, let userLocation = navService.router.location?.coordinate, !shape.coordinates.isEmpty {
-            let slicedLineString = shape.sliced(from: userLocation)!
-            let line = MGLPolyline(slicedLineString)
-
-            let camera = navigationView.mapView.cameraThatFitsShape(line, direction: navigationView.mapView.camera.heading, edgePadding: insets)
-            camera.pitch = 0
-            camera.altitude = navigationView.mapView.camera.altitude
-            navigationView.mapView.setCamera(camera, animated: true)
-        }
-    }
 
     fileprivate func rating(for stars: Int) -> Int {
         assert(stars >= 0 && stars <= 5)
@@ -572,9 +508,6 @@ extension RouteMapViewController: NavigationViewDelegate {
 
     func navigationMapViewUserAnchorPoint(_ mapView: NavigationMapView) -> CGPoint {
         //If the end of route component is showing, then put the anchor point slightly above the middle of the map
-        if navigationView.endOfRouteView != nil, let show = navigationView.endOfRouteShowConstraint, show.isActive {
-            return CGPoint(x: mapView.bounds.midX, y: (mapView.bounds.height * 0.4))
-        }
 
         //otherwise, ask the delegate or return .zero
         return delegate?.navigationMapViewUserAnchorPoint(mapView) ?? .zero
@@ -801,38 +734,6 @@ extension RouteMapViewController {
     fileprivate func unsubscribeFromKeyboardNotifications() {
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-    }
-    @objc fileprivate func keyboardWillShow(notification: NSNotification) {
-        guard navigationView.endOfRouteView != nil else { return }
-        guard let userInfo = notification.userInfo else { return }
-        guard let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int else { return }
-        guard let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
-        guard let keyBoardRect = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-
-        let keyboardHeight = keyBoardRect.size.height
-
-        if #available(iOS 11.0, *) {
-            navigationView.endOfRouteShowConstraint?.constant = -1 * (keyboardHeight - view.safeAreaInsets.bottom) //subtract the safe area, which is part of the keyboard's frame
-        } else {
-            navigationView.endOfRouteShowConstraint?.constant = -1 * keyboardHeight
-        }
-
-        let curve = UIView.AnimationCurve(rawValue: curveValue) ?? .easeIn
-        let options = UIView.AnimationOptions(curve: curve) ?? .curveEaseIn
-        UIView.animate(withDuration: duration, delay: 0, options: options, animations: view.layoutIfNeeded, completion: nil)
-    }
-
-    @objc fileprivate func keyboardWillHide(notification: NSNotification) {
-        guard navigationView.endOfRouteView != nil else { return }
-        guard let userInfo = notification.userInfo else { return }
-        guard let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int else { return }
-        guard let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
-        
-        navigationView.endOfRouteShowConstraint?.constant = 0
-
-        let curve = UIView.AnimationCurve(rawValue: curveValue) ?? .easeOut
-        let options = UIView.AnimationOptions(curve: curve) ?? .curveEaseOut
-        UIView.animate(withDuration: duration, delay: 0, options: options, animations: view.layoutIfNeeded, completion: nil)
     }
 }
 
