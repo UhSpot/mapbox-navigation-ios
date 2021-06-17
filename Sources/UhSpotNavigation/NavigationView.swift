@@ -40,13 +40,7 @@ open class NavigationView: UIView {
         static let endOfRouteHeight: CGFloat = 260.0
         static let buttonSpacing: CGFloat = 8.0
     }
-    
-    lazy var endOfRouteShowConstraint: NSLayoutConstraint? = self.endOfRouteView?.bottomAnchor.constraint(equalTo: self.safeBottomAnchor)
-    
-    lazy var endOfRouteHideConstraint: NSLayoutConstraint? = self.endOfRouteView?.topAnchor.constraint(equalTo: self.bottomAnchor)
-    
-    lazy var endOfRouteHeightConstraint: NSLayoutConstraint? = self.endOfRouteView?.heightAnchor.constraint(equalToConstant: Constants.endOfRouteHeight)
-    
+       
     
     private enum Images {
         static let overview = UIImage(named: "overview", in: .mapboxNavigation, compatibleWith: nil)!.withRenderingMode(.alwaysTemplate)
@@ -63,33 +57,11 @@ open class NavigationView: UIView {
         return map
     }()
     
-    lazy var floatingStackView: UIStackView = {
-        let stackView = UIStackView(orientation: .vertical, autoLayout: true)
-        stackView.distribution = .equalSpacing
-        stackView.spacing = Constants.buttonSpacing
-        return stackView
-    }()
     
     lazy var overviewButton = FloatingButton.rounded(image: Images.overview)
     lazy var muteButton = FloatingButton.rounded(image: Images.volumeUp, selectedImage: Images.volumeOff)
     lazy var reportButton = FloatingButton.rounded(image: Images.feedback)
     
-    func reinstallConstraints() {
-        if let activeFloatingStackView = self.constraints(affecting: self.floatingStackView) {
-            NSLayoutConstraint.deactivate(activeFloatingStackView)
-        }
-        if let activeSpeedLimitView = self.constraints(affecting: self.speedLimitView) {
-            NSLayoutConstraint.deactivate(activeSpeedLimitView)
-        }
-
-        setupConstraints()
-    }
-    
-    var floatingButtonsPosition: MapOrnamentPosition = .topTrailing {
-        didSet {
-            reinstallConstraints()
-        }
-    }
     
     var floatingButtons : [UIButton]? {
         didSet {
@@ -119,18 +91,6 @@ open class NavigationView: UIView {
         }
     }
     
-    var endOfRouteView: UIView? {
-        didSet {
-            if let active: [NSLayoutConstraint] = constraints(affecting: oldValue) {
-                NSLayoutConstraint.deactivate(active)
-            }
-            
-            oldValue?.removeFromSuperview()
-            if let eor = endOfRouteView { addSubview(eor) }
-            endOfRouteView?.translatesAutoresizingMaskIntoConstraints = false
-        }
-    }
-    
     //MARK: - Initializers
     
     convenience init(delegate: NavigationViewDelegate) {
@@ -150,9 +110,7 @@ open class NavigationView: UIView {
     }
     
     func commonInit() {
-        floatingButtons = [overviewButton, muteButton, reportButton]
         setupViews()
-        setupConstraints()
     }
     
     func clearStackViews() {
