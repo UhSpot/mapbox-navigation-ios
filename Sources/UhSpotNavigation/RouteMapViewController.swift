@@ -742,6 +742,7 @@ internal extension UIView.AnimationOptions {
         }
     }
 }
+
 protocol RouteMapViewControllerDelegate: NavigationMapViewDelegate, VisualInstructionDelegate {
     func mapViewControllerDidDismiss(_ mapViewController: RouteMapViewController, byCanceling canceled: Bool)
     func mapViewControllerShouldAnnotateSpokenInstructions(_ routeMapViewController: RouteMapViewController) -> Bool

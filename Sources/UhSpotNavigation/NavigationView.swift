@@ -63,13 +63,6 @@ open class NavigationView: UIView {
     lazy var reportButton = FloatingButton.rounded(image: Images.feedback)
     
     
-    var floatingButtons : [UIButton]? {
-        didSet {
-            clearStackViews()
-            setupStackViews()
-        }
-    }
-    
     lazy var resumeButton: ResumeButton = .forAutoLayout()
     
     lazy var wayNameView: WayNameView = {
