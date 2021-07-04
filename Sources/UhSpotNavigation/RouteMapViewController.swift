@@ -109,7 +109,6 @@ class RouteMapViewController: UIViewController {
         }
         
         makeGestureRecognizersResetFrameRate()
-        navigationView.resumeButton.addTarget(self, action: Actions.recenter, for: .touchUpInside)
         resumeNotifications()
     }
 
@@ -451,12 +450,10 @@ extension RouteMapViewController: NavigationViewDelegate {
 
     // MARK: NavigationMapViewCourseTrackingDelegate
     func navigationMapViewDidStartTrackingCourse(_ mapView: NavigationMapView) {
-        navigationView.resumeButton.isHidden = true
         mapView.logoView.isHidden = false
     }
 
     func navigationMapViewDidStopTrackingCourse(_ mapView: NavigationMapView) {
-        navigationView.resumeButton.isHidden = false
         navigationView.wayNameView.isHidden = true
         mapView.logoView.isHidden = true
     }
@@ -516,10 +513,6 @@ extension RouteMapViewController: NavigationViewDelegate {
      - parameter location: The user’s current location.
      */
     func labelCurrentRoad(at rawLocation: CLLocation, for snappedLocation: CLLocation? = nil) {
-        guard navigationView.resumeButton.isHidden else {
-            return
-        }
-
         let roadName = delegate?.mapViewController(self, roadNameAt: rawLocation)
         guard roadName == nil else {
             if let roadName = roadName {

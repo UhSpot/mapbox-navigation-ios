@@ -110,7 +110,6 @@ open class NavigationView: UIView {
         let children: [UIView] = [
             mapView,
             topBannerContainerView,
-            resumeButton,
             wayNameView,
             speedLimitView,
             bottomBannerContainerView
