@@ -7,8 +7,7 @@ extension NavigationView {
         mapView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
         mapView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
   
-     
-        resumeButton.leadingAnchor.constraint(equalTo: safeLeadingAnchor, constant: 10).isActive = true
+    
 
         wayNameView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         wayNameView.bottomAnchor.constraint(equalTo: bottomBannerContainerView.topAnchor, constant: -10).isActive = true

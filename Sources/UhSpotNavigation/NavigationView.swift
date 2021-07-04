@@ -63,8 +63,6 @@ open class NavigationView: UIView {
     lazy var reportButton = FloatingButton.rounded(image: Images.feedback)
     
     
-    lazy var resumeButton: ResumeButton = .forAutoLayout()
-    
     lazy var wayNameView: WayNameView = {
         let view: WayNameView = .forAutoLayout(hidden: true)
         view.clipsToBounds = true

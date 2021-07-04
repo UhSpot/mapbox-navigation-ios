@@ -12,9 +12,6 @@ extension NavigationView {
         topBannerContainerView.topAnchor.constraint(equalTo: topAnchor).isActive = true
 
         floatingStackView.topAnchor.constraint(equalTo: topBannerContainerView.bottomAnchor, constant: 10).isActive = true
-        
-        resumeButton.leadingAnchor.constraint(equalTo: safeLeadingAnchor, constant: 10).isActive = true
-        resumeButton.bottomAnchor.constraint(equalTo: bottomBannerContainerView.topAnchor, constant: -10).isActive = true
 
         bottomBannerContainerView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         bottomBannerContainerView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
