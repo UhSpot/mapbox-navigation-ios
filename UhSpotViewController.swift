@@ -93,10 +93,6 @@ class UhSpotViewController: UIViewController, MGLMapViewDelegate {
     @IBAction func cancelButtonPressed(_ sender: Any) {
         self.dismiss(animated: true, completion: nil)
     }
-    
-    @IBAction func recenterMap(_ sender: Any) {
-        mapView.recenterMap()
-    }
 
 
     
