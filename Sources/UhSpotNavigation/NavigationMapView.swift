@@ -1490,16 +1490,16 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
         }
         
         if let parkImage = UIImage(named: "Park") {
-            style.setImage(parkImage!, forName: "Park")
+            style.setImage(parkImage, forName: "Park")
         }
         if let meteredImage = UIImage(named: "MeteredParking") {
-            style.setImage(meteredImage!, forName: "MeteredParking")
+            style.setImage(meteredImage, forName: "MeteredParking")
         }
         if let noParkImage = UIImage(named: "NoParking") {
-            style.setImage(noParkImage!, forName: "NoParking")
+            style.setImage(noParkImage, forName: "NoParking")
         }
         if let noDataImage = UIImage(named: "MissingData") {
-            style.setImage(noDataImage!, forName: "MissingData")
+            style.setImage(noDataImage, forName: "MissingData")
         }
         
         let streetsSourceIdentifiers: [String] = style.sources.compactMap {
