@@ -1489,10 +1489,10 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
             return
         }
         
-        if let parkImage = UIImage(named: "Park"),
-           let meteredImage = UIImage(named: "MeteredParking"),
-           let noParkImage = UIImage(named: "NoParking"),
-           let noDataImage = UIImage(named: "MissingData"){
+        if let parkImage = UIImage(named: "Park") as? UIImage,
+           let meteredImage = UIImage(named: "MeteredParking") as? UIImage,
+           let noParkImage = UIImage(named: "NoParking") as? UIImage,
+           let noDataImage = UIImage(named: "MissingData") as? UIImage {
             
             style.setImage(parkImage, forName: "Park")
             style.setImage(meteredImage, forName: "MeteredParking")
