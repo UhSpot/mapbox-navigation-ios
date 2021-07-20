@@ -1488,11 +1488,18 @@ open class NavigationMapView: MGLMapView, UIGestureRecognizerDelegate {
         guard let style = style else {
             return
         }
-
-        style.setImage(UIImage(named: "Park")!, forName: "Park")
-        style.setImage(UIImage(named: "MeteredParking")!, forName: "MeteredParking")
-        style.setImage(UIImage(named: "NoParking")!, forName: "NoParking")
-        style.setImage(UIImage(named: "MissingData")!, forName: "MissingData")
+        
+        if let parkImage = UIImage(named: "Park"),
+           let meteredImage = UIImage(named: "MeteredParking"),
+           let noParkImage = UIImage(named: "NoParking"),
+           let noDataImage = UIImage(named: "MissingData"){
+            
+            style.setImage(parkImage, forName: "Park")
+            style.setImage(meteredImage, forName: "MeteredParking")
+            style.setImage(noParkImage, forName: "NoParking")
+            style.setImage(noDataImage, forName: "MissingData")
+            
+        }
         
         let streetsSourceIdentifiers: [String] = style.sources.compactMap {
             $0 as? MGLVectorTileSource
