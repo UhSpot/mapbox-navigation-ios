@@ -119,6 +119,8 @@ public protocol NavigationMapViewDelegate: class, UnimplementedLogging {
      - returns: A CGPoint (in regular coordinate-space) that represents the point on-screen where the user location icon should be drawn.
      */
     func navigationMapViewUserAnchorPoint(_ mapView: NavigationMapView) -> CGPoint
+    
+    
 }
 
 public extension NavigationMapViewDelegate {

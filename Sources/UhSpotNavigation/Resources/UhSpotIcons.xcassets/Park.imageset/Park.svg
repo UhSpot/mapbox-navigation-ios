@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="114px" height="114px" viewBox="0 0 114 114" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Regulation Sign Template</title>
+    <defs>
+        <rect id="path-1" x="8" y="11" width="97" height="91" rx="13"></rect>
+        <filter x="-7.2%" y="-5.5%" width="114.4%" height="115.4%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="0" dy="2" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="2" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.5 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="UhSpot-Components" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Regulation-Sign-Template">
+            <g id="Navigation---Top-Left">
+                <rect id="Navigation" fill="#00D68F" x="0" y="0" width="114" height="114" rx="13"></rect>
+                <g id="Rectangle-3">
+                    <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                    <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-1"></use>
+                </g>
+            </g>
+            <g id="Group-2" transform="translate(34.000000, 24.000000)" fill="#000000">
+                <path d="M33.8847317,0 C42.6282439,3.10721708 47,10.3731675 47,21.7978513 C47,33.2225351 42.0227733,40.255314 32.06832,42.8961879 L32.06832,42.8961879 L12.6340612,42.8961879 L12.6340612,67 L0,67 L0,0 Z M28.2922928,11.5319988 L12.6390775,11.5319988 L12.6390775,30.7838037 L28.2922928,30.7838037 C32.4326877,29.2985806 34.5028852,26.0899465 34.5028852,21.1579013 C34.5028852,16.2258561 32.4326877,13.0172219 28.2922928,11.5319988 Z" id="Path-106"></path>
+            </g>
+        </g>
+    </g>
+</svg>

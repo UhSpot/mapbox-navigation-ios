@@ -223,6 +223,7 @@
 		3A8187C924BDAE9C00708F19 /* URLSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8187C824BDAE9C00708F19 /* URLSession.swift */; };
 		3BA34B4C267A6EC2005CEE40 /* UhSpotViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */; };
 		3BA34B4D267A6EC2005CEE40 /* UhSpotViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */; };
+		3BF80C6A26A7684900A84269 /* UhSpotIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3BF80C6926A7684900A84269 /* UhSpotIcons.xcassets */; };
 		3EA9301B03F8679BEDD4795F /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EA93A10227A7DAF1861D9F5 /* Cache.swift */; };
 		3EA9369C33A8F10DAE9043AA /* ImageDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EA934C5D8DBAA19DB0F5271 /* ImageDownloader.swift */; };
 		3EA9371104016CD402547F1A /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EA938479CF48D7AD1B6369B /* ImageCache.swift */; };
@@ -794,6 +795,7 @@
 		3A163AE2249901D000D66A0D /* FixLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixLocation.swift; sourceTree = "<group>"; };
 		3A8187C824BDAE9C00708F19 /* URLSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSession.swift; sourceTree = "<group>"; };
 		3BA34B4B267A6EC2005CEE40 /* UhSpotViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UhSpotViewController.swift; sourceTree = "<group>"; };
+		3BF80C6926A7684900A84269 /* UhSpotIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = UhSpotIcons.xcassets; sourceTree = "<group>"; };
 		3EA93170CB959F3065ACFFC3 /* SpeechAPISpy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpeechAPISpy.swift; sourceTree = "<group>"; };
 		3EA93230997B8D59E3B76C8C /* InstructionPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InstructionPresenter.swift; sourceTree = "<group>"; };
 		3EA934C5D8DBAA19DB0F5271 /* ImageDownloader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageDownloader.swift; sourceTree = "<group>"; };
@@ -2102,6 +2104,7 @@
 		CEF73EF2264EE471004A78EA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				3BF80C6926A7684900A84269 /* UhSpotIcons.xcassets */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -2486,6 +2489,7 @@
 				DA303C9521B728DD00F921DC /* Localizable.strings in Resources */,
 				C57AD98A20EAA39A0087B24B /* Entitlements.plist in Resources */,
 				35002D691E5F6B2F0090E733 /* Main.storyboard in Resources */,
+				3BF80C6A26A7684900A84269 /* UhSpotIcons.xcassets in Resources */,
 				35002D611E5F6ADB0090E733 /* Assets.xcassets in Resources */,
 				DA303C9F21B76B5C00F921DC /* LaunchScreen.storyboard in Resources */,
 				DA303CA421B76CB000F921DC /* Localizable.stringsdict in Resources */,
