@@ -1,6 +1,5 @@
 import Foundation
 import CoreLocation
-import MapboxCommon
 import MapboxNavigationNative
 import MapboxMobileEvents
 import MapboxDirections
@@ -16,43 +15,38 @@ import Turf
 open class RouteController: NSObject {
     public enum DefaultBehavior {
         public static let shouldRerouteFromLocation: Bool = true
-        public static let shouldDiscardLocation: Bool = true
+        public static let shouldDiscardLocation: Bool = false
         public static let didArriveAtWaypoint: Bool = true
         public static let shouldPreventReroutesWhenArrivingAtWaypoint: Bool = true
         public static let shouldDisableBatteryMonitoring: Bool = true
     }
-
-    lazy var navigator: Navigator = {
-        let settingsProfile = SettingsProfile(application: ProfileApplication.kMobile, platform: ProfilePlatform.KIOS)
-        return Navigator(profile: settingsProfile, config: NavigatorConfig(), customConfig: "", tilesConfig: TilesConfig())
-    }()
     
-    public var indexedRoute: IndexedRoute {
-        get {
-            return routeProgress.indexedRoute
-        }
-        set {
-            routeProgress = RouteProgress(route: newValue.0, routeIndex: newValue.1, options: routeProgress.routeOptions)
-            updateNavigator(with: routeProgress)
-        }
+    var navigator: MapboxNavigationNative.Navigator {
+        return Navigator.shared.navigator
+    }
+    
+    /**
+     A `TileStore` instance used by navigator
+     */
+    open var navigatorTileStore: TileStore {
+        return Navigator.shared.tileStore
     }
     
     public var route: Route {
-        return indexedRoute.0
+        return routeProgress.route
     }
+    
+    public internal(set) var indexedRouteResponse: IndexedRouteResponse
     
     private var _routeProgress: RouteProgress {
         willSet {
             resetObservation(for: _routeProgress)
         }
         didSet {
-            movementsAwayFromRoute = 0
             updateNavigator(with: _routeProgress)
             updateObservation(for: _routeProgress)
         }
     }
-    
-    var movementsAwayFromRoute = 0
     
     var routeTask: URLSessionDataTask?
     
@@ -91,11 +85,10 @@ open class RouteController: NSObject {
      - important: If the rawLocation is outside of the route snapping tolerances, this value is nil.
      */
     var snappedLocation: CLLocation? {
-        guard let locationUpdateDate = lastLocationUpdateDate else {
+        guard lastLocationUpdateDate != nil, let status = navigator.getStatus() else {
             return nil
         }
-
-        let status = navigator.status(at: locationUpdateDate)
+        
         guard status.routeState == .tracking || status.routeState == .complete else {
             return nil
         }
@@ -151,21 +144,24 @@ open class RouteController: NSObject {
         return snappedLocation ?? rawLocation
     }
     
-    required public init(along route: Route, routeIndex: Int, options: RouteOptions, directions: Directions = Directions.shared, dataSource source: RouterDataSource) {
+    required public init(alongRouteAtIndex routeIndex: Int, in routeResponse: RouteResponse, options: RouteOptions, directions: Directions = NavigationSettings.shared.directions, dataSource source: RouterDataSource) {
         self.directions = directions
-        self._routeProgress = RouteProgress(route: route, routeIndex: routeIndex, options: options)
+        self.indexedRouteResponse = .init(routeResponse: routeResponse, routeIndex: routeIndex)
+        self._routeProgress = RouteProgress(route: routeResponse.routes![routeIndex], options: options)
         self.dataSource = source
         self.refreshesRoute = options.profileIdentifier == .automobileAvoidingTraffic && options.refreshingEnabled
         UIDevice.current.isBatteryMonitoringEnabled = true
         
         super.init()
         
+        subscribeNotifications()
         updateNavigator(with: _routeProgress)
         updateObservation(for: _routeProgress)
     }
     
     deinit {
         resetObservation(for: _routeProgress)
+        unsubscribeNotifications()
     }
     
     func resetObservation(for progress: RouteProgress) {
@@ -184,26 +180,26 @@ open class RouteController: NSObject {
     func geometryEncoding(_ routeShapeFormat: RouteShapeFormat) -> ActiveGuidanceGeometryEncoding {
         switch routeShapeFormat {
         case .geoJSON:
-            return .kGeoJSON
+            return .geoJSON
         case .polyline:
-            return .kPolyline5
+            return .polyline5
         case .polyline6:
-            return .kPolyline6
+            return .polyline6
         }
     }
     
     func mode(_ profileIdentifier: DirectionsProfileIdentifier) -> ActiveGuidanceMode {
         switch profileIdentifier {
         case .automobile:
-            return .kDriving
+            return .driving
         case .automobileAvoidingTraffic:
-            return .kDriving
+            return .driving
         case .cycling:
-            return .kCycling
+            return .cycling
         case .walking:
-            return .kWalking
+            return .walking
         default:
-            return .kDriving
+            return .driving
         }
     }
     
@@ -222,30 +218,42 @@ open class RouteController: NSObject {
         let activeGuidanceOptions = ActiveGuidanceOptions(mode: mode(progress.routeOptions.profileIdentifier),
                                                           geometryEncoding: geometryEncoding(progress.routeOptions.shapeFormat),
                                                           waypoints: waypoints)
-        navigator.setRouteForRouteResponse(routeJSONString, route: 0, leg: UInt32(routeProgress.legIndex), options: activeGuidanceOptions)
+        navigator.setRouteForRouteResponse(routeJSONString,
+                                           route: 0,
+                                           leg: UInt32(routeProgress.legIndex),
+                                           options: activeGuidanceOptions)
     }
     
     /// updateRouteLeg is used to notify nav-native of the developer changing the active route-leg.
     private func updateRouteLeg(to value: Int) {
         let legIndex = UInt32(value)
-        if navigator.changeRouteLeg(forRoute: 0, leg: legIndex), let timestamp = location?.timestamp {
-            updateIndexes(status: navigator.status(at: timestamp), progress: routeProgress)
+        if navigator.changeRouteLeg(forRoute: 0, leg: legIndex), let status = navigator.getStatus() {
+            updateIndexes(status: status, progress: routeProgress)
         }
     }
     
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
-        guard delegate?.router(self, shouldDiscard: location) ?? DefaultBehavior.shouldDiscardLocation else {
+        guard !(delegate?.router(self, shouldDiscard: location) ?? DefaultBehavior.shouldDiscardLocation) else {
             return
         }
         
         rawLocation = location
         
         locations.forEach { navigator.updateLocation(for: FixLocation($0)) }
+    }
+    
+    @objc private func navigationStatusDidChange(_ notification: NSNotification) {
+        guard let userInfo = notification.userInfo,
+              let status = userInfo[Navigator.NotificationUserInfoKey.statusKey] as? NavigationStatus else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.update(to: status)
+        }
+    }
 
-        let status = navigator.status(at: location.timestamp)
-        
+    private func update(to status: NavigationStatus) {
+        guard let location = rawLocation else { return }
         // Notify observers if the step’s remaining distance has changed.
         update(progress: routeProgress, with: CLLocation(status.location), rawLocation: location, upcomingRouteAlerts: status.upcomingRouteAlerts)
         
@@ -256,13 +264,45 @@ open class RouteController: NSObject {
         updateRouteLegProgress(status: status)
         updateSpokenInstructionProgress(status: status, willReRoute: willReroute)
         updateVisualInstructionProgress(status: status)
+        updateRoadName(status: status)
         
         if willReroute {
             reroute(from: location, along: routeProgress)
         }
-        
-        // Check for faster route proactively (if reroutesProactively is enabled)
-        refreshAndCheckForFasterRoute(from: location, routeProgress: routeProgress)
+
+        if status.routeState != .complete {
+            // Check for faster route proactively (if reroutesProactively is enabled)
+            refreshAndCheckForFasterRoute(from: location, routeProgress: routeProgress)
+        }
+    }
+    
+    private func subscribeNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(fallbackToOffline),
+                                               name: .navigationDidSwitchToFallbackVersion,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(restoreToOnline),
+                                               name: .navigationDidSwitchToTargetVersion,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(navigationStatusDidChange),
+                                               name: .navigationStatusDidChange,
+                                               object: nil)
+    }
+    
+    private func unsubscribeNotifications() {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc func fallbackToOffline(_ notification: Notification) {
+        self.updateNavigator(with: self._routeProgress)
+        self.updateRouteLeg(to: self._routeProgress.legIndex)
+    }
+    
+    @objc func restoreToOnline(_ notification: Notification) {
+        self.updateNavigator(with: self._routeProgress)
+        self.updateRouteLeg(to: self._routeProgress.legIndex)
     }
     
     func updateIndexes(status: NavigationStatus, progress: RouteProgress) {
@@ -270,23 +310,28 @@ open class RouteController: NSObject {
         let newStepIndex = Int(status.stepIndex)
         let newIntersectionIndex = Int(status.intersectionIndex)
         
-        if (newLegIndex != progress.legIndex) {
+        let oldLegIndex = progress.legIndex
+        if newLegIndex != progress.legIndex {
             progress.legIndex = newLegIndex
         }
-        if (newStepIndex != progress.currentLegProgress.stepIndex) {
+        
+        if newStepIndex != progress.currentLegProgress.stepIndex {
+            precondition(progress.currentLegProgress.leg.steps.indices.contains(newStepIndex), "The stepIndex: \(newStepIndex) is higher than steps count: \(progress.currentLegProgress.leg.steps.count) of the leg :\(newLegIndex) or not included. The old leg index: \(oldLegIndex) will not be updated in this case.")
+
             progress.currentLegProgress.stepIndex = newStepIndex
         }
         
-        if (newIntersectionIndex != progress.currentLegProgress.currentStepProgress.intersectionIndex) {
+        if newIntersectionIndex != progress.currentLegProgress.currentStepProgress.intersectionIndex {
             progress.currentLegProgress.currentStepProgress.intersectionIndex = newIntersectionIndex
         }
         
-        if let spokenIndexPrimitive = status.voiceInstruction?.index, progress.currentLegProgress.currentStepProgress.spokenInstructionIndex != Int(spokenIndexPrimitive)
-            {
+        if let spokenIndexPrimitive = status.voiceInstruction?.index,
+           progress.currentLegProgress.currentStepProgress.spokenInstructionIndex != Int(spokenIndexPrimitive) {
             progress.currentLegProgress.currentStepProgress.spokenInstructionIndex = Int(spokenIndexPrimitive)
         }
         
-        if let visualInstructionIndex = status.bannerInstruction?.index, routeProgress.currentLegProgress.currentStepProgress.visualInstructionIndex != Int(visualInstructionIndex) {
+        if let visualInstructionIndex = status.bannerInstruction?.index,
+           routeProgress.currentLegProgress.currentStepProgress.visualInstructionIndex != Int(visualInstructionIndex) {
             routeProgress.currentLegProgress.currentStepProgress.visualInstructionIndex = Int(visualInstructionIndex)
         }
     }
@@ -310,6 +355,13 @@ open class RouteController: NSObject {
                 announcePassage(of: instruction, routeProgress: routeProgress)
             }
         }
+    }
+    
+    func updateRoadName(status: NavigationStatus) {
+        let roadName = status.roadName
+        NotificationCenter.default.post(name: .currentRoadNameDidChange, object: self, userInfo: [
+            NotificationUserInfoKey.roadNameKey: roadName
+        ])
     }
     
     func updateRouteLegProgress(status: NavigationStatus) {
@@ -382,16 +434,76 @@ open class RouteController: NSObject {
         updateRouteLeg(to: routeProgress.legIndex + 1)
     }
     
-    public func enableLocationRecording() {
-        navigator.toggleHistoryFor(onOff: true)
+    // MARK: Accessing Relevant Routing Data
+    
+    /**
+     A custom configuration for electronic horizon observations.
+     
+     Set this property to `nil` to use the default configuration.
+     */
+    public var electronicHorizonOptions: ElectronicHorizonOptions? {
+        get {
+            Navigator.shared.electronicHorizonOptions
+        }
+        set {
+            Navigator.shared.electronicHorizonOptions = newValue
+        }
     }
     
-    public func disableLocationRecording() {
-        navigator.toggleHistoryFor(onOff: false)
+    /// The road graph that is updated as the route controller tracks the user’s location.
+    public var roadGraph: RoadGraph {
+        return Navigator.shared.roadGraph
+    }
+
+    /// The road object store that is updated as the route controller tracks the user’s location.
+    public var roadObjectStore: RoadObjectStore {
+        return Navigator.shared.roadObjectStore
+    }
+
+    /// The road object matcher that allows to match user-defined road objects.
+    public var roadObjectMatcher: RoadObjectMatcher {
+        return Navigator.shared.roadObjectMatcher
     }
     
-    public func locationHistory() -> String? {
-        return navigator.getHistory()
+    // MARK: Recording History to Diagnose Problems
+    
+    /**
+     Path to the directory where history could be stored when `RouteController.writeHistory(completionHandler:)` is called.
+     */
+    public static var historyDirectoryURL: URL? = nil {
+        didSet {
+            Navigator.historyDirectoryURL = historyDirectoryURL
+        }
+    }
+    
+    /**
+     Starts recording history for debugging purposes.
+     
+     - postcondition: Use the `stopRecordingHistory(writingFileWith:)` method to stop recording history and write the recorded history to a file.
+     */
+    public static func startRecordingHistory() {
+        Navigator.shared.startRecordingHistory()
+    }
+    
+    /**
+     A closure to be called when history writing ends.
+     
+     - parameter historyFileURL: A URL to the file that contains history data. This argument is `nil` if no history data has been written because history recording has not yet begun. Use the `startRecordingHistory()` method to begin recording before attempting to write a history file.
+     */
+    public typealias HistoryFileWritingCompletionHandler = (_ historyFileURL: URL?) -> Void
+    
+    /**
+     Stops recording history, asynchronously writing any recorded history to a file.
+     
+     Upon completion, the completion handler is called with the URL to a file in the directory specified by `RouteController.historyDirectoryURL`. The file contains details about the route controller’s activity that may be useful to include when reporting an issue to Mapbox.
+     
+     - precondition: Use the `startRecordingHistory()` method to begin recording history. If the `startRecordingHistory()` method has not been called, this method has no effect.
+     - postcondition: To write history incrementally without an interruption in history recording, use the `startRecordingHistory()` method immediately after this method. If you use the `startRecordingHistory()` method inside the completion handler of this method, history recording will be paused while the file is being prepared.
+     
+     - parameter completionHandler: A closure to be executed when the history file is ready.
+     */
+    public static func stopRecordingHistory(writingFileWith completionHandler: @escaping HistoryFileWritingCompletionHandler) {
+        Navigator.shared.stopRecordingHistory(writingFileWith: completionHandler)
     }
 }
 
@@ -413,9 +525,34 @@ extension RouteController: Router {
             return true
         }
         
-        let status = status ?? navigator.status(at: location.timestamp)
-        let offRoute = status.routeState == .offRoute || status.routeState == .invalid
-        return !offRoute
+        // If we still wait for the first status from NavNative, there is no need to reroute
+        guard let status = status ?? navigator.getStatus() else { return true }
+
+        /// NavNative doesn't support reroutes after arrival.
+        /// The code below is a port of logic from LegacyRouteController
+        /// This should be removed once NavNative adds support for reroutes after arrival. 
+        if status.routeState == .complete {
+            // If the user has arrived and reroutes after arrival should be prevented, do not continue monitor
+            // reroutes, step progress, etc
+            if routeProgress.currentLegProgress.userHasArrivedAtWaypoint &&
+                (delegate?.router(self, shouldPreventReroutesWhenArrivingAt: destination) ??
+                    RouteController.DefaultBehavior.shouldPreventReroutesWhenArrivingAtWaypoint) {
+                return true
+            }
+
+            func userIsWithinRadiusOfDestination(location: CLLocation) -> Bool {
+                let lastStep = routeProgress.currentLegProgress.currentStep
+                let isCloseToFinalStep = location.isWithin(RouteControllerMaximumDistanceBeforeRecalculating,
+                                                           of: lastStep)
+                return isCloseToFinalStep
+            }
+
+            return userIsWithinRadiusOfDestination(location: location)
+        }
+        else {
+            let offRoute = status.routeState == .offRoute || status.routeState == .invalid
+            return !offRoute
+        }
     }
     
     public func reroute(from location: CLLocation, along progress: RouteProgress) {
@@ -447,7 +584,7 @@ extension RouteController: Router {
             case let .success(response):
                 guard let route = response.routes?.first else { return }
                 guard case let .route(routeOptions) = response.options else { return } //TODO: Can a match hit this codepoint?
-                strongSelf._routeProgress = RouteProgress(route: route, routeIndex: 0, options: routeOptions, legIndex: 0)
+                strongSelf._routeProgress = RouteProgress(route: route, options: routeOptions, legIndex: 0)
                 strongSelf._routeProgress.currentLegProgress.stepIndex = 0
                 strongSelf.announce(reroute: route, at: location, proactive: false)
                 
@@ -459,6 +596,16 @@ extension RouteController: Router {
                 return
             }
         }
+    }
+
+    public func updateRoute(with indexedRouteResponse: IndexedRouteResponse, routeOptions: RouteOptions?) {
+        guard let routes = indexedRouteResponse.routeResponse.routes, routes.count > indexedRouteResponse.routeIndex else {
+            preconditionFailure("`indexedRouteResponse` does not contain route for index `\(indexedRouteResponse.routeIndex)` when updating route.")
+        }
+        let routeOptions = routeOptions ?? routeProgress.routeOptions
+        routeProgress = RouteProgress(route: routes[indexedRouteResponse.routeIndex], options: routeOptions)
+        self.indexedRouteResponse = indexedRouteResponse
+        updateNavigator(with: routeProgress)
     }
 }
 

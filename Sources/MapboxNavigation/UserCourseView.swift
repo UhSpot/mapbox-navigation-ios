@@ -1,4 +1,5 @@
 import UIKit
+import CoreLocation
 
 /**
  A protocol that represents a `UIView` which tracks the user’s location and course on a `NavigationMapView`.
@@ -7,21 +8,24 @@ public protocol CourseUpdatable where Self: UIView {
     /**
      Updates the view to reflect the given location and other camera properties.
      */
-    func update(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, tracksUserCourse: Bool)
+    func update(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, navigationCameraState: NavigationCameraState)
 }
 
 public extension CourseUpdatable {
-    func update(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, tracksUserCourse: Bool) {
-        applyDefaultUserPuckTransformation(location: location, pitch: pitch, direction: direction, animated: animated, tracksUserCourse: tracksUserCourse)
-    }
     
-    func applyDefaultUserPuckTransformation(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, tracksUserCourse: Bool) {
+    func update(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, navigationCameraState: NavigationCameraState) {
         let duration: TimeInterval = animated ? 1 : 0
         UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveLinear], animations: {
-            let angle = tracksUserCourse ? 0 : CLLocationDegrees(direction - location.course)
-            self.layer.setAffineTransform(CGAffineTransform.identity.rotated(by: -CGFloat(angle.toRadians())))
-            var transform = CATransform3DRotate(CATransform3DIdentity, CGFloat(CLLocationDegrees(pitch).toRadians()), 1.0, 0, 0)
-            transform = CATransform3DScale(transform, tracksUserCourse ? 1 : 0.5, tracksUserCourse ? 1 : 0.5, 1)
+            let angle = CGFloat(CLLocationDegrees(direction - location.course).toRadians())
+            self.layer.setAffineTransform(CGAffineTransform.identity.rotated(by: -angle))
+            
+            // `UserCourseView` pitch is changed only during transition to the overview mode.
+            let pitch = CGFloat(navigationCameraState == .transitionToOverview ? 0.0 : CLLocationDegrees(pitch).toRadians())
+            var transform = CATransform3DRotate(CATransform3DIdentity, pitch, 1.0, 0, 0)
+            
+            let isCameraFollowing = navigationCameraState == .following
+            let scale = CGFloat(isCameraFollowing ? 1.0 : 0.5)
+            transform = CATransform3DScale(transform, scale, scale, 1)
             transform.m34 = -1.0 / 1000 // (-1 / distance to projection plane)
             self.layer.sublayerTransform = transform
         }, completion: nil)
@@ -31,7 +35,7 @@ public extension CourseUpdatable {
 /**
  A view representing the user’s location on screen.
  */
-public class UserPuckCourseView: UIView, CourseUpdatable {
+open class UserPuckCourseView: UIView, CourseUpdatable {
     private var lastLocationUpdate: Date?
     private var staleTimer: Timer!
 
@@ -48,14 +52,19 @@ public class UserPuckCourseView: UIView, CourseUpdatable {
     /**
      Transforms the location of the user puck.
      */
-    public func update(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, tracksUserCourse: Bool) {
+    public func update(location: CLLocation, pitch: CGFloat, direction: CLLocationDegrees, animated: Bool, navigationCameraState: NavigationCameraState) {
         let duration: TimeInterval = animated ? 1 : 0
         UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .curveLinear], animations: {
-            let angle = tracksUserCourse ? 0 : CLLocationDegrees(direction - location.course)
-            self.puckView.layer.setAffineTransform(CGAffineTransform.identity.rotated(by: -CGFloat(angle.toRadians())))
-        
-            var transform = CATransform3DRotate(CATransform3DIdentity, CGFloat(CLLocationDegrees(pitch).toRadians()), 1.0, 0, 0)
-            transform = CATransform3DScale(transform, tracksUserCourse ? 1 : 0.5, tracksUserCourse ? 1 : 0.5, 1)
+            let angle = CGFloat(CLLocationDegrees(direction - location.course).toRadians())
+            self.puckView.layer.setAffineTransform(CGAffineTransform.identity.rotated(by: -angle))
+            
+            // `UserCourseView` pitch is changed only during transition to the overview mode.
+            let pitch = CGFloat(navigationCameraState == .transitionToOverview ? 0.0 : CLLocationDegrees(pitch).toRadians())
+            var transform = CATransform3DRotate(CATransform3DIdentity, pitch, 1.0, 0, 0)
+            
+            let isCameraFollowing = navigationCameraState == .following
+            let scale = CGFloat(isCameraFollowing ? 1.0 : 0.5)
+            transform = CATransform3DScale(transform, scale, scale, 1)
             transform.m34 = -1.0 / 1000 // (-1 / distance to projection plane)
             self.layer.sublayerTransform = transform
         }, completion: nil)
@@ -120,14 +129,14 @@ public class UserPuckCourseView: UIView, CourseUpdatable {
     
     private func initTimer() {
         staleTimer = Timer(timeInterval: staleRefreshInterval,
-                           target: self,
-                           selector: #selector(refreshPuckStaleState),
-                           userInfo: nil,
-                           repeats: true)
+                           repeats: true,
+                           block: { [weak self] _ in
+                            self?.refreshPuckStaleState()
+                           })
         RunLoop.current.add(staleTimer, forMode: .common)
     }
-    
-    @objc func refreshPuckStaleState() {
+
+    private func refreshPuckStaleState() {
         if let lastUpdate = lastLocationUpdate {
             let ratio = CGFloat(Date().timeIntervalSince(lastUpdate) / staleInterval)
             puckView.staleRatio = max(0.0, min(1.0, ratio))
@@ -141,7 +150,6 @@ public class UserPuckCourseView: UIView, CourseUpdatable {
         lastLocationUpdate = Date()
     }
 }
-
 
 class UserPuckStyleKitView: UIView {
     private typealias ColorComponents = (hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)
@@ -189,8 +197,10 @@ class UserPuckStyleKitView: UIView {
         return (hue, saturation, brightness, alpha)
     }
     
-    private func drawingPuckColor() -> UIColor
-    {
+    private func drawingPuckColor() -> UIColor {
+        puckColorComponents = colorComponents(puckColor)
+        stalePuckColorComponents = colorComponents(stalePuckColor)
+        
         return UIColor(hue: puckColorComponents.hue + (stalePuckColorComponents.hue - puckColorComponents.hue) * staleRatio,
                        saturation: puckColorComponents.saturation + (stalePuckColorComponents.saturation - puckColorComponents.saturation) * staleRatio,
                        brightness: puckColorComponents.brightness + (stalePuckColorComponents.brightness - puckColorComponents.brightness) * staleRatio,
@@ -199,10 +209,13 @@ class UserPuckStyleKitView: UIView {
     
     override func draw(_ rect: CGRect) {
         super.draw(rect)
-        drawNavigation_puck(fillColor: fillColor, puckColor: drawingPuckColor(), shadowColor: shadowColor, circleColor: fillColor)
+        drawNavigationPuck(fillColor: fillColor, puckColor: drawingPuckColor(), shadowColor: shadowColor, circleColor: fillColor)
     }
     
-    func drawNavigation_puck(fillColor: UIColor = UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.000), puckColor: UIColor = UIColor(red: 0.149, green: 0.239, blue: 0.341, alpha: 1.000), shadowColor: UIColor = UIColor(red: 0.149, green: 0.239, blue: 0.341, alpha: 0.160), circleColor: UIColor = UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.000)) {
+    func drawNavigationPuck(fillColor: UIColor = UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.000),
+                            puckColor: UIColor = UIColor(red: 0.149, green: 0.239, blue: 0.341, alpha: 1.000),
+                            shadowColor: UIColor = UIColor(red: 0.149, green: 0.239, blue: 0.341, alpha: 0.160),
+                            circleColor: UIColor = UIColor(red: 1.000, green: 1.000, blue: 1.000, alpha: 1.000)) {
         
         //// Canvas 2
         //// navigation_pluck

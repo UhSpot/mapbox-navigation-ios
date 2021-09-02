@@ -18,7 +18,7 @@ extension FeedbackViewController: UIViewControllerTransitioningDelegate {
 /**
  The `FeedbackViewControllerDelegate` protocol provides methods for responding to feedback events.
  */
-public protocol FeedbackViewControllerDelegate: class, UnimplementedLogging {
+public protocol FeedbackViewControllerDelegate: AnyObject, UnimplementedLogging {
     /**
      Called when the user opens the feedback form.
      */
@@ -27,7 +27,7 @@ public protocol FeedbackViewControllerDelegate: class, UnimplementedLogging {
     /**
      Called when the user submits a feedback event.
      */
-    func feedbackViewController(_ feedbackViewController: FeedbackViewController, didSend feedbackItem: FeedbackItem, uuid: UUID)
+    func feedbackViewController(_ feedbackViewController: FeedbackViewController, didSend feedbackItem: FeedbackItem, feedback: FeedbackEvent)
     
     /**
      Called when a `FeedbackViewController` is dismissed for any reason without giving explicit feedback.
@@ -130,9 +130,10 @@ public class FeedbackViewController: UIViewController, DismissDraggable, UIGestu
      */
     public weak var eventsManager: NavigationEventsManager?
     
-    var uuid: UUID? {
-        return eventsManager?.recordFeedback()
-    }
+    /**
+     Current feedback.
+     */
+    var currentFeedback: FeedbackEvent?
     
     /**
      Initialize a new FeedbackViewController from a `NavigationEventsManager`.
@@ -156,6 +157,12 @@ public class FeedbackViewController: UIViewController, DismissDraggable, UIGestu
     func commonInit() {
         self.modalPresentationStyle = .custom
         self.transitioningDelegate = self
+
+        createFeedback()
+    }
+    
+    func createFeedback() {
+        currentFeedback = eventsManager?.createFeedback()
     }
     
     override public func viewDidLoad() {
@@ -233,9 +240,9 @@ public class FeedbackViewController: UIViewController, DismissDraggable, UIGestu
     }
     
     func send(_ item: FeedbackItem) {
-        if let uuid = self.uuid {
-            delegate?.feedbackViewController(self, didSend: item, uuid: uuid)
-            eventsManager?.updateFeedback(uuid: uuid, type: item.feedbackType, source: .user, description: nil)
+        if let feedback = currentFeedback {
+            delegate?.feedbackViewController(self, didSend: item, feedback: feedback)
+            eventsManager?.sendFeedback(feedback, type: item.feedbackType)
         }
         
         guard let parent = presentingViewController else {
@@ -250,9 +257,7 @@ public class FeedbackViewController: UIViewController, DismissDraggable, UIGestu
     
     func dismissFeedbackItem() {
         delegate?.feedbackViewControllerDidCancel(self)
-        if let uuid = self.uuid {
-            eventsManager?.cancelFeedback(uuid: uuid)
-        }
+        currentFeedback = nil
         dismiss(animated: true, completion: nil)
     }
 }
@@ -282,8 +287,10 @@ extension FeedbackViewController: UICollectionViewDelegate {
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let item = sections[indexPath.row]
 
-        if detailedFeedbackEnabled, let eventsManager = eventsManager {
-            let feedbackViewController = FeedbackSubtypeViewController(eventsManager: eventsManager, feedbackType: item.feedbackType)
+        if detailedFeedbackEnabled, let eventsManager = eventsManager, let feedback = currentFeedback {
+            let feedbackViewController = FeedbackSubtypeViewController(eventsManager: eventsManager,
+                                                                       feedbackType: item.feedbackType,
+                                                                       feedback: feedback)
 
             guard let parent = presentingViewController else {
                 dismiss(animated: true)

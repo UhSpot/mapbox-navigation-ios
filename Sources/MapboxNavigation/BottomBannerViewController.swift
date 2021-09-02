@@ -1,3 +1,4 @@
+import CoreLocation
 import UIKit
 import MapboxCoreNavigation
 import MapboxDirections
@@ -5,7 +6,7 @@ import MapboxDirections
 /**
  `BottomBannerViewControllerDelegate` provides a method for reacting to the user tapping on the "cancel" button in the `BottomBannerViewController`.
  */
-public protocol BottomBannerViewControllerDelegate: class {
+public protocol BottomBannerViewControllerDelegate: AnyObject {
     /**
      A method that is invoked when the user taps on the cancel button.
      - parameter sender: The button that originated the tap event.
@@ -89,15 +90,6 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
                 timeRemainingLabel.textColor = timeRemainingLabel.trafficSevereColor
             }
         }
-    }
-    /**
-     Initializes a `BottomBannerViewController` that provides estimated arrival time, distance to arrival, and time to arrival.
-     
-     - parameter delegate: A delegate to recieve BottomBannerViewControllerDelegate messages.
-     */
-    @available(swift, obsoleted: 0.1, message: "Set the delegate property separately after initializing this object.")
-    public convenience init(delegate: BottomBannerViewControllerDelegate?) {
-        fatalError()
     }
     
     /**

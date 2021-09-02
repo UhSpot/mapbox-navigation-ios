@@ -1,13 +1,14 @@
 import XCTest
 import MapboxDirections
+import CoreLocation
 @testable import TestHelper
 @testable import MapboxNavigation
 @testable import MapboxCoreNavigation
 
 /// :nodoc:
-class InstructionsCardCollectionTests: XCTestCase {
-    lazy var initialRoute: Route = {
-        return Fixture.route(from: jsonFileName, options: routeOptions)
+class InstructionsCardCollectionTests: TestCase {
+    lazy var initialRouteResponse: RouteResponse = {
+        return Fixture.routeResponse(from: jsonFileName, options: routeOptions)
     }()
     
     lazy var instructionsCardCollectionDataSource: (collection: InstructionsCardViewController, progress: RouteProgress, service: MapboxNavigationService, delegate: InstructionsCardCollectionDelegateSpy) = {
@@ -31,8 +32,8 @@ class InstructionsCardCollectionTests: XCTestCase {
         ])
         let fakeRoute = Fixture.route(from: "route-with-banner-instructions", options: fakeOptions)
         
-        let service = MapboxNavigationService(route: initialRoute, routeIndex: 0, routeOptions: fakeOptions, directions: DirectionsSpy(), simulating: .never)
-        let routeProgress = RouteProgress(route: fakeRoute, routeIndex: 0, options: fakeOptions)
+        let service = MapboxNavigationService(routeResponse: initialRouteResponse, routeIndex: 0, routeOptions: fakeOptions, simulating: .never)
+        let routeProgress = RouteProgress(route: fakeRoute, options: fakeOptions)
         subject.routeProgress = routeProgress
         
         return (collection: subject, progress: routeProgress, service: service, delegate: delegate)
@@ -123,25 +124,6 @@ class InstructionsCardCollectionTests: XCTestCase {
 
         XCTAssertTrue(subject.isInPreview)
         XCTAssertNotNil(instructionsCardCollectionSpy.step)
-    }
-    
-    func constrain(_ child: UIView, to parent: UIView) {
-        let constraints = [
-            child.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
-            child.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
-            child.topAnchor.constraint(equalTo: parent.topAnchor, constant: 30.0)
-        ]
-        NSLayoutConstraint.activate(constraints)
-    }
-    
-    func embed(parent:UIViewController, child: UIViewController, in container: UIView, constrainedBy constraints: ((UIViewController, UIViewController) -> [NSLayoutConstraint])?) {
-        child.willMove(toParent: parent)
-        parent.addChild(child)
-        container.addSubview(child.view)
-        if let childConstraints: [NSLayoutConstraint] = constraints?(parent, child) {
-            parent.view.addConstraints(childConstraints)
-        }
-        child.didMove(toParent: parent)
     }
 }
 

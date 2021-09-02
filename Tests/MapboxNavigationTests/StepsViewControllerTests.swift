@@ -1,10 +1,11 @@
 import XCTest
 import MapboxDirections
+import CoreLocation
 @testable import TestHelper
 @testable import MapboxCoreNavigation
 @testable import MapboxNavigation
 
-class StepsViewControllerTests: XCTestCase {
+class StepsViewControllerTests: TestCase {
     struct Constants {
         static let route = response.routes!.first!
         static let options = routeOptions
@@ -13,10 +14,9 @@ class StepsViewControllerTests: XCTestCase {
     
     lazy var dependencies: (stepsViewController: StepsViewController, routeController: RouteController, firstLocation: CLLocation, lastLocation: CLLocation) = {
         let bogusToken = "pk.feedCafeDeadBeefBadeBede"
-        let directions = Directions(credentials: Fixture.credentials)
         let dataSource = RouteControllerDataSourceFake()
         
-        let routeController = RouteController(along: Constants.route, routeIndex: 0, options: Constants.options, directions: directions, dataSource: dataSource)
+        let routeController = RouteController(alongRouteAtIndex: 0, in: response, options: Constants.options, dataSource: dataSource)
         
         let stepsViewController = StepsViewController(routeProgress: routeController.routeProgress)
         

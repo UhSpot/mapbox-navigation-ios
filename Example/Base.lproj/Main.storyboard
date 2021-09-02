@@ -98,8 +98,6 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
-                        <outlet property="bottomBar" destination="tgD-cs-dAn" id="bIA-KH-Xa9"/>
-                        <outlet property="bottomBarBackground" destination="52U-cY-V4s" id="wSk-Ee-ww2"/>
                         <outlet property="clearMap" destination="6ux-mK-LQF" id="9M7-CK-q1M"/>
                         <outlet property="longPressHintView" destination="Tfo-Ic-OqD" id="gYu-YW-6FX"/>
                         <outlet property="simulationButton" destination="iiq-Gf-SKY" id="DHR-zB-Mwv"/>
@@ -215,80 +213,16 @@
                             <constraint firstItem="ocq-gm-39c" firstAttribute="top" secondItem="Zeb-q8-C2a" secondAttribute="bottom" constant="20" id="yJM-zZ-jVy"/>
                             <constraint firstItem="Zeb-q8-C2a" firstAttribute="leading" secondItem="KG0-bP-EJe" secondAttribute="leading" id="zYT-mW-YMn"/>
                         </constraints>
-                        <userDefinedRuntimeAttributes>
-                            <userDefinedRuntimeAttribute type="string" keyPath="styleURL__" value="mapbox://styles/mapbox-map-design/ckd6dqf981hi71iqlyn3e896y"/>
-                        </userDefinedRuntimeAttributes>
                     </view>
                     <connections>
                         <outlet property="cancelButton" destination="68P-Cf-VxO" id="SlV-gp-9jp"/>
                         <outlet property="instructionsBannerView" destination="Zeb-q8-C2a" id="Bhs-wQ-4bY"/>
-                        <outlet property="mapView" destination="bFk-po-evo" id="k8H-sF-UE1"/>
+                        <outlet property="navigationMapView" destination="bFk-po-evo" id="STp-UK-eUQ"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bbz-fl-vkV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1028" y="34.632683658170919"/>
-        </scene>
-        <!--Waypoint Confirmation View Controller-->
-        <scene sceneID="VHA-oq-pTR">
-            <objects>
-                <viewController storyboardIdentifier="waypointConfirmation" id="JoY-h8-mcz" customClass="WaypointConfirmationViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="wgq-AG-cad">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1vl-kS-fBt">
-                                <rect key="frame" x="91" y="318.5" width="193" height="30"/>
-                                <state key="normal" title="Continue to next destination"/>
-                                <connections>
-                                    <action selector="continueButtonPressed:" destination="JoY-h8-mcz" eventType="touchUpInside" id="ytK-Vg-d0S"/>
-                                </connections>
-                            </button>
-                        </subviews>
-                        <viewLayoutGuide key="safeArea" id="WE2-2K-5tX"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <constraints>
-                            <constraint firstItem="1vl-kS-fBt" firstAttribute="centerY" secondItem="wgq-AG-cad" secondAttribute="centerY" id="1Ro-0J-G3Q"/>
-                            <constraint firstItem="1vl-kS-fBt" firstAttribute="centerX" secondItem="WE2-2K-5tX" secondAttribute="centerX" id="NCF-wB-Ww5"/>
-                        </constraints>
-                    </view>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Obi-w3-SAb" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="447" y="814"/>
-        </scene>
-        <!--Uh Spot View Controller-->
-        <scene sceneID="4j8-SG-5sQ">
-            <objects>
-                <viewController storyboardIdentifier="uhspot" id="6Td-kn-91e" customClass="UhSpotViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="0pr-zb-n8L">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="QVJ-HR-QUq" customClass="NavigationMapView" customModule="MapboxNavigation">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                            </view>
-                        </subviews>
-                        <viewLayoutGuide key="safeArea" id="fW1-Pu-k4r"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <constraints>
-                            <constraint firstAttribute="bottom" secondItem="QVJ-HR-QUq" secondAttribute="bottom" id="N58-pk-LLd"/>
-                            <constraint firstItem="QVJ-HR-QUq" firstAttribute="top" secondItem="0pr-zb-n8L" secondAttribute="top" id="Uvf-uf-FaF"/>
-                            <constraint firstAttribute="trailing" secondItem="QVJ-HR-QUq" secondAttribute="trailing" id="cIe-R9-zFl"/>
-                            <constraint firstItem="QVJ-HR-QUq" firstAttribute="leading" secondItem="0pr-zb-n8L" secondAttribute="leading" id="suu-eq-0AA"/>
-                        </constraints>
-                        <userDefinedRuntimeAttributes>
-                            <userDefinedRuntimeAttribute type="string" keyPath="styleURL__" value="mapbox://styles/mapbox-map-design/ckd6dqf981hi71iqlyn3e896y"/>
-                        </userDefinedRuntimeAttributes>
-                    </view>
-                    <connections>
-                        <outlet property="mapView" destination="QVJ-HR-QUq" id="3oa-9H-Ypc"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="t59-r7-sSF" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="1748" y="92"/>
         </scene>
     </scenes>
 </document>

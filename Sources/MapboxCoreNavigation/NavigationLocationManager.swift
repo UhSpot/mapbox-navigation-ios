@@ -17,10 +17,16 @@ open class NavigationLocationManager: CLLocationManager {
             allowsBackgroundLocationUpdates = true
         }
     }
+    
+    /**
+     `simulatesLocation` used to indicate whether the location manager is providing simulated locations.
+     - seealso: `NavigationMapView.simulatesLocation`
+     */
+    public var simulatesLocation: Bool = false
 }
 
 extension NavigationLocationManager: RouterDataSource {
-    public var locationProvider: NavigationLocationManager.Type {
+    public var locationManagerType: NavigationLocationManager.Type {
         return type(of: self)
     }
 }

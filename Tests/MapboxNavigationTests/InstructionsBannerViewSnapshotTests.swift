@@ -1,18 +1,18 @@
 import XCTest
-import FBSnapshotTestCase
+import TestHelper
+import SnapshotTesting
 import MapboxDirections
 @testable import MapboxNavigation
 @testable import MapboxCoreNavigation
 
-class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
+class InstructionsBannerViewSnapshotTests: TestCase {
     let imageRepository: ImageRepository = ImageRepository.shared
 
     let asyncTimeout: TimeInterval = 2.0
 
     override func setUp() {
         super.setUp()
-        recordMode = false
-        agnosticOptions = [.OS, .device]
+        isRecording = false
 
         let i280Instruction = VisualInstruction.Component.image(image: .init(imageBaseURL: ShieldImage.i280.baseURL), alternativeText: .init(text: "I-280", abbreviation: nil, abbreviationPriority: 0))
         let us101Instruction = VisualInstruction.Component.image(image: .init(imageBaseURL: ShieldImage.us101.baseURL), alternativeText: .init(text: "US 101", abbreviation: nil, abbreviationPriority: 0))
@@ -21,6 +21,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         imageRepository.storeImage(ShieldImage.us101.image, forKey: us101Instruction.cacheKey!, toDisk: false)
 
         NavigationSettings.shared.distanceUnit = .mile
+        DayStyle().apply()
     }
 
     override func tearDown() {
@@ -49,7 +50,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.turn, .right, primaryInstruction: instructions, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testMultilinePrimary() {
@@ -66,7 +67,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.turn, .right, primaryInstruction: instructions, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testSinglelinePrimaryAndSecondary() {
@@ -84,7 +85,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.turn, .right, primaryInstruction: primary, secondaryInstruction: secondary))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testPrimaryShieldAndSecondary() {
@@ -101,7 +102,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.turn, .right, primaryInstruction: primary, secondaryInstruction: secondary))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testAbbreviateInstructions() {
@@ -123,7 +124,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.continue, .straightAhead, primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testAbbreviateInstructionsIncludingDelimiter() {
@@ -146,7 +147,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         imageRepository.storeImage(ShieldImage.i280.image, forKey: primary.first!.cacheKey!)
         view.update(for: makeVisualInstruction(.continue, .straightAhead, primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testAbbreviateWestFremontAvenue() {
@@ -163,7 +164,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.continue, .straightAhead, primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testAdjacentShields() {
@@ -180,7 +181,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
 
         view.update(for: makeVisualInstruction(.continue, .straightAhead, primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testInstructionsAndNextInstructions() {
@@ -213,7 +214,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         nextBannerView.maneuverView.backgroundColor = .clear
         nextBannerView.maneuverView.isEnd = true
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testLongDistance() {
@@ -228,7 +229,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         let primary = [VisualInstruction.Component.text(text: .init(text: "中国 安徽省 宣城市 郎溪县", abbreviation: nil, abbreviationPriority: nil))]
         view.update(for: makeVisualInstruction(.continue, .straightAhead, primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testSweEngLongDistance() {
@@ -242,7 +243,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         let primary = [VisualInstruction.Component.text(text: .init(text: "Lorem Ipsum / Dolor Sit Amet", abbreviation: nil, abbreviationPriority: nil))]
         view.update(for: makeVisualInstruction(primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testUkrainianLongDistance() {
@@ -256,7 +257,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         let primary = [VisualInstruction.Component.text(text: .init(text: "Lorem Ipsum / Dolor Sit Amet", abbreviation: nil, abbreviationPriority: nil))]
         view.update(for: makeVisualInstruction(primaryInstruction: primary, secondaryInstruction: nil))
 
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testExitShields() {
@@ -278,7 +279,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         window.addSubview(view)
 
         view.update(for: makeVisualInstruction(.takeOffRamp, .right, primaryInstruction: primary, secondaryInstruction: [secondary]))
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 
     func testGenericShields() {
@@ -299,7 +300,7 @@ class InstructionsBannerViewSnapshotTests: FBSnapshotTestCase {
         DayStyle().apply()
 
         view.update(for: makeVisualInstruction(.reachFork, .right, primaryInstruction: primary, secondaryInstruction: secondary))
-        verify(view)
+        assertImageSnapshot(matching: view, as: .image(precision: 0.95))
     }
 }
 

@@ -2,16 +2,16 @@ import XCTest
 import MapboxDirections
 import TestHelper
 import Turf
+import MapboxMaps
 @testable import MapboxNavigation
 @testable import MapboxCoreNavigation
 
-class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
+class NavigationMapViewTests: TestCase {
     let response = Fixture.routeResponse(from: "route-with-instructions", options: NavigationRouteOptions(coordinates: [
         CLLocationCoordinate2D(latitude: 40.311012, longitude: -112.47926),
         CLLocationCoordinate2D(latitude: 29.99908, longitude: -102.828197),
     ]))
-    var styleLoadingExpectation: XCTestExpectation?
-    var mapView: NavigationMapView?
+    var navigationMapView: NavigationMapView!
     
     lazy var route: Route = {
         let route = response.routes!.first!
@@ -20,25 +20,12 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     
     override func setUp() {
         super.setUp()
-        
-        mapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        mapView!.delegate = self
-        if mapView!.style == nil {
-            styleLoadingExpectation = expectation(description: "Style Loaded Expectation")
-            waitForExpectations(timeout: 2, handler: nil)
-        }
+        navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
     }
     
     override func tearDown() {
-        styleLoadingExpectation = nil
-        mapView = nil
+        navigationMapView = nil
         super.tearDown()
-    }
-    
-    func mapView(_ mapView: MGLMapView, didFinishLoading style: MGLStyle) {
-        XCTAssertNotNil(mapView.style)
-        XCTAssertEqual(mapView.style, style)
-        styleLoadingExpectation!.fulfill()
     }
     
     let coordinates: [CLLocationCoordinate2D] = [
@@ -51,7 +38,7 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     ]
     
     func testNavigationMapViewCombineWithSimilarCongestions() {
-        let congestionSegments = mapView!.combine(coordinates, with: [
+        let congestionSegments = coordinates.combined([
             .low,
             .low,
             .low,
@@ -65,7 +52,7 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     }
     
     func testNavigationMapViewCombineWithDissimilarCongestions() {
-        let congestionSegmentsSevere = mapView!.combine(coordinates, with: [
+        let congestionSegmentsSevere = coordinates.combined([
             .low,
             .low,
             .severe,
@@ -87,20 +74,27 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     }
     
     func testRemoveWaypointsDoesNotRemoveUserAnnotations() {
-        XCTAssertNil(mapView!.annotations)
-        mapView!.addAnnotation(MGLPointAnnotation())
-        mapView!.addAnnotation(PersistentAnnotation())
-        XCTAssertEqual(mapView!.annotations!.count, 2)
+        navigationMapView.pointAnnotationManager = navigationMapView.mapView.annotations.makePointAnnotationManager()
+        let pointAnnotationManager = navigationMapView.pointAnnotationManager
+        XCTAssertEqual(0, pointAnnotationManager?.annotations.count)
         
-        mapView!.showWaypoints(on: route)
-        XCTAssertEqual(mapView!.annotations!.count, 3)
+        let annotations = [
+            PointAnnotation(coordinate: CLLocationCoordinate2D()),
+            PointAnnotation(coordinate: CLLocationCoordinate2D())
+        ]
         
-        mapView!.removeWaypoints()
-        XCTAssertEqual(mapView!.annotations!.count, 2)
+        pointAnnotationManager?.annotations = annotations
+        XCTAssertEqual(pointAnnotationManager?.annotations.count, 2)
+        
+        navigationMapView.showWaypoints(on: route)
+        XCTAssertEqual(pointAnnotationManager?.annotations.count, 1)
+        
+        navigationMapView.removeWaypoints()
+        XCTAssertEqual(pointAnnotationManager?.annotations.count, 0)
         
         // Clean up
-        mapView!.removeAnnotations(mapView!.annotations ?? [])
-        XCTAssertNil(mapView!.annotations)
+        pointAnnotationManager?.annotations = []
+        XCTAssertEqual(0, pointAnnotationManager?.annotations.count)
     }
 
     func setUpVanishingRouteLine() -> Route {
@@ -121,7 +115,7 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     
     func testUpdateVanishingPoint() {
         let route = setUpVanishingRouteLine()
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
+        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
         let shape = route.shape!
         let targetPoint = Turf.mid(shape.coordinates[6], shape.coordinates[7])
         //which is between route.legs[0].steps[1].shape!.coordinates[3] and  route.legs[0].steps[1].shape!.coordinates[4]
@@ -131,22 +125,23 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
             preconditionFailure("Granular distances are invalid")
         }
 
-        let testRouteProgress: RouteProgress = RouteProgress(route: route, routeIndex: 0, options: routeOptions, legIndex: 0, spokenInstructionIndex: 0)
+        let testRouteProgress: RouteProgress = RouteProgress(route: route, options: routeOptions, legIndex: 0, spokenInstructionIndex: 0)
         testRouteProgress.currentLegProgress = RouteLegProgress(leg: route.legs[0], stepIndex: 1, spokenInstructionIndex: 0)
         testRouteProgress.currentLegProgress.currentStepProgress = RouteStepProgress(step: route.legs[0].steps[1], spokenInstructionIndex: 0)
         testRouteProgress.currentLegProgress.currentStepProgress.distanceTraveled = stepTraveledDistanceSep
 
         navigationMapView.initPrimaryRoutePoints(route: route)
         navigationMapView.updateUpcomingRoutePointIndex(routeProgress: testRouteProgress)
-        navigationMapView.updateTraveledRouteLine(targetPoint)
+        navigationMapView.updateFractionTraveled(coordinate: targetPoint)
 
         let expectedTraveledFraction = 0.06383308537010246
-        XCTAssertEqual(navigationMapView.fractionTraveled, expectedTraveledFraction)
+
+        XCTAssertTrue(abs(navigationMapView.fractionTraveled - expectedTraveledFraction) < 0.000000000001)
     }
     
     func testParseRoutePoints() {
         let route = setUpVanishingRouteLine()
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
+        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
         
         navigationMapView.initPrimaryRoutePoints(route: route)
         let nestedList = navigationMapView.routePoints?.nestedList
@@ -180,39 +175,37 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
         return validRoute
     }
     
-    func congestionLevel(_ feature: MGLPolylineFeature) -> CongestionLevel? {
-        guard let congestionLevel = feature.attributes["congestion"] as? String else { return nil }
+    func congestionLevel(_ feature: Turf.Feature) -> CongestionLevel? {
+        guard let congestionLevel = feature.properties?["congestion"] as? String else { return nil }
         
         return CongestionLevel(rawValue: congestionLevel)
     }
     
     func testOverriddenStreetsRouteClassTunnelSingleCongestionLevel() {
         let route = loadRoute(from: "route-with-road-classes-single-congestion")
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        var congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
-        XCTAssertEqual(congestions?.count, 1)
+        var congestions = route.congestionFeatures()
+        XCTAssertEqual(congestions.count, 1)
         
-        // Since `NavigationMapView.addCongestion(to:legIndex:)` merges congestion levels which are similar
-        // it is expected that only one congestion level is shown for this route.
+        // Since `Route.congestionFeatures(legIndex:isAlternativeRoute:roadClassesWithOverriddenCongestionLevels:)`
+        // merges congestion levels which are similar it is expected that only one congestion
+        // level is shown for this route.
         var expectedCongestionLevel: CongestionLevel = .unknown
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevel)
         }
         
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.golf]
         expectedCongestionLevel = .low
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.golf])
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevel)
         }
     }
     
     func testOverriddenStreetsRouteClassMotorwayMixedCongestionLevels() {
         let route = loadRoute(from: "route-with-mixed-road-classes")
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        var congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
-        XCTAssertEqual(congestions?.count, 5)
+        var congestions = route.congestionFeatures()
+        XCTAssertEqual(congestions.count, 5)
         
         var expectedCongestionLevels: [CongestionLevel] = [
             .unknown,
@@ -222,13 +215,13 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
             .unknown
         ]
         
-        // Since `NavigationMapView.addCongestion(to:legIndex:)` merges congestion levels which are similar
-        // in such case it is expected that mixed congestion levels remain unmodified.
-        congestions?.enumerated().forEach {
+        // Since `Route.congestionFeatures(legIndex:isAlternativeRoute:roadClassesWithOverriddenCongestionLevels:)`
+        // merges congestion levels which are similar in such case it is expected that mixed congestion
+        // levels remain unmodified.
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.motorway]
         expectedCongestionLevels = [
             .low,
             .severe,
@@ -236,20 +229,18 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
             .severe,
             .low
         ]
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.motorway])
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
     }
     
     func testOverriddenStreetsRouteClassMissing() {
         let route = loadRoute(from: "route-with-missing-road-classes")
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.motorway]
         
-        var congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
-        XCTAssertEqual(congestions?.count, 3)
+        var congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.motorway])
+        XCTAssertEqual(congestions.count, 3)
         
         var expectedCongestionLevels: [CongestionLevel] = [
             .severe,
@@ -259,17 +250,16 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
         
         // In case if `roadClassesWithOverriddenCongestionLevels` was provided with `.motorway` `MapboxStreetsRoadClass` it is expected
         // that any `.unknown` congestion level for such `MapboxStreetsRoadClass` will be overwritten to `.low` congestion level.
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = []
         expectedCongestionLevels[1] = .unknown
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [])
         
         // In case if `roadClassesWithOverriddenCongestionLevels` is empty `.unknown` congestion level will not be
         // overwritten.
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
@@ -285,8 +275,6 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     
     func testRouteStreetsRoadClassesCountEqualToCongestionLevelsCount() {
         let route = loadRoute(from: "route-with-missing-road-classes")
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.motorway]
         
         // Make sure that number of `MapboxStreetsRoadClass` is equal to number of congestion levels.
         route.legs.forEach {
@@ -299,8 +287,7 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     
     func testRouteStreetsRoadClassesNotPresent() {
         let route = loadRoute(from: "route-with-not-present-road-classes")
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        var congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        var congestions = route.congestionFeatures()
         let expectedCongestionLevels: [CongestionLevel] = [
             .unknown,
             .low,
@@ -309,16 +296,15 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
             .low
         ]
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.motorway, .secondary, .ferry]
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.motorway, .secondary, .ferry])
         
         // Since `SreetsRoadClass`es are not present in this route congestion levels should remain unchanged after
         // modifying `roadClassesWithOverriddenCongestionLevels`, `streetsRoadClasses` should be empty as well.
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
@@ -331,13 +317,12 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
     
     func testRouteStreetsRoadClassesDifferentAndSameCongestion() {
         let route = loadRoute(from: "route-with-same-congestion-different-road-classes")
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
-        var congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        var congestions = route.congestionFeatures()
         var expectedCongestionLevels: [CongestionLevel] = [
             .unknown
         ]
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
@@ -347,17 +332,15 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
             .low,
             .unknown
         ]
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.street]
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.street])
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.street, .ferry]
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.street, .ferry])
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
         
@@ -366,21 +349,155 @@ class NavigationMapViewTests: XCTestCase, MGLMapViewDelegate {
         expectedCongestionLevels = [
             .low
         ]
-        navigationMapView.roadClassesWithOverriddenCongestionLevels = [.street, .ferry, .motorway]
-        congestions = navigationMapView.addCongestion(to: route, legIndex: 0)
+        congestions = route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: [.street, .ferry, .motorway])
         
-        congestions?.enumerated().forEach {
+        congestions.enumerated().forEach {
             XCTAssertEqual(congestionLevel($0.element), expectedCongestionLevels[$0.offset])
         }
     }
     
+    func testUpdateRouteLineGradient() {
+        let route = loadRoute(from: "route-with-road-classes-single-congestion")
+        let congestions = route.congestionFeatures()
+        var lineGradient = navigationMapView.routeLineGradient(congestions, fractionTraveled: 0.0, isMain: true)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.trafficUnknownColor)
+        
+        var fractionTraveled = 0.5
+        var nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficUnknownColor)
+        
+        let nexDownModerateFraction = Double(CGFloat(0.3).nextDown)
+        let nexDownHeavyFraction = Double(CGFloat(0.4).nextDown)
+        lineGradient = [
+            0.0: navigationMapView.trafficSevereColor,
+            nexDownModerateFraction: navigationMapView.trafficSevereColor,
+            0.3: navigationMapView.trafficModerateColor,
+            nexDownHeavyFraction: navigationMapView.trafficModerateColor,
+            0.4: navigationMapView.trafficHeavyColor
+        ]
+        
+        fractionTraveled = 0.3
+        nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficModerateColor)
+        
+        fractionTraveled = 0.35
+        nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficModerateColor)
+        
+        fractionTraveled = 0.45
+        nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficHeavyColor)
+        
+        lineGradient = [Double:UIColor]()
+        fractionTraveled = 0.45
+        nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficUnknownColor)
+    }
+    
     func testRoadClassesWithOverriddenCongestionLevelsRemovesDuplicates() {
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus), styleURL: Fixture.blankStyle)
+        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
         navigationMapView.roadClassesWithOverriddenCongestionLevels = [.aerialway, .construction, .construction, .golf]
         
         XCTAssertEqual(navigationMapView.roadClassesWithOverriddenCongestionLevels?.count, 3)
     }
+
+    // Disabled. TODO: Find out why buildings aren't highlighted
+    func disabled_testHighlightBuildings() {
+        let featureQueryExpectation = XCTestExpectation(description: "Wait for building to be highlighted.")
+
+        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
+        let cameraOptions = CameraOptions(center: CLLocationCoordinate2D(latitude: 37.79060960181454, longitude: -122.39564506250244),
+                                          zoom: 17.0,
+                                          bearing: 0.0,
+                                          pitch: 0.0)
+        navigationMapView.mapView.mapboxMap.setCamera(to: cameraOptions)
+        let buildingHighlightCoordinates: [CLLocationCoordinate2D] = [
+            CLLocationCoordinate2D(latitude: 37.79066471218174, longitude: -122.39581404166825),
+            CLLocationCoordinate2D(latitude: 37.78999490647732, longitude: -122.39485917526815)
+        ]
+        navigationMapView.highlightBuildings(at: buildingHighlightCoordinates, in3D: true, completion: { (result) -> Void in
+            if result == true  {
+                featureQueryExpectation.fulfill()
+            } else {
+                XCTFail("Building highlighted failed.")
+            }
+        })
+        
+        wait(for: [featureQueryExpectation], timeout: 5.0)
+    }
+    
+    func testFinalDestinationAnnotationIsPresent() {
+        
+        class NavigationMapViewDelegateMock: NavigationMapViewDelegate {
+            
+            var didAddFinalDestinationAnnotation = false
+            
+            func navigationMapView(_ navigationMapView: NavigationMapView,
+                                   didAdd finalDestinationAnnotation: PointAnnotation,
+                                   pointAnnotationManager: PointAnnotationManager) {
+                didAddFinalDestinationAnnotation = true
+            }
+        }
+        
+        let navigationMapView = NavigationMapView(frame: UIScreen.main.bounds)
+        
+        let navigationMapViewDelegateMock = NavigationMapViewDelegateMock()
+        navigationMapView.delegate = navigationMapViewDelegateMock
+        
+        navigationMapView.showWaypoints(on: route)
+        
+        // Right after calling `NavigationMapView.showWaypoints(on:legIndex:)` and before loading actual
+        // `MapView` style it is expected that `NavigationMapView.finalDestinationAnnotation` is assigned
+        // to non-nil value.
+        XCTAssertNotNil(navigationMapView.finalDestinationAnnotation, "Final destination annotation should not be nil.")
+        XCTAssertNil(navigationMapView.pointAnnotationManager, "Point annotation manager should be nil.")
+        
+        let styleJSONObject: [String: Any] = [
+            "version": 8,
+            "center": [
+                -122.385563, 37.763330
+            ],
+            "zoom": 15,
+            "sources": [],
+            "layers": []
+        ]
+        
+        let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
+        XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
+        
+        let didAddFinalDestinationAnnotationExpectation = self.expectation {
+            return navigationMapViewDelegateMock.didAddFinalDestinationAnnotation
+        }
+        
+        navigationMapView.mapView.mapboxMap.loadStyleJSON(styleJSON)
+        
+        wait(for: [didAddFinalDestinationAnnotationExpectation], timeout: 5.0)
+        
+        // After fully loading style `NavigationMapView.finalDestinationAnnotation` should be assigned to nil and
+        // `NavigationMapView.pointAnnotationManager` must become valid.
+        XCTAssertNil(navigationMapView.finalDestinationAnnotation, "Final destination annotation should be nil.")
+        XCTAssertNotNil(navigationMapView.pointAnnotationManager, "Point annotation manager should not be nil.")
+        XCTAssertEqual(navigationMapView.pointAnnotationManager?.annotations.count,
+                       1,
+                       "Only final destination annotation should be present.")
+        XCTAssertEqual(navigationMapView.pointAnnotationManager?.annotations.first?.id,
+                       NavigationMapView.AnnotationIdentifier.finalDestinationAnnotation,
+                       "Point annotation identifiers should be equal.")
+    }
 }
-
-class PersistentAnnotation: MGLPointAnnotation { }
-

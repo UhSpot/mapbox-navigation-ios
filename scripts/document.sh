@@ -40,6 +40,7 @@ mkdir -p /tmp/mbnavigation/
 README=/tmp/mbnavigation/README.md
 cp docs/cover.md "${README}"
 perl -pi -e "s/\\$\\{MINOR_VERSION\\}/${MINOR_VERSION}/" "${README}"
+perl -pi -e "s/\\$\\{SHORT_VERSION\\}/${SHORT_VERSION}/" "${README}"
 # http://stackoverflow.com/a/4858011/4585461
 echo "## Changes in version ${RELEASE_VERSION}" >> "${README}"
 sed -n -e '/^## /{' -e ':a' -e 'n' -e '/^## /q' -e 'p' -e 'ba' -e '}' CHANGELOG.md >> "${README}"
@@ -51,12 +52,6 @@ find Sources/Mapbox{Core,}Navigation/ -name '*.swift' -exec \
     perl -pi -e 's/\bMapboxCoreNavigation\b/MapboxNavigation/' {} \;
 find Sources/Mapbox{Core,}Navigation/ -name '*.[hm]' -exec \
     perl -pi -e 's/([<"])MapboxCoreNavigation\b/$1MapboxNavigation/' {} \;
-
-# Blow away any platform-based availability attributes, since everything is
-# compatible enough to be documented.
-# https://github.com/mapbox/mapbox-navigation-ios/issues/1682
-find Sources/Mapbox{Core,}Navigation/ -name '*.swift' -exec \
-    perl -pi -e 's/\@available\s*\(\s*iOS \d+.\d,.*?\)//' {} \;
 
 jazzy \
     --podspec MapboxNavigation-Documentation.podspec \

@@ -1,8 +1,10 @@
+import CoreLocation
 import Foundation
+import UIKit
 import MapboxCoreNavigation
 import MapboxDirections
 
-public protocol TopBannerViewControllerDelegate: class, UnimplementedLogging {
+public protocol TopBannerViewControllerDelegate: AnyObject, UnimplementedLogging {
     func topBanner(_ banner: TopBannerViewController, didSwipeInDirection direction: UISwipeGestureRecognizer.Direction)
     
     func topBanner(_ banner: TopBannerViewController, didSelect legIndex: Int, stepIndex: Int, cell: StepTableViewCell)
@@ -471,11 +473,6 @@ extension TopBannerViewController: NavigationStatusPresenter {
     
     public func hide(_ status: StatusView.Status) {
         statusView.hide(status)
-    }
-    
-    @available(*, deprecated, message: "Add a status using show(_:) instead")
-    public func showStatus(title: String, spinner spin: Bool, duration: TimeInterval, animated: Bool, interactive: Bool) {
-        statusView.showStatus(title: title, spinner: spin, duration: duration, animated: animated, interactive: interactive)
     }
 }
 

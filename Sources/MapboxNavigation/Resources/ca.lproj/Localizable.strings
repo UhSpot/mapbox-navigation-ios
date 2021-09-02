@@ -1,11 +1,11 @@
-/* Delimiter between lines in an address when displayed inline */
-"ADDRESS_LINE_SEPARATOR" = ",";
-
 /* Title on arrival action sheet */
 "CARPLAY_ARRIVED" = "Heu arribat";
 
 /* Message on arrival action sheet */
 "CARPLAY_ARRIVED_MESSAGE" = "Que us agradaria fer? ";
+
+/* Title on continue button in CarPlay */
+"CARPLAY_CONTINUE" = "Continua";
 
 /* Name of the waypoint associated with the current location */
 "CARPLAY_CURRENT_LOCATION" = "Posició actual";
@@ -39,9 +39,6 @@
 
 /* Title on rate button in CarPlay */
 "CARPLAY_RATE_TRIP" = "Valora el viatge";
-
-/* Message when search returned zero results in CarPlay */
-"CARPLAY_SEARCH_NO_RESULTS" = "Sense resultats";
 
 /* Alert title that shows when feedback has been submitted */
 "CARPLAY_SUBMITTED_FEEDBACK" = "Enviat";
@@ -86,7 +83,7 @@
 "FEEDBACK_THANK_YOU" = "Gràcies pel vostre informe!";
 
 /* Title of view controller for sending feedback */
-"FEEDBACK_TITLE" = "Informar d'un problema";
+"FEEDBACK_TITLE" = "Informar d’un problema";
 
 /* Specific route feedback that a illegal route problem was encountered but not listed as a choice. */
 "ILLEGAL_ROUTE_OTHER_FEEDBACK" = "Altres";

@@ -1,8 +1,6 @@
 import UIKit
 import CoreLocation
 import MapboxDirections
-import MapboxAccounts
-
 
 public enum SimulationIntent: Int{
     case manual, poorGPS
@@ -51,22 +49,26 @@ public protocol NavigationService: CLLocationManagerDelegate, RouterDataSource, 
     /**
      The router object that tracks the user’s progress as they travel along a predetermined route.
      */
-    var router: Router! { get }
+    var router: Router { get }
     
     /**
      The events manager, responsible for all telemetry.
      */
-    var eventsManager: NavigationEventsManager! { get }
-    
-    /**
-     The route along which the user is expected to travel, plus its index in the `RouteResponse`, if applicable.
-     */
-    var indexedRoute: IndexedRoute { get set }
+    var eventsManager: NavigationEventsManager { get }
     
     /**
      The route along which the user is expected to travel.
+
+     If you want to update the route, use `Router.updateRoute(with:routeOptions:)` method from `router`.
      */
     var route: Route { get }
+    
+    /**
+     The `RouteResponse` object containing active route, plus its index in this `RouteResponse`, if applicable.
+
+     If you want to update the route, use `Router.updateRoute(with:routeOptions:)` method from `router`.
+     */
+    var indexedRouteResponse: IndexedRouteResponse { get }
     
     /**
      The simulation mode of the service.
@@ -120,7 +122,11 @@ public protocol NavigationService: CLLocationManagerDelegate, RouterDataSource, 
  */
 public class MapboxNavigationService: NSObject, NavigationService {
     typealias DefaultRouter = RouteController
-    
+
+    private var _router: Router?
+    private var _eventsManager: NavigationEventsManager?
+    private var _poorGPSTimer: DispatchTimer?
+
     /**
      The default time interval before beginning simulation when the `.onPoorGPS` simulation option is enabled.
      */
@@ -150,12 +156,12 @@ public class MapboxNavigationService: NSObject, NavigationService {
     /**
      The active router. By default, a `RouteController`.
      */
-    public var router: Router!
+    public var router: Router { _router! }
     
     /**
      The events manager. Sends telemetry back to the Mapbox platform.
      */
-    public var eventsManager: NavigationEventsManager!
+    public var eventsManager: NavigationEventsManager { _eventsManager! }
     
     /**
      The `NavigationService` delegate. Wraps `RouterDelegate` messages.
@@ -204,32 +210,34 @@ public class MapboxNavigationService: NSObject, NavigationService {
         }
     }
     
-    var poorGPSTimer: DispatchTimer!
+    var poorGPSTimer: DispatchTimer { _poorGPSTimer! }
     private var isSimulating: Bool { return simulatedLocationSource != nil }
     private var _simulationSpeedMultiplier: Double = 1.0
     
     /**
      Intializes a new `NavigationService`. Useful convienence initalizer for OBJ-C users, for when you just want to set up a service without customizing anything.
      
-     - parameter route: The route to follow.
-     - parameter routeindex: The index of the route within the original `RouteController` object.
+     - parameter routeResponse: `RouteResponse` object, containing selection of routes to follow.
+     - parameter routeIndex: The index of the route within the original `RouteResponse` object.
+     - parameter routeOptions: The route options used to get the route.
      */
-    convenience init(route: Route, routeIndex: Int, routeOptions options: RouteOptions) {
-        self.init(route: route, routeIndex: routeIndex, routeOptions: options, directions: nil, locationSource: nil, eventsManagerType: nil)
+    convenience init(routeResponse: RouteResponse, routeIndex: Int, routeOptions options: RouteOptions) {
+        self.init(routeResponse: routeResponse, routeIndex: routeIndex, routeOptions: options, directions: nil, locationSource: nil, eventsManagerType: nil)
     }
     
     /**
      Intializes a new `NavigationService`.
      
-     - parameter route: The route to follow.
+     - parameter routeResponse: `RouteResponse` object, containing selection of routes to follow.
      - parameter routeIndex: The index of the route within the original `RouteResponse` object.
-     - parameter directions: The Directions object that created `route`.
+     - parameter routeOptions: The route options used to get the route.
+     - parameter directions: The Directions object that created `route`. If this argument is omitted, the shared value of `NavigationSettings.directions` will be used.
      - parameter locationSource: An optional override for the default `NaviationLocationManager`.
      - parameter eventsManagerType: An optional events manager type to use while tracking the route.
      - parameter simulationMode: The simulation mode desired.
      - parameter routerType: An optional router type to use for traversing the route.
      */
-    required public init(route: Route,
+    required public init(routeResponse: RouteResponse,
                          routeIndex: Int,
                          routeOptions: RouteOptions,
                          directions: Directions? = nil,
@@ -238,22 +246,23 @@ public class MapboxNavigationService: NSObject, NavigationService {
                          simulating simulationMode: SimulationMode = .onPoorGPS,
                          routerType: Router.Type? = nil) {
         nativeLocationSource = locationSource ?? NavigationLocationManager()
-        self.directions = directions ?? Directions.shared
+        self.directions = directions ?? NavigationSettings.shared.directions
         self.simulationMode = simulationMode
         super.init()
         resumeNotifications()
         
-        poorGPSTimer = DispatchTimer(countdown: poorGPSPatience.dispatchInterval)  { [weak self] in
+        _poorGPSTimer = DispatchTimer(countdown: poorGPSPatience.dispatchInterval)  { [weak self] in
             guard let mode = self?.simulationMode, mode == .onPoorGPS else { return }
             self?.simulate(intent: .poorGPS)
         }
         
         let routerType = routerType ?? DefaultRouter.self
-        router = routerType.init(along: route, routeIndex: routeIndex, options: routeOptions, directions: self.directions, dataSource: self)
+        _router = routerType.init(alongRouteAtIndex: routeIndex, in: routeResponse, options: routeOptions, directions: self.directions, dataSource: self)
         NavigationSettings.shared.distanceUnit = routeOptions.locale.usesMetric ? .kilometer : .mile
         
         let eventType = eventsManagerType ?? NavigationEventsManager.self
-        eventsManager = eventType.init(dataSource: self, accessToken: self.directions.credentials.accessToken)
+        _eventsManager = eventType.init(activeNavigationDataSource: self,
+                                        accessToken: self.directions.credentials.accessToken)
         locationManager.activityType = routeOptions.activityType
         bootstrapEvents()
         
@@ -266,7 +275,9 @@ public class MapboxNavigationService: NSObject, NavigationService {
     
     deinit {
         suspendNotifications()
-        endNavigation()
+        eventsManager.withBackupDataSource(self) {
+            endNavigation()
+        }
         nativeLocationSource.delegate = nil
         simulatedLocationSource?.delegate = nil
     }
@@ -305,26 +316,33 @@ public class MapboxNavigationService: NSObject, NavigationService {
         delegate?.navigationService(self, didEndSimulating: progress, becauseOf: intent)
     }
     
-    public var indexedRoute: IndexedRoute {
-        get {
-            return router.indexedRoute
-        }
-        set {
-            router.indexedRoute = newValue
-        }
+    public var route: Route {
+        router.route
     }
     
-    public var route: Route {
-        return indexedRoute.0
+    public var indexedRouteResponse: IndexedRouteResponse {
+        router.indexedRouteResponse
     }
     
     public func start() {
-        // Jump to the first coordinate on the route if the location source does
-        // not yet have a fixed location.
-        if router.location == nil,
-            let coordinate = route.shape?.coordinates.first {
-            let location = CLLocation(coordinate: coordinate, altitude: -1, horizontalAccuracy: -1, verticalAccuracy: -1, course: -1, speed: 0, timestamp: Date())
-            router.locationManager?(nativeLocationSource, didUpdateLocations: [location])
+        // Feed the first location to the router if router doesn't have a location yet. See #1790, #3237 for reference.
+        if router.location == nil {
+            if let currentLocation = locationManager.location {
+                router.locationManager?(nativeLocationSource, didUpdateLocations: [
+                   currentLocation
+                ])
+            }
+            else if let coordinate = route.shape?.coordinates.first { // fallback to simulated location.
+                router.locationManager?(nativeLocationSource, didUpdateLocations: [
+                    CLLocation(coordinate: coordinate,
+                               altitude: -1,
+                               horizontalAccuracy: -1,
+                               verticalAccuracy: -1,
+                               course: -1,
+                               speed: 0,
+                               timestamp: Date())
+                ])
+            }
         }
         
         nativeLocationSource.startUpdatingHeading()
@@ -335,11 +353,10 @@ public class MapboxNavigationService: NSObject, NavigationService {
         }
         
         eventsManager.sendRouteRetrievalEvent()
+        router.delegate = self
     }
     
     public func stop() {
-        
-        MBXAccounts.resetSession()
         
         nativeLocationSource.stopUpdatingHeading()
         nativeLocationSource.stopUpdatingLocation()
@@ -349,6 +366,7 @@ public class MapboxNavigationService: NSObject, NavigationService {
         }
         
         poorGPSTimer.disarm()
+        router.delegate = nil
     }
     
     public func endNavigation(feedback: EndOfRouteFeedback? = nil) {
@@ -356,8 +374,12 @@ public class MapboxNavigationService: NSObject, NavigationService {
         stop()
     }
 
+    public func updateRoute(with indexedRouteResponse: IndexedRouteResponse, routeOptions: RouteOptions?) {
+        router.updateRoute(with: indexedRouteResponse, routeOptions: routeOptions)
+    }
+
     private func bootstrapEvents() {
-        eventsManager.dataSource = self
+        eventsManager.activeNavigationDataSource = self
         eventsManager.resetSession()
     }
 
@@ -397,7 +419,7 @@ extension MapboxNavigationService: CLLocationManagerDelegate {
         if simulationMode == .always, manager != simulatedLocationSource { return }
         
         //update the events manager with the received locations
-        eventsManager.record(locations: locations)
+        eventsManager.record(locations)
         
         //sanity check: make sure the update actually contains a location
         guard let location = locations.last else { return }
@@ -517,34 +539,18 @@ extension MapboxNavigationService: RouterDelegate {
 //MARK: EventsManagerDataSource Logic
 extension MapboxNavigationService {
     public var routeProgress: RouteProgress {
-        return self.router.routeProgress
+        return router.routeProgress
     }
     
     public var desiredAccuracy: CLLocationAccuracy {
-        return self.locationManager.desiredAccuracy
+        return locationManager.desiredAccuracy
     }
 }
 
 //MARK: RouterDataSource
 extension MapboxNavigationService {
-    public var locationProvider: NavigationLocationManager.Type {
+    public var locationManagerType: NavigationLocationManager.Type {
         return type(of: locationManager)
-    }
-}
-
-fileprivate extension NavigationEventsManager {
-    func incrementDistanceTraveled(by distance: CLLocationDistance) {
-        sessionState?.totalDistanceCompleted += distance
-    }
-    
-    func arriveAtWaypoint() {
-        sessionState?.departureTimestamp = nil
-        sessionState?.arrivalTimestamp = nil
-    }
-    
-    func record(locations: [CLLocation]) {
-        guard let state = sessionState else { return }
-        locations.forEach(state.pastLocations.push(_:))
     }
 }
 
@@ -559,7 +565,7 @@ private extension Double {
 private func checkForUpdates() {
     #if TARGET_IPHONE_SIMULATOR
     guard (NSClassFromString("XCTestCase") == nil) else { return } // Short-circuit when running unit tests
-    guard let version = Bundle(for: RouteController.self).object(forInfoDictionaryKey: "CFBundleShortVersionString") else { return }
+    guard let version = Bundle.string(forMapboxCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else { return }
     let latestVersion = String(describing: version)
     _ = URLSession.shared.dataTask(with: URL(string: "https://docs.mapbox.com/ios/navigation/latest_version.txt")!, completionHandler: { (data, response, error) in
         if let _ = error { return }
@@ -579,7 +585,9 @@ private func checkForLocationUsageDescription() {
     guard let _ = Bundle.main.bundleIdentifier else {
         return
     }
-    if Bundle.main.locationAlwaysUsageDescription == nil && Bundle.main.locationWhenInUseUsageDescription == nil && Bundle.main.locationAlwaysAndWhenInUseUsageDescription == nil {
-        preconditionFailure("This application’s Info.plist file must include a NSLocationWhenInUseUsageDescription. See https://developer.apple.com/documentation/corelocation for more information.")
+    if Bundle.main.locationWhenInUseUsageDescription == nil && Bundle.main.locationAlwaysAndWhenInUseUsageDescription == nil {
+        if UserDefaults.standard.object(forKey: "NSLocationWhenInUseUsageDescription") == nil && UserDefaults.standard.object(forKey: "NSLocationAlwaysAndWhenInUseUsageDescription") == nil {
+                    preconditionFailure("This application’s Info.plist file must include a NSLocationWhenInUseUsageDescription. See https://developer.apple.com/documentation/corelocation for more information.")
+        }
     }
 }

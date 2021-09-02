@@ -1,71 +1,123 @@
-#if canImport(MapboxGeocoder)
 import Foundation
-import MapboxGeocoder
 import CarPlay
 
-struct RecentItem: Codable, Equatable {
-    static func ==(lhs: RecentItem, rhs: RecentItem) -> Bool {
-        return lhs.timestamp == rhs.timestamp && lhs.geocodedPlacemark == rhs.geocodedPlacemark
-    }
+/**
+ Struct, which represents recently found search item on CarPlay. When storing recent items in an array
+ use dedicated methods for addition: `[RecentItem].add(_:)`, and removal: `[RecentItem].remove(_:)`.
+ */
+public struct RecentItem: Equatable, Codable {
     
+    /**
+     Property, which contains information regarding geocoder result.
+     */
+    public private(set) var navigationGeocodedPlacemark: NavigationGeocodedPlacemark
+
     var timestamp: Date
-    var geocodedPlacemark: GeocodedPlacemark
     
-    static let persistenceKey = "RecentItems"
-    
-    static var filePathUrl: URL {
+    static var recentItemsPathURL: URL? {
         get {
-            let documents = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]
-            let url = URL(fileURLWithPath: documents)
-            return url.appendingPathComponent(persistenceKey.appending(".data"))
+            guard let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true) else {
+                return nil
+            }
+            
+            return documentsDirectory.appendingPathComponent("RecentItems.data")
         }
     }
     
-    static func loadDefaults() -> [RecentItem] {
-        let data = try? Data(contentsOf: RecentItem.filePathUrl)
-        let decoder = JSONDecoder()
-        if let data = data, let recentItems = try? decoder.decode([RecentItem].self, from: data) {
-            return recentItems.sorted(by: { $0.timestamp > $1.timestamp })
-        }
-        
-        return [RecentItem]()
-    }
-    
-    init(_ geocodedPlacemark: GeocodedPlacemark) {
-        self.geocodedPlacemark = geocodedPlacemark
+    /**
+     Initializes a newly created `RecentItem` instance, with a geocoded data stored in
+     `NavigationGeocodedPlacemark`.
+     
+     - parameter navigationGeocodedPlacemark: A `NavigationGeocodedPlacemark` instance, which contains
+     information regarding geocoder result.
+     */
+    public init(_ navigationGeocodedPlacemark: NavigationGeocodedPlacemark) {
+        self.navigationGeocodedPlacemark = navigationGeocodedPlacemark
         self.timestamp = Date()
     }
+
+    /**
+     Loads a list of `RecentItem`s, which is serialized into a file stored in `recentItemsPathURL`.
+     */
+    public static func loadDefaults() -> [RecentItem] {
+        guard let recentItemsPathURL = RecentItem.recentItemsPathURL else { return [] }
+        
+        do {
+            let data = try Data(contentsOf: recentItemsPathURL)
+            let recentItems = try JSONDecoder().decode([RecentItem].self, from: data)
+            
+            return recentItems.sorted(by: { $0.timestamp > $1.timestamp })
+        } catch {
+            NSLog("Failed to load recent items with error: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /**
+     Method, which allows to verify, whether current `RecentItem` instance contains data, which is
+     similar to data provided in `searchText` parameter.
+     
+     - parameter searchText: Text, which will be used for performing search.
+     */
+    public func matches(_ searchText: String) -> Bool {
+        return navigationGeocodedPlacemark.title.contains(searchText) ||
+            navigationGeocodedPlacemark.subtitle?.contains(searchText) ?? false
+    }
     
-    func matches(_ searchText: String) -> Bool {
-        return geocodedPlacemark.formattedName.contains(searchText) || geocodedPlacemark.address?.contains(searchText) ?? false
+    public static func ==(lhs: RecentItem, rhs: RecentItem) -> Bool {
+        return lhs.timestamp == rhs.timestamp &&
+            lhs.navigationGeocodedPlacemark == rhs.navigationGeocodedPlacemark
     }
 }
 
 extension Array where Element == RecentItem {
-    func save() {
-        let encoder = JSONEncoder()
-        let data = try? encoder.encode(self)
-        (try? data?.write(to: RecentItem.filePathUrl)) as ()??
+    
+    /**
+     Saves an array of `RecentItem`s to a file at the path specified by `recentItemsPathURL`.
+     */
+    @discardableResult public func save() -> Bool {
+        guard let recentItemsPathURL = RecentItem.recentItemsPathURL else { return false }
+        
+        do {
+            let data = try JSONEncoder().encode(self)
+            try data.write(to: recentItemsPathURL)
+        } catch {
+            NSLog("Failed to save recent items with error: \(error.localizedDescription)")
+            return false
+        }
+        
+        return true
     }
     
-    mutating func add(_ recentItem: RecentItem) {
-        let existing = lazy.filter { $0.geocodedPlacemark == recentItem.geocodedPlacemark }.first
-        
-        guard let alreadyExisting = existing else {
+    /**
+     Adds a recent item to the collection. If a similar recent item is already in the collection, this method updates the `timestamp` of that item instead of adding a redundant item.
+     
+     - parameter recentItem: A recent item to add to the collection.
+     */
+    public mutating func add(_ recentItem: RecentItem) {
+        let existingNavigationGeocodedPlacemark = lazy.filter {
+            $0.navigationGeocodedPlacemark == recentItem.navigationGeocodedPlacemark
+        }.first
+
+        guard let validNavigationGeocodedPlacemark = existingNavigationGeocodedPlacemark else {
             insert(recentItem, at: 0)
             return
         }
-        
-        var updated = alreadyExisting
-        updated.timestamp = Date()
-        remove(alreadyExisting)
-        add(updated)
+
+        var updatedNavigationGeocodedPlacemark = validNavigationGeocodedPlacemark
+        updatedNavigationGeocodedPlacemark.timestamp = Date()
+        remove(validNavigationGeocodedPlacemark)
+        add(updatedNavigationGeocodedPlacemark)
     }
     
-    mutating func remove(_ recentItem: RecentItem) {
+    /**
+     Removes the first matching recent item from the collection.
+     
+     - parameter recentItem: A recent item to remove from the collection.
+     */
+    public mutating func remove(_ recentItem: RecentItem) {
         if let index = firstIndex(of: recentItem) {
             remove(at: index)
         }
     }
 }
-#endif

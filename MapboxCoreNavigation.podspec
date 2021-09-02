@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   # ―――  Spec Metadata  ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
   s.name = "MapboxCoreNavigation"
-  s.version = '1.4.0'
+  s.version = '2.0.0-beta.24'
   s.summary = "Core components for turn-by-turn navigation on iOS."
 
   s.description  = <<-DESC
@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
 
   # ―――  Spec License  ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
-  s.license = { :type => "ISC", :file => "LICENSE.md" }
+  s.license = { :type => "Mapbox Terms of Service", :file => "LICENSE.md" }
 
   # ――― Author Metadata  ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
@@ -24,12 +24,13 @@ Pod::Spec.new do |s|
 
   # ――― Platform Specifics ――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
-  s.ios.deployment_target = "10.0"
+  s.ios.deployment_target = "11.0"
 
 
   # ――― Source Location ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
-  s.source = { :git => "https://github.com/UhSpot/mapbox-navigation-ios.git", :tag => "v#{s.version.to_s}" }
+  s.source = { :git => "https://github.com/mapbox/mapbox-navigation-ios.git", :tag => "v#{s.version.to_s}" }
+
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
   s.source_files = "Sources/{MapboxCoreNavigation,CMapboxCoreNavigation/include}/**/*.{h,m,swift}"
@@ -39,11 +40,10 @@ Pod::Spec.new do |s|
   s.requires_arc = true
   s.module_name = "MapboxCoreNavigation"
 
-  s.dependency "MapboxNavigationNative", "~> 32.0"
-  s.dependency "MapboxAccounts", "~> 2.3.0"
-  s.dependency "MapboxDirections", "~> 1.2.0"
-  s.dependency "MapboxMobileEvents", "~> 0.10.2" # Always specify a patch release if pre-v1.0
-  s.dependency "Turf", "~> 1.0"
+  s.dependency "MapboxNavigationNative", "~> 64.0"
+  s.dependency "MapboxDirections-pre", "2.0.0-beta.8"
+  s.dependency "MapboxMobileEvents", "~> 1.0.0" # Always specify a patch release if pre-v1.0
+  s.dependency "Turf", "2.0.0-rc.1"
 
   s.swift_version = "5.0"
 end

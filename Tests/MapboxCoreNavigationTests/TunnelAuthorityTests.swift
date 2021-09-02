@@ -3,7 +3,6 @@ import Turf
 import Polyline
 import MapKit
 import MapboxDirections
-#if !SWIFT_PACKAGE
 @testable import TestHelper
 @testable import MapboxCoreNavigation
 
@@ -20,11 +19,11 @@ var tunnelRoute: Route {
     return tunnelResponse.routes!.first!
 }
 
-class TunnelAuthorityTests: XCTestCase {
+class TunnelAuthorityTests: TestCase {
     lazy var locationManager = NavigationLocationManager()
     
     func testUserWithinTunnelEntranceRadius() {
-        let routeProgress = RouteProgress(route: tunnelRoute, routeIndex: 0, options: tunnelOptions)
+        let routeProgress = RouteProgress(route: tunnelRoute, options: tunnelOptions)
         
         // Mock location move to first coordinate on tunnel route
         let firstCoordinate = tunnelRoute.shape!.coordinates.first!
@@ -84,4 +83,3 @@ class TunnelAuthorityTests: XCTestCase {
         XCTAssertTrue(betweenTunnels, "Answer should be true, we are between two tunnels")
     }
 }
-#endif

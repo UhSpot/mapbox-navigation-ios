@@ -1,11 +1,11 @@
-/* Delimiter between lines in an address when displayed inline */
-"ADDRESS_LINE_SEPARATOR" = ", ";
-
 /* Title on arrival action sheet */
 "CARPLAY_ARRIVED" = "Ви прибули";
 
 /* Message on arrival action sheet */
 "CARPLAY_ARRIVED_MESSAGE" = "Що ви хотіли б зробити?";
+
+/* Title on continue button in CarPlay */
+"CARPLAY_CONTINUE" = "Продовжити";
 
 /* Name of the waypoint associated with the current location */
 "CARPLAY_CURRENT_LOCATION" = "Поточне місцезнаходження";
@@ -39,9 +39,6 @@
 
 /* Title on rate button in CarPlay */
 "CARPLAY_RATE_TRIP" = "Оцініть вашу подорож";
-
-/* Message when search returned zero results in CarPlay */
-"CARPLAY_SEARCH_NO_RESULTS" = "Результати відсутні";
 
 /* Alert title that shows when feedback has been submitted */
 "CARPLAY_SUBMITTED_FEEDBACK" = "Надіслано";
@@ -167,10 +164,10 @@
 "ROAD_CLOSURE_OTHER_FEEDBACK" = "Інше";
 
 /* This route does not have tolls */
-"ROUTE_HAS_NO_TOLLS" = "No Tolls";
+"ROUTE_HAS_NO_TOLLS" = "Проїзд бесплатний";
 
 /* This route does have tolls */
-"ROUTE_HAS_TOLLS" = "Tolls";
+"ROUTE_HAS_TOLLS" = "Проїзд платний";
 
 /* Specific route feedback that user was offered an alternative that was unexpected. */
 "ROUTE_QUALITY_ALTERNATIVE_ROUTE_NOT_EXPECTED_FEEDBACK" = "Неочікуваний альтернативний маршрут";

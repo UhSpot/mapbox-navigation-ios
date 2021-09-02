@@ -5,11 +5,6 @@ import Polyline
 import MapboxMobileEvents
 import Turf
 
-protocol RouteControllerDataSource: class {
-    var location: CLLocation? { get }
-    var locationProvider: NavigationLocationManager.Type { get }
-}
-
 @available(*, deprecated, renamed: "RouteController")
 open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationManagerDelegate {
     
@@ -56,19 +51,21 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
             movementsAwayFromRoute = 0
         }
     }
-    
-    public var indexedRoute: IndexedRoute {
-        get {
-            return routeProgress.indexedRoute
+
+    public func updateRoute(with indexedRouteResponse: IndexedRouteResponse, routeOptions: RouteOptions?) {
+        guard let routes = indexedRouteResponse.routeResponse.routes, routes.count > indexedRouteResponse.routeIndex else {
+            preconditionFailure("`indexedRouteResponse` does not contain route for index `\(indexedRouteResponse.routeIndex)` when updating route.")
         }
-        set {
-            routeProgress.indexedRoute = newValue
-        }
+        let routeOptions = routeOptions ?? routeProgress.routeOptions
+        routeProgress = RouteProgress(route: routes[indexedRouteResponse.routeIndex], options: routeOptions)
+        self.indexedRouteResponse = indexedRouteResponse
     }
     
     public var route: Route {
-        return indexedRoute.0
+        routeProgress.route
     }
+    
+    public internal(set) var indexedRouteResponse: IndexedRouteResponse
 
     var isRerouting = false
     var isRefreshing = false
@@ -87,9 +84,10 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
 
     var userSnapToStepDistanceFromManeuver: CLLocationDistance?
     
-    required public init(along route: Route, routeIndex: Int, options: RouteOptions, directions: Directions = Directions.shared, dataSource source: RouterDataSource) {
+    required public init(alongRouteAtIndex routeIndex: Int, in routeResponse: RouteResponse, options: RouteOptions, directions: Directions = NavigationSettings.shared.directions, dataSource source: RouterDataSource) {
         self.directions = directions
-        self._routeProgress = RouteProgress(route: route, routeIndex: routeIndex, options: options)
+        self.indexedRouteResponse = .init(routeResponse: routeResponse, routeIndex: routeIndex)
+        self._routeProgress = RouteProgress(route: routeResponse.routes![routeIndex], options: options)
         self.dataSource = source
         self.refreshesRoute = options.profileIdentifier == .automobileAvoidingTraffic && options.refreshingEnabled
         UIDevice.current.isBatteryMonitoringEnabled = true
@@ -371,13 +369,10 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
                  ])
                  return
             case let .success(response):
-                guard case let .route(options) = response.options, let route = response.routes?.first else {
+                guard case let .route(options) = response.options, !(response.routes?.isEmpty ?? true) else {
                     return
                 }
-                strongSelf.indexedRoute = (route, 0) // unconditionally getting the first route above
-                strongSelf._routeProgress = RouteProgress(route: route, routeIndex: 0, options: options, legIndex: 0)
-                strongSelf._routeProgress.currentLegProgress.stepIndex = 0
-                strongSelf.announce(reroute: route, at: location, proactive: false)
+                strongSelf.updateRoute(with: .init(routeResponse: response, routeIndex: 0), routeOptions: options) // unconditionally getting the first route above
             }
         }
     }
@@ -385,7 +380,7 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
     private func checkForUpdates() {
         #if TARGET_IPHONE_SIMULATOR
         guard (NSClassFromString("XCTestCase") == nil) else { return } // Short-circuit when running unit tests
-            guard let version = Bundle(for: RouteController.self).object(forInfoDictionaryKey: "CFBundleShortVersionString") else { return }
+        guard let version = Bundle.string(forMapboxCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else { return }
             let latestVersion = String(describing: version)
             _ = URLSession.shared.dataTask(with: URL(string: "https://docs.mapbox.com/ios/navigation/latest_version.txt")!, completionHandler: { (data, response, error) in
                 if let _ = error { return }
@@ -405,8 +400,10 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
         guard let _ = Bundle.main.bundleIdentifier else {
             return
         }
-        if Bundle.main.locationAlwaysUsageDescription == nil && Bundle.main.locationWhenInUseUsageDescription == nil && Bundle.main.locationAlwaysAndWhenInUseUsageDescription == nil {
-            preconditionFailure("This application’s Info.plist file must include a NSLocationWhenInUseUsageDescription. See https://developer.apple.com/documentation/corelocation for more information.")
+        if Bundle.main.locationWhenInUseUsageDescription == nil && Bundle.main.locationAlwaysAndWhenInUseUsageDescription == nil {
+            if UserDefaults.standard.object(forKey: "NSLocationWhenInUseUsageDescription") == nil && UserDefaults.standard.object(forKey: "NSLocationAlwaysAndWhenInUseUsageDescription") == nil {
+                        preconditionFailure("This application’s Info.plist file must include a NSLocationWhenInUseUsageDescription. See https://developer.apple.com/documentation/corelocation for more information.")
+            }
         }
     }
 
@@ -569,20 +566,5 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
         set {
             fatalError()
         }
-    }
-    
-    /// Required through `Router` protocol. No-op
-    public func enableLocationRecording() {
-        // no-op
-    }
-    /// Required through `Router` protocol. No-op
-
-    public func disableLocationRecording() {
-        // no-op
-    }
-    
-    /// Required through `Router` protocol. No-op
-    public func locationHistory() -> String? {
-        return nil
     }
 }

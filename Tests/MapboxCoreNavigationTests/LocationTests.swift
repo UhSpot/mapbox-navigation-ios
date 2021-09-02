@@ -1,12 +1,11 @@
 import XCTest
 import CoreLocation
 @testable import MapboxCoreNavigation
-#if !SWIFT_PACKAGE
 @testable import TestHelper
 
-class LocationTests: XCTestCase {
+class LocationTests: TestCase {
     var setup: (progress: RouteProgress, firstLocation: CLLocation) {
-        let progress = RouteProgress(route: route, routeIndex: 0, options: routeOptions)
+        let progress = RouteProgress(route: route, options: routeOptions)
         let firstCoord = progress.nearbyShape.coordinates.first!
         let firstLocation = CLLocation(latitude: firstCoord.latitude, longitude: firstCoord.longitude)
         
@@ -73,4 +72,3 @@ class LocationTests: XCTestCase {
         XCTAssertFalse(differentCourseAndAccurateLocation.shouldSnap(toRouteWith: initialHeadingOnFirstStep), "Should not snap when user course is different, the location is accurate and moving")
     }
 }
-#endif

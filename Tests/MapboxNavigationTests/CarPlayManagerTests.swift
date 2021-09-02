@@ -2,16 +2,17 @@ import XCTest
 import MapboxCoreNavigation
 import MapboxDirections
 import MapboxMobileEvents
+import CarPlay
+import MapboxMaps
+import CarPlayTestHelper
 @testable import TestHelper
 @testable import MapboxNavigation
-
-import CarPlay
 
 // For some reason XCTest bundles ignore @available annotations and these tests are run on iOS < 12 :(
 // This is a bug in XCTest which will hopefully get fixed in an upcoming release.
 
 @available(iOS 12.0, *)
-class CarPlayManagerTests: XCTestCase {
+class CarPlayManagerTests: TestCase {
     var manager: CarPlayManager?
     var searchController: CarPlaySearchController?
     var eventsManagerSpy: NavigationEventsManagerSpy?
@@ -19,7 +20,7 @@ class CarPlayManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         eventsManagerSpy = NavigationEventsManagerSpy()
-        manager = CarPlayManager(eventsManager: eventsManagerSpy, navigationViewControllerClass: CarPlayNavigationViewControllerTestable.self)
+        manager = CarPlayManager(eventsManager: eventsManagerSpy, carPlayNavigationViewControllerClass: CarPlayNavigationViewControllerTestable.self)
         searchController = CarPlaySearchController()
     }
 
@@ -30,16 +31,13 @@ class CarPlayManagerTests: XCTestCase {
     }
 
     func simulateCarPlayDisconnection() {
-        let fakeInterfaceController = FakeCPInterfaceController(#function)
+        let fakeInterfaceController = FakeCPInterfaceController(context: #function)
         let fakeWindow = CPWindow()
 
         manager!.application(UIApplication.shared, didDisconnectCarInterfaceController: fakeInterfaceController, from: fakeWindow)
     }
 
     func testEventsEnqueuedAndFlushedWhenCarPlayConnected() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-
         simulateCarPlayConnection(manager!)
 
         let expectedEventName = MMEventTypeNavigationCarplayConnect
@@ -50,9 +48,6 @@ class CarPlayManagerTests: XCTestCase {
     }
 
     func testEventsEnqueuedAndFlushedWhenCarPlayDisconnected() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-
         simulateCarPlayDisconnection()
 
         let expectedEventName = MMEventTypeNavigationCarplayDisconnect
@@ -63,9 +58,6 @@ class CarPlayManagerTests: XCTestCase {
     // MARK: Upon connecting to CarPlay, window and interfaceController should be set up correctly
 
     func testWindowAndIntefaceControllerAreSetUpWithSearchWhenConnected() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-        
         let exampleDelegate = TestCarPlayManagerDelegate()
         let searchDelegate = TestCarPlaySearchControllerDelegate()
         let searchButtonHandler: ((CPBarButton) -> Void) = { _ in self.manager!.interfaceController!.pushTemplate(CPSearchTemplate(), animated: true)}
@@ -98,9 +90,6 @@ class CarPlayManagerTests: XCTestCase {
     }
 
     func testManagerAsksDelegateForLeadingAndTrailingBarButtonsIfAvailable() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-
         let exampleDelegate = TestCarPlayManagerDelegate()
         exampleDelegate.leadingBarButtons = [CPBarButton(type: .text), CPBarButton(type: .text)]
         exampleDelegate.trailingBarButtons = [CPBarButton(type: .image), CPBarButton(type: .image)]
@@ -120,9 +109,6 @@ class CarPlayManagerTests: XCTestCase {
     }
     
     func testManagerAsksDelegateForLeadingAndTrailingBarButtonsIfNotAvailable() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-        
         simulateCarPlayConnection(manager!)
         
         guard let fakeInterfaceController = manager?.interfaceController else {
@@ -136,9 +122,6 @@ class CarPlayManagerTests: XCTestCase {
     }
 
     func testManagerAsksDelegateForMapButtonsIfAvailable() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-
         let exampleDelegate = TestCarPlayManagerDelegate()
         exampleDelegate.mapButtons = [CPMapButton()]
 
@@ -156,9 +139,6 @@ class CarPlayManagerTests: XCTestCase {
     }
     
     func testManagerAsksDelegateForMapButtonsIfNotAvailable() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-        
         simulateCarPlayConnection(manager!)
         
         guard let fakeInterfaceController = manager?.interfaceController else {
@@ -171,9 +151,6 @@ class CarPlayManagerTests: XCTestCase {
     }
 
     func testManagerTellsDelegateWhenNavigationStartsAndEndsDueToArrival() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
-
         guard let manager = manager else {
             XCTFail("Won't continue without a test subject...")
             return
@@ -198,8 +175,8 @@ class CarPlayManagerTests: XCTestCase {
             CLLocationCoordinate2D(latitude: 37.764793, longitude: -122.463161),
             CLLocationCoordinate2D(latitude: 34.054081, longitude: -118.243412),
         ])
-        choice.userInfo = (Fixture.route(from: "route-with-banner-instructions", options: options), 0, options)
-
+        choice.userInfo = (Fixture.routeResponse(from: "route-with-banner-instructions", options: options), 0, options)
+        CarPlayMapViewController.swizzleMethods()
         manager.mapTemplate(mapTemplate, startedTrip: CPTrip(origin: MKMapItem(), destination: MKMapItem(), routeChoices: [choice]), using: choice)
 
         // trip previews are hidden on the mapTemplate
@@ -207,12 +184,13 @@ class CarPlayManagerTests: XCTestCase {
         // a navigation session is started on the mapTemplate
         // a CarPlayNavigationViewController is presented (why?)
 
-        // the CarPlayNavigationDelegate is notified
+        // the CarPlayNavigationViewControllerDelegate is notified
         XCTAssertTrue(exampleDelegate.navigationInitiated, "The CarPlayManagerDelegate should have been told that navigation was initiated.")
 
-        manager.currentNavigator!.exitNavigation(byCanceling: true)
+        manager.carPlayNavigationViewController!.exitNavigation(byCanceling: true)
 
         XCTAssertTrue(exampleDelegate.navigationEnded, "The CarPlayManagerDelegate should have been told that navigation ended.")
+        CarPlayMapViewController.unswizzleMethods()
     }
     
     func testRouteFailure() {
@@ -240,7 +218,7 @@ class CarPlayManagerTests: XCTestCase {
         }
         
         let expectation = XCTestExpectation(description: "Ensuring Spy is called")
-        let spy = DirectionsInvocationSpy()
+        let spy = DirectionsInvocationSpy(credentials: .mocked)
         spy.payload = expectation.fulfill
         
         let subject = CarPlayManager(directions: spy)
@@ -274,12 +252,11 @@ import Nimble
 @available(iOS 12.0, *)
 class CarPlayManagerSpec: QuickSpec {
     override func spec() {
-        // NOTE: Xcode is going to complain here - ignore. This is a known XCTest bug.
-        guard #available(iOS 12, *) else { return }
         var manager: CarPlayManager?
         var delegate: TestCarPlayManagerDelegate?
 
         beforeEach {
+            CarPlayMapViewController.swizzleMethods()
             let directionsSpy = DirectionsSpy()
             manager = CarPlayManager(styles: nil, directions: directionsSpy, eventsManager: nil)
             delegate = TestCarPlayManagerDelegate()
@@ -288,8 +265,14 @@ class CarPlayManagerSpec: QuickSpec {
             simulateCarPlayConnection(manager!)
         }
 
+        afterEach {
+            CarPlayMapViewController.unswizzleMethods()
+        }
+
         //MARK: Previewing Routes
-        describe("Previewing routes", {
+        describe("Previewing routes") {
+            // Fails on older iOS versions with "Unsupported object MapTemplateSpy"
+            guard #available(iOS 14, *) else { return }
             beforeEach {
                 manager!.mapTemplateProvider = MapTemplateSpyProvider()
             }
@@ -308,7 +291,7 @@ class CarPlayManagerSpec: QuickSpec {
                 directionsSpy.fireLastCalculateCompletion(with: waypoints, routes: [route], error: nil)
             }
 
-            context("when the trip is not customized by the developer", {
+            context("when the trip is not customized by the developer") {
                 beforeEach {
                     previewRoutesAction()
                 }
@@ -321,9 +304,9 @@ class CarPlayManagerSpec: QuickSpec {
                     let expectedStartButtonTitle = NSLocalizedString("CARPLAY_GO", bundle: .mapboxNavigation, value: "Go", comment: "Title for start button in CPTripPreviewTextConfiguration")
                     expect(mapTemplateSpy.currentPreviewTextConfiguration?.startButtonTitle).to(equal(expectedStartButtonTitle))
                 }
-            })
+            }
             
-            context("when the delegate provides a custom trip", {
+            context("when the delegate provides a custom trip") {
                 var customTrip: CPTrip!
 
                 beforeEach {
@@ -342,9 +325,9 @@ class CarPlayManagerSpec: QuickSpec {
                     expect(mapTemplateSpy.currentTripPreviews).to(contain(customTrip))
                     expect(mapTemplateSpy.currentPreviewTextConfiguration).toNot(beNil())
                 }
-            })
+            }
             
-            context("when the delegate provides a custom trip preview text", {
+            context("when the delegate provides a custom trip preview text") {
                 var customTripPreviewTextConfiguration: CPTripPreviewTextConfiguration!
                 let customStartButtonTitleText = "Let's roll"
                 
@@ -364,11 +347,11 @@ class CarPlayManagerSpec: QuickSpec {
                     expect(mapTemplateSpy.currentTripPreviews).toNot(beEmpty())
                     expect(mapTemplateSpy.currentPreviewTextConfiguration?.startButtonTitle).to(equal(customStartButtonTitleText))
                 }
-            })
-        })
+            }
+        }
         
         //MARK: Starting a Trip
-        describe("Starting a trip", {
+        describe("Starting a trip") {
             let action = {
                 let fakeTemplate = CPMapTemplate()
                 let fakeRouteChoice = CPRouteChoice(summaryVariants: ["summary1"], additionalInformationVariants: ["addl1"], selectionSummaryVariants: ["selection1"])
@@ -376,7 +359,7 @@ class CarPlayManagerSpec: QuickSpec {
                     CLLocationCoordinate2D(latitude: 37.764793, longitude: -122.463161),
                     CLLocationCoordinate2D(latitude: 34.054081, longitude: -118.243412),
                 ])
-                fakeRouteChoice.userInfo = (Fixture.route(from: "route-with-banner-instructions", options: options), 0, options)
+                fakeRouteChoice.userInfo = (Fixture.routeResponse(from: "route-with-banner-instructions", options: options), 0, options)
                 let fakeTrip = CPTrip(origin: MKMapItem(), destination: MKMapItem(), routeChoices: [fakeRouteChoice])
 
                 //simulate starting a fake trip
@@ -385,7 +368,7 @@ class CarPlayManagerSpec: QuickSpec {
                 service.start()
             }
 
-            context("When configured to simulate", {
+            context("When configured to simulate") {
                 beforeEach {
                     manager!.simulatesLocations = true
                     manager!.simulatedSpeedMultiplier = 5.0
@@ -400,9 +383,9 @@ class CarPlayManagerSpec: QuickSpec {
                     expect(service.simulationMode).to(equal(.always))
                     expect(service.simulationSpeedMultiplier).to(equal(5.0))
                 }
-            })
+            }
 
-            context("When configured not to simulate", {
+            context("When configured not to simulate") {
                 beforeEach {
                     manager!.simulatesLocations = false
                 }
@@ -415,19 +398,19 @@ class CarPlayManagerSpec: QuickSpec {
 
                     expect(service.simulationMode).to(equal(.onPoorGPS))
                 }
-            })
-        })
+            }
+        }
     }
 
     private class CustomTripPreviewDelegate: CarPlayManagerDelegate {
         var customTripPreviewTextConfiguration: CPTripPreviewTextConfiguration?
         var customTrip: CPTrip?
 
-        func carPlayManager(_ carPlayManager: CarPlayManager, willPreview trip: CPTrip) -> (CPTrip) {
+        func carPlayManager(_ carPlayManager: CarPlayManager, willPreview trip: CPTrip) -> CPTrip {
             return customTrip ?? trip
         }
 
-        func carPlayManager(_ carPlayManager: CarPlayManager, willPreview trip: CPTrip, with previewTextConfiguration: CPTripPreviewTextConfiguration) -> (CPTripPreviewTextConfiguration) {
+        func carPlayManager(_ carPlayManager: CarPlayManager, willPreview trip: CPTrip, with previewTextConfiguration: CPTripPreviewTextConfiguration) -> CPTripPreviewTextConfiguration {
             return customTripPreviewTextConfiguration ?? previewTextConfiguration
         }
 
@@ -440,231 +423,52 @@ class CarPlayManagerSpec: QuickSpec {
         }
         
         //TODO: ADD OPTIONS TO THIS DELEGATE METHOD
-        func carPlayManager(_ carPlayManager: CarPlayManager, navigationServiceAlong route: Route, routeIndex: Int, routeOptions: RouteOptions, desiredSimulationMode: SimulationMode) -> NavigationService {
-            let directionsFake = Directions(credentials: Fixture.credentials)
-            return MapboxNavigationService(route: route, routeIndex: routeIndex, routeOptions: routeOptions, directions: directionsFake, simulating: desiredSimulationMode)
+        func carPlayManager(_ carPlayManager: CarPlayManager, navigationServiceFor routeResponse: RouteResponse, routeIndex: Int, routeOptions: RouteOptions, desiredSimulationMode: SimulationMode) -> NavigationService? {
+            return MapboxNavigationService(routeResponse: routeResponse, routeIndex: routeIndex, routeOptions: routeOptions, simulating: desiredSimulationMode)
         }
 
         func carPlayManager(_ carPlayManager: CarPlayManager, didPresent navigationViewController: CarPlayNavigationViewController) {
             //no-op
         }
-    }
-}
 
-//MARK: -
-//MARK: Test Helper Methods
-
-@available(iOS 12.0, *)
-func simulateCarPlayConnection(_ manager: CarPlayManager) {
-    let fakeInterfaceController = FakeCPInterfaceController(#function)
-    let fakeWindow = CPWindow()
-    
-    manager.application(UIApplication.shared, didConnectCarInterfaceController: fakeInterfaceController, to: fakeWindow)
-    if let mapViewController = manager.carWindow?.rootViewController?.view {
-        manager.carWindow?.addSubview(mapViewController)
+        func carPlayManager(_ carPlayManager: CarPlayManager, shouldPresentArrivalUIFor waypoint: Waypoint) -> Bool {
+            true
+        }
     }
 }
 
 @available(iOS 12.0, *)
-class CarPlayManagerFailureDelegateSpy: CarPlayManagerDelegate {
-    private(set) var recievedError: DirectionsError?
-    
-    @available(iOS 12.0, *)
-    func carPlayManager(_ carPlayManager: CarPlayManager, didFailToFetchRouteBetween waypoints: [Waypoint]?, options: RouteOptions, error: DirectionsError) -> CPNavigationAlert? {
-        recievedError = error
-        return nil
-    }
-    
-    func carPlayManager(_ carPlayManager: CarPlayManager, navigationServiceAlong route: Route, routeIndex: Int, routeOptions: RouteOptions, desiredSimulationMode: SimulationMode) -> NavigationService {
-        fatalError("This is an empty stub.")
-    }
-    
-    func carPlayManager(_ carPlayManager: CarPlayManager, didBeginNavigationWith service: NavigationService) {
-        fatalError("This is an empty stub.")
-    }
-    
-    func carPlayManagerDidEndNavigation(_ carPlayManager: CarPlayManager) {
-        fatalError("This is an empty stub.")
+extension CarPlayMapViewController {
+    private static var presentedViewControllers: [UIViewController] = []
+    private static var swizzled: Bool = false
+
+    static func swizzleMethods() {
+        guard !swizzled else { return }
+        swizzled = true
+        swapMethodsForSwizzling()
     }
 
-    func carPlayManager(_ carPlayManager: CarPlayManager, didPresent navigationViewController: CarPlayNavigationViewController) {
-        fatalError("This is an empty stub.")
-    }
-}
-
-//MARK: Test Objects / Classes.
-
-@available(iOS 12.0, *)
-class TestCarPlayManagerDelegate: CarPlayManagerDelegate {
-    public fileprivate(set) var navigationInitiated = false
-    public fileprivate(set) var currentService: NavigationService?
-    public fileprivate(set) var navigationEnded = false
-    
-    public var interfaceController: CPInterfaceController?
-    public var searchController: CarPlaySearchController?
-    public var leadingBarButtons: [CPBarButton]?
-    public var trailingBarButtons: [CPBarButton]?
-    public var mapButtons: [CPMapButton]?
-
-    func carPlayManager(_ carPlayManager: CarPlayManager, navigationServiceAlong route: Route, routeIndex: Int, routeOptions: RouteOptions, desiredSimulationMode: SimulationMode) -> NavigationService {
-        let response = Fixture.routeResponse(from: jsonFileName, options: routeOptions)
-        let initialRoute = response.routes!.first!
-        let directionsClientSpy = DirectionsSpy()
-        let service = MapboxNavigationService(route: initialRoute, routeIndex: 0, routeOptions: routeOptions, directions: directionsClientSpy, locationSource: NavigationLocationManager(), eventsManagerType: NavigationEventsManagerSpy.self, simulating: desiredSimulationMode)
-        return service
+    static func unswizzleMethods() {
+        guard swizzled else { return }
+        swizzled = false
+        swapMethodsForSwizzling()
     }
 
-    func carPlayManager(_ carPlayManager: CarPlayManager, leadingNavigationBarButtonsCompatibleWith traitCollection: UITraitCollection, in: CPTemplate, for activity: CarPlayActivity) -> [CPBarButton]? {
-        return leadingBarButtons
+    private static func swapMethodsForSwizzling() {
+        method_exchangeImplementations(
+            class_getInstanceMethod(CarPlayMapViewController.self,
+                                    #selector(CarPlayMapViewController.present(_:animated:completion:)))!,
+            class_getInstanceMethod(CarPlayMapViewController.self,
+                                    #selector(CarPlayMapViewController.swizzled_present(_:animated:completion:)))!
+        )
     }
 
-    func carPlayManager(_ carPlayManager: CarPlayManager, trailingNavigationBarButtonsCompatibleWith traitCollection: UITraitCollection, in: CPTemplate, for activity: CarPlayActivity) -> [CPBarButton]? {
-        return trailingBarButtons
-    }
-
-    func carPlayManager(_ carPlayManager: CarPlayManager, mapButtonsCompatibleWith traitCollection: UITraitCollection, in template: CPTemplate, for activity: CarPlayActivity) -> [CPMapButton]? {
-        return mapButtons
-    }
-
-    func carPlayManager(_ carPlayManager: CarPlayManager, didBeginNavigationWith service: NavigationService) {
-        XCTAssertFalse(navigationInitiated)
-        navigationInitiated = true
-        currentService = service
-    }
-
-    func carPlayManagerDidEndNavigation(_ carPlayManager: CarPlayManager) {
-        XCTAssertTrue(navigationInitiated)
-        navigationEnded = true
-        currentService = nil
-    }
-
-    func carPlayManager(_ carPlayManager: CarPlayManager, didPresent navigationViewController: CarPlayNavigationViewController) {
-        XCTAssertTrue(navigationInitiated)
-    }
-}
-
-@available(iOS 12.0, *)
-class CarPlayNavigationViewControllerTestable: CarPlayNavigationViewController {
-    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+    @objc private func swizzled_present(_ viewControllerToPresent: UIViewController,
+                                animated flag: Bool,
+                                completion: (() -> Void)? = nil) {
+        /// We need to keep strong reference to `viewControllerToPresent` so that it won't be deallocated in some cases.
+        /// This aligns with 
+        Self.presentedViewControllers.append(viewControllerToPresent)
         completion?()
-    }
-}
-
-@available(iOS 12.0, *)
-class TestCarPlaySearchControllerDelegate: CarPlaySearchControllerDelegate {
-    public fileprivate(set) var interfaceController: CPInterfaceController?
-    public fileprivate(set) var carPlayManager: CarPlayManager?
-    
-    func carPlaySearchController(_ searchController: CarPlaySearchController, carPlayManager: CarPlayManager, interfaceController: CPInterfaceController) {
-        self.interfaceController = interfaceController
-    }
-    
-    func previewRoutes(to waypoint: Waypoint, completionHandler: @escaping () -> Void) {
-        carPlayManager?.previewRoutes(to: waypoint, completionHandler: completionHandler)
-    }
-    
-    func resetPanButtons(_ mapTemplate: CPMapTemplate) {
-        carPlayManager?.resetPanButtons(mapTemplate)
-    }
-    
-    func pushTemplate(_ template: CPTemplate, animated: Bool) {
-        interfaceController?.pushTemplate(template, animated: animated)
-    }
-    
-    func popTemplate(animated: Bool) {
-        interfaceController?.popTemplate(animated: animated)
-    }
-}
-
-@available(iOS 12.0, *)
-class MapTemplateSpy: CPMapTemplate {
-    private(set) var currentTripPreviews: [CPTrip]?
-    private(set) var currentPreviewTextConfiguration: CPTripPreviewTextConfiguration?
-    
-    private(set) var estimatesUpdate: (CPTravelEstimates, CPTrip, CPTimeRemainingColor)?
-    
-    var fakeSession:  CPNavigationSession!
-
-    override func showTripPreviews(_ tripPreviews: [CPTrip], textConfiguration: CPTripPreviewTextConfiguration?) {
-        currentTripPreviews = tripPreviews
-        currentPreviewTextConfiguration = textConfiguration
-    }
-    
-    override func update(_ estimates: CPTravelEstimates, for trip: CPTrip, with timeRemainingColor: CPTimeRemainingColor) {
-        estimatesUpdate = (estimates, trip, timeRemainingColor)
-    }
-    
-    override func hideTripPreviews() {
-        currentTripPreviews = nil
-        currentPreviewTextConfiguration = nil
-    }
-    
-    override func startNavigationSession(for trip: CPTrip) -> CPNavigationSession {
-        return fakeSession
-    }
-}
-
-@available(iOS 12.0, *)
-public class MapTemplateSpyProvider: MapTemplateProvider {
-    override public func createMapTemplate() -> CPMapTemplate {
-        return MapTemplateSpy()
-    }
-}
-
-@available(iOS 12.0, *)
-class FakeCPInterfaceController: CPInterfaceController {
-    /**
-     A simple stub which allows for instantiation of a CPInterfaceController for testing.
-
-     CPInterfaceController cannot be instantiated directly. Properties which don't work in headless testing will need to be overridden with test-specific mock functionality provided.
-     */
-    init(_ context: String) {
-        self.context = context
-    }
-
-    let context: String
-    var templateStack: [CPTemplate] = []
-
-    override var debugDescription: String {
-        return "CPInterfaceControllerSpy for \(context)"
-    }
-
-    // MARK - CPInterfaceController declarations and overrides
-
-    override open func pushTemplate(_ templateToPush: CPTemplate, animated: Bool) {
-        templateStack.append(templateToPush)
-    }
-
-    override open func popTemplate(animated: Bool) {
-        templateStack.removeLast()
-    }
-
-    override open var topTemplate: CPTemplate? {
-        get {
-            return templateStack.last
-        }
-    }
-
-    override open var templates: [CPTemplate] {
-        get {
-            return templateStack
-        }
-    }
-    
-    var _rootTemplate = CPTemplate()
-    override var rootTemplate: CPTemplate {
-        if #available(iOS 14.0, *) {
-            return _rootTemplate
-        } else {
-            return super.rootTemplate
-        }
-    }
-    
-    override func setRootTemplate(_ rootTemplate: CPTemplate, animated: Bool) {
-        if #available(iOS 14.0, *) {
-            _rootTemplate = rootTemplate
-        } else {
-            super.setRootTemplate(rootTemplate, animated: animated)
-        }
     }
 }

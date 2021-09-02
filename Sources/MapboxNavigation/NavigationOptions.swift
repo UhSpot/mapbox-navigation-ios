@@ -40,6 +40,20 @@ open class NavigationOptions: NavigationCustomizable {
      */
     open var bottomBanner: ContainerViewController?
     
+    /**
+     Configuration for predictive caching.
+     
+     These options control how the `PredictiveCacheManager` will try to proactively fetch data related to the route. A `nil` value disables the feature.
+     */
+    open var predictiveCacheOptions: PredictiveCacheOptions?
+
+    /**
+     Custom `NavigationMapView` instance to be embedded in navigation UI.
+     
+     If set to `nil`, a default `NavigationMapView` instance will be created. When a custom instance is set, `NavigationView` will update its delegate and camera's `viewportDatasource` to function correctly. You may want to use this property for customization or optimization purposes.
+     */
+    open var navigationMapView: NavigationMapView?
+    
     // This makes the compiler happy.
     required public init() {
         // do nothing
@@ -53,14 +67,18 @@ open class NavigationOptions: NavigationCustomizable {
      - parameter voiceController: The voice controller that vocalizes spoken instructions along the route at the appropriate times.
      - parameter topBanner: The container view controller that presents the top banner.
      - parameter bottomBanner: The container view controller that presents the bottom banner.
+     - parameter predictiveCacheOptions: Configuration for predictive caching. These options control how the `PredictiveCacheManager` will try to proactively fetch data related to the route. A `nil` value disables the feature.
+     - parameter navigationMapView: Custom `NavigationMapView` instance to supersede the default one.
      */
-    public convenience init(styles: [Style]? = nil, navigationService: NavigationService? = nil, voiceController: RouteVoiceController? = nil, topBanner: ContainerViewController? = nil, bottomBanner: ContainerViewController? = nil) {
+    public convenience init(styles: [Style]? = nil, navigationService: NavigationService? = nil, voiceController: RouteVoiceController? = nil, topBanner: ContainerViewController? = nil, bottomBanner: ContainerViewController? = nil, predictiveCacheOptions: PredictiveCacheOptions? = nil, navigationMapView: NavigationMapView? = nil) {
         self.init()
         self.styles = styles
         self.navigationService = navigationService
         self.voiceController = voiceController
         self.topBanner = topBanner
         self.bottomBanner = bottomBanner
+        self.predictiveCacheOptions = predictiveCacheOptions
+        self.navigationMapView = navigationMapView
     }
     
     /**

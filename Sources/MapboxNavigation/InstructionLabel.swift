@@ -33,13 +33,25 @@ open class InstructionLabel: StylableLabel, InstructionPresenterDataSource {
         }
     }
 
+    open override func update() {
+        let previousInstruction = instruction
+        instruction = previousInstruction
+        super.update()
+    }
+    
+    open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        update()
+        imageRepository.resetImageCache(nil)
+    }
+    
     private var instructionPresenter: InstructionPresenter?
 }
 
 /**
  The `VisualInstructionDelegate` protocol defines a method that allows an object to customize presented visual instructions.
  */
-public protocol VisualInstructionDelegate: class, UnimplementedLogging {
+public protocol VisualInstructionDelegate: AnyObject, UnimplementedLogging {
     /**
      Called when an InstructionLabel will present a visual instruction.
      
