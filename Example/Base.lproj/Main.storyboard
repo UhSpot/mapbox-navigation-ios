@@ -224,5 +224,142 @@
             </objects>
             <point key="canvasLocation" x="1028" y="34.632683658170919"/>
         </scene>
+        <!--Uh Spot View Controller-->
+        <scene sceneID="q7j-ex-USp">
+            <objects>
+                <viewController storyboardIdentifier="uhspotNavigation" id="bkm-47-sOA" customClass="UhSpotViewController" customModule="Example" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Zax-LG-5hi">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4Yn-Dg-OEk" customClass="NavigationMapView" customModule="MapboxNavigation">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            </view>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="k4U-NR-CRs" userLabel="Recenter">
+                                <rect key="frame" x="8" y="577" width="62" height="30"/>
+                                <state key="normal" title="Recenter"/>
+                                <connections>
+                                    <action selector="recenterMap:" destination="bkm-47-sOA" eventType="touchUpInside" id="rU1-Wn-ZiB"/>
+                                </connections>
+                            </button>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="FgB-1h-5XX" userLabel="Background">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="125"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Bdv-dW-Gqh" customClass="UhSpotBannerView" customModule="MapboxNavigation">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="125"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="sIQ-WJ-mjU">
+                                        <rect key="frame" x="300" y="37.5" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="50" id="3Az-5r-jcv"/>
+                                            <constraint firstAttribute="width" constant="50" id="bTD-cQ-32D"/>
+                                        </constraints>
+                                        <state key="normal" title="Button" image="Park"/>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dAh-v4-yVh">
+                                        <rect key="frame" x="100" y="37.5" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="l3n-Ij-Kae"/>
+                                            <constraint firstAttribute="height" constant="50" id="rxK-b0-NJV"/>
+                                        </constraints>
+                                        <state key="normal" title="Button" image="Park"/>
+                                    </button>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Current street name" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="q8o-wU-f3S">
+                                        <rect key="frame" x="150" y="54" width="150" height="17"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstItem="q8o-wU-f3S" firstAttribute="leading" secondItem="dAh-v4-yVh" secondAttribute="trailing" id="0rd-Da-w6T"/>
+                                    <constraint firstItem="sIQ-WJ-mjU" firstAttribute="centerY" secondItem="Bdv-dW-Gqh" secondAttribute="centerY" id="1bf-yx-pID"/>
+                                    <constraint firstItem="dAh-v4-yVh" firstAttribute="leading" secondItem="Bdv-dW-Gqh" secondAttribute="leading" constant="100" id="5Wh-cX-Jd0"/>
+                                    <constraint firstItem="q8o-wU-f3S" firstAttribute="centerY" secondItem="Bdv-dW-Gqh" secondAttribute="centerY" id="HoP-qJ-nEg"/>
+                                    <constraint firstItem="q8o-wU-f3S" firstAttribute="trailing" secondItem="sIQ-WJ-mjU" secondAttribute="leading" id="K9e-0C-bls"/>
+                                    <constraint firstItem="dAh-v4-yVh" firstAttribute="centerY" secondItem="Bdv-dW-Gqh" secondAttribute="centerY" id="TPs-21-cyJ"/>
+                                    <constraint firstAttribute="height" constant="125" id="abW-3g-VhR"/>
+                                    <constraint firstItem="sIQ-WJ-mjU" firstAttribute="trailing" secondItem="Bdv-dW-Gqh" secondAttribute="trailing" constant="-25" id="qQg-tb-dSy"/>
+                                </constraints>
+                            </view>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yyV-8R-Oig">
+                                <rect key="frame" x="297" y="145" width="68" height="30"/>
+                                <state key="normal" title="Feedback"/>
+                                <connections>
+                                    <action selector="showFeedback:" destination="bkm-47-sOA" eventType="touchUpInside" id="gez-1Z-UfN"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="pmZ-H7-6QA">
+                                <rect key="frame" x="157.5" y="592" width="60" height="60"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="60" id="Vvz-i8-1Xm"/>
+                                    <constraint firstAttribute="width" constant="60" id="WN4-6U-HJZ"/>
+                                </constraints>
+                                <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <inset key="titleEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="10"/>
+                                <state key="normal" title="×" image="MainButton">
+                                    <color key="titleColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <attributedString key="userComments">
+                                    <fragment content="DO NOT TRANSLATE">
+                                        <attributes>
+                                            <font key="NSFont" metaFont="message" size="11"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0"/>
+                                        </attributes>
+                                    </fragment>
+                                </attributedString>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="30"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <connections>
+                                    <action selector="uhspotButtonPressed:" destination="bkm-47-sOA" eventType="touchUpInside" id="mtL-Hr-fVS"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="M55-qH-Puk"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="yyV-8R-Oig" firstAttribute="top" secondItem="Bdv-dW-Gqh" secondAttribute="bottom" constant="20" id="1lw-tP-yC5"/>
+                            <constraint firstItem="4Yn-Dg-OEk" firstAttribute="top" secondItem="Zax-LG-5hi" secondAttribute="top" id="7VP-57-wWQ"/>
+                            <constraint firstItem="pmZ-H7-6QA" firstAttribute="centerX" secondItem="M55-qH-Puk" secondAttribute="centerX" id="8CW-o1-Eok"/>
+                            <constraint firstAttribute="trailing" secondItem="4Yn-Dg-OEk" secondAttribute="trailing" id="Ink-zQ-ux1"/>
+                            <constraint firstItem="Bdv-dW-Gqh" firstAttribute="top" secondItem="M55-qH-Puk" secondAttribute="top" id="Mec-Cd-pjk"/>
+                            <constraint firstItem="FgB-1h-5XX" firstAttribute="leading" secondItem="Zax-LG-5hi" secondAttribute="leading" id="NPH-BL-gNT"/>
+                            <constraint firstItem="M55-qH-Puk" firstAttribute="trailing" secondItem="yyV-8R-Oig" secondAttribute="trailing" constant="10" id="Oid-CP-jLR"/>
+                            <constraint firstItem="M55-qH-Puk" firstAttribute="trailing" secondItem="Bdv-dW-Gqh" secondAttribute="trailing" id="QIW-h3-dgP"/>
+                            <constraint firstItem="M55-qH-Puk" firstAttribute="bottom" secondItem="pmZ-H7-6QA" secondAttribute="bottom" constant="15" id="WVV-SL-AoN"/>
+                            <constraint firstAttribute="bottom" secondItem="4Yn-Dg-OEk" secondAttribute="bottom" id="Xh6-ZY-E7n"/>
+                            <constraint firstItem="FgB-1h-5XX" firstAttribute="top" secondItem="Zax-LG-5hi" secondAttribute="top" id="YRQ-Mq-dNe"/>
+                            <constraint firstItem="Bdv-dW-Gqh" firstAttribute="leading" secondItem="M55-qH-Puk" secondAttribute="leading" id="cIf-cJ-Pmq"/>
+                            <constraint firstItem="FgB-1h-5XX" firstAttribute="height" secondItem="Bdv-dW-Gqh" secondAttribute="height" id="dBY-tM-mME"/>
+                            <constraint firstItem="4Yn-Dg-OEk" firstAttribute="leading" secondItem="Zax-LG-5hi" secondAttribute="leading" id="dgT-Mp-dRH"/>
+                            <constraint firstItem="FgB-1h-5XX" firstAttribute="trailing" secondItem="Zax-LG-5hi" secondAttribute="trailing" id="du0-pm-Aeb"/>
+                            <constraint firstAttribute="bottom" secondItem="k4U-NR-CRs" secondAttribute="bottom" constant="60" id="wMh-kv-Onr"/>
+                            <constraint firstItem="k4U-NR-CRs" firstAttribute="leading" secondItem="M55-qH-Puk" secondAttribute="leading" constant="8" id="xzg-Ou-9jk"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="currentLegName" destination="q8o-wU-f3S" id="4tf-wB-gC3"/>
+                        <outlet property="instructionsBannerView" destination="Bdv-dW-Gqh" id="sH9-6G-zll"/>
+                        <outlet property="leftSideRegulation" destination="dAh-v4-yVh" id="W7g-1P-KJX"/>
+                        <outlet property="navigationMapView" destination="4Yn-Dg-OEk" id="alG-xA-3si"/>
+                        <outlet property="rightSideRegulation" destination="sIQ-WJ-mjU" id="xco-eT-idm"/>
+                        <outlet property="uhspotButton" destination="pmZ-H7-6QA" id="fAH-PB-pFh"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="fLP-l4-D4a" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="104.8" y="748.87556221889065"/>
+        </scene>
     </scenes>
+    <resources>
+        <image name="MainButton" width="77" height="77"/>
+        <image name="Park" width="114" height="114"/>
+    </resources>
 </document>

@@ -11,7 +11,7 @@ public protocol InstructionsCardCollectionDelegate: InstructionsCardContainerVie
      - parameter step: The step for the maneuver instruction in preview.
      */
     func instructionsCardCollection(_ instructionsCardCollection: InstructionsCardViewController, didPreview step: RouteStep)
-    
+    func uhspotCardCollection(_ instructionsCardCollection: UhSpotCardViewController, didPreview step: RouteStep)
     /**
      Offers the delegate the opportunity to customize the size of a prototype collection view cell per the associated trait collection.
      
@@ -20,6 +20,7 @@ public protocol InstructionsCardCollectionDelegate: InstructionsCardContainerVie
      - returns: The preferred size of the cards for each cell in the instructions card collection.
      */
     func instructionsCardCollection(_ instructionsCardCollection: InstructionsCardViewController, cardSizeFor traitCollection: UITraitCollection) -> CGSize?
+    func uhspotCardCollection(_ instructionsCardCollection: UhSpotCardViewController, cardSizeFor traitCollection: UITraitCollection) -> CGSize?
 }
 
 public extension InstructionsCardCollectionDelegate {
@@ -27,7 +28,16 @@ public extension InstructionsCardCollectionDelegate {
         logUnimplemented(protocolType: InstructionsCardCollectionDelegate.self, level: .debug)
     }
     
+    func uhspotCardCollection(_ instructionsCardCollection: UhSpotCardViewController, didPreview step: RouteStep) {
+        logUnimplemented(protocolType: InstructionsCardCollectionDelegate.self, level: .debug)
+    }
+    
     func instructionsCardCollection(_ instructionsCardCollection: InstructionsCardViewController, cardSizeFor traitCollection: UITraitCollection) -> CGSize? {
+        logUnimplemented(protocolType: InstructionsCardCollectionDelegate.self, level: .info)
+        return nil
+    }
+    
+    func uhspotCardCollection(_ instructionsCardCollection: UhSpotCardViewController, cardSizeFor traitCollection: UITraitCollection) -> CGSize? {
         logUnimplemented(protocolType: InstructionsCardCollectionDelegate.self, level: .info)
         return nil
     }

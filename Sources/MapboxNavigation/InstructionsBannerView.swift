@@ -43,8 +43,18 @@ open class InstructionsBannerView: BaseInstructionsBannerView, NavigationCompone
 }
 
 /// :nodoc:
+@IBDesignable
+open class UhSpotBannerView: BaseInstructionsBannerView, NavigationComponent {
+    public func navigationService(_ service: NavigationService, didPassVisualInstructionPoint instruction: VisualInstructionBanner, routeProgress: RouteProgress) {
+        update(for: instruction)
+    }
+}
+
+/// :nodoc:
 open class BaseInstructionsBannerView: UIControl {
     public weak var maneuverView: ManeuverView!
+    public weak var leftSide: UIButton!
+    public weak var rightSide: UIButton!
     public weak var primaryLabel: PrimaryLabel!
     public weak var secondaryLabel: SecondaryLabel!
     public weak var distanceLabel: DistanceLabel!
@@ -160,7 +170,7 @@ open class BaseInstructionsBannerView: UIControl {
      */
     public func update(for instruction: VisualInstructionBanner?) {
         let secondaryInstruction = instruction?.secondaryInstruction
-        primaryLabel.numberOfLines = secondaryInstruction == nil ? 2 : 1
+        primaryLabel.numberOfLines = secondaryInstruction == nil ? 1 : 1
         
         if secondaryInstruction == nil {
             centerYAlignInstructions()
@@ -210,14 +220,15 @@ open class BaseInstructionsBannerView: UIControl {
         distanceLabel.minimumScaleFactor = 16.0 / 22.0
         addSubview(distanceLabel)
         self.distanceLabel = distanceLabel
-        
+                
         let primaryLabel = PrimaryLabel()
         primaryLabel.instructionDelegate = instructionDelegate
         primaryLabel.translatesAutoresizingMaskIntoConstraints = false
         primaryLabel.allowsDefaultTighteningForTruncation = true
         primaryLabel.adjustsFontSizeToFitWidth = true
         primaryLabel.numberOfLines = 1
-        primaryLabel.minimumScaleFactor = 20.0 / 30.0
+ 
+        primaryLabel.font = UIFont.systemFont(ofSize: 8)
         primaryLabel.lineBreakMode = .byTruncatingTail
         addSubview(primaryLabel)
         self.primaryLabel = primaryLabel
@@ -281,12 +292,14 @@ open class BaseInstructionsBannerView: UIControl {
         // Turn arrow view
         maneuverView.heightAnchor.constraint(equalToConstant: BaseInstructionsBannerView.maneuverViewSize.height).isActive = true
         maneuverView.widthAnchor.constraint(equalToConstant: BaseInstructionsBannerView.maneuverViewSize.width).isActive = true
-        maneuverView.topAnchor.constraint(equalTo: topAnchor, constant: BaseInstructionsBannerView.padding).isActive = true
+        maneuverView.topAnchor.constraint(equalTo: primaryLabel.topAnchor).isActive = true
         maneuverView.centerXAnchor.constraint(equalTo: leadingAnchor, constant: firstColumnWidth / 2).isActive = true
         
+        
         // Primary Label
-        primaryLabel.leadingAnchor.constraint(equalTo: dividerView.trailingAnchor).isActive = true
-        primaryLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18).isActive = true
+        primaryLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5.0).isActive = true
+        primaryLabel.trailingAnchor.constraint(equalTo: dividerView.leadingAnchor, constant: -5).isActive = true
+        primaryLabel.topAnchor.constraint(equalTo: topAnchor).isActive = true
         baselineConstraints.append(primaryLabel.topAnchor.constraint(equalTo: maneuverView.topAnchor, constant: -BaseInstructionsBannerView.padding/2))
         centerYConstraints.append(primaryLabel.centerYAnchor.constraint(equalTo: centerYAnchor))
         

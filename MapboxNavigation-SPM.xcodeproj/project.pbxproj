@@ -13,6 +13,11 @@
 		3577B878214FF35800094294 /* FavoritesList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3577B877214FF35800094294 /* FavoritesList.swift */; };
 		358D14661E5E3B7700ADE590 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358D14651E5E3B7700ADE590 /* AppDelegate.swift */; };
 		358D14681E5E3B7700ADE590 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358D14671E5E3B7700ADE590 /* ViewController.swift */; };
+		3BF05E6A26E29D1300C8C313 /* UhSpotViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF05E6926E29D1300C8C313 /* UhSpotViewController.swift */; };
+		3BF05E6C26E2A43600C8C313 /* MainButton.svg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF05E6B26E2A43600C8C313 /* MainButton.svg */; };
+		3BF05E7026E42DD000C8C313 /* NoParking.svg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF05E6D26E42DD000C8C313 /* NoParking.svg */; };
+		3BF05E7126E42DD000C8C313 /* Park.svg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF05E6E26E42DD000C8C313 /* Park.svg */; };
+		3BF05E7226E42DD000C8C313 /* MeteredParking.svg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF05E6F26E42DD000C8C313 /* MeteredParking.svg */; };
 		8A092F9B25DEE81900CA7CF5 /* ViewController+FreeDrive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A092F9A25DEE81900CA7CF5 /* ViewController+FreeDrive.swift */; };
 		8A092F9C25DEE81900CA7CF5 /* ViewController+FreeDrive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A092F9A25DEE81900CA7CF5 /* ViewController+FreeDrive.swift */; };
 		8A0D5DB625DF2A86006F0919 /* StyledFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0D5DB525DF2A86006F0919 /* StyledFeature.swift */; };
@@ -54,6 +59,11 @@
 		35C6EDA01EBB224E00A27EF8 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Main.strings; sourceTree = "<group>"; };
 		35C6EDA21EBB224F00A27EF8 /* ca */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ca; path = ca.lproj/Main.strings; sourceTree = "<group>"; };
 		35C6EDAD1EBB266300A27EF8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Main.strings; sourceTree = "<group>"; };
+		3BF05E6926E29D1300C8C313 /* UhSpotViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UhSpotViewController.swift; sourceTree = "<group>"; };
+		3BF05E6B26E2A43600C8C313 /* MainButton.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = MainButton.svg; sourceTree = "<group>"; };
+		3BF05E6D26E42DD000C8C313 /* NoParking.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = NoParking.svg; sourceTree = "<group>"; };
+		3BF05E6E26E42DD000C8C313 /* Park.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Park.svg; sourceTree = "<group>"; };
+		3BF05E6F26E42DD000C8C313 /* MeteredParking.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = MeteredParking.svg; sourceTree = "<group>"; };
 		43E69517233D297B0019BF6E /* cover.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = cover.md; path = docs/cover.md; sourceTree = "<group>"; };
 		8A092F9A25DEE81900CA7CF5 /* ViewController+FreeDrive.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "ViewController+FreeDrive.swift"; path = "Example/ViewController+FreeDrive.swift"; sourceTree = "<group>"; };
 		8A0D5DB525DF2A86006F0919 /* StyledFeature.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = StyledFeature.swift; path = Example/StyledFeature.swift; sourceTree = "<group>"; };
@@ -127,6 +137,10 @@
 				DA303C9D21B76B5C00F921DC /* LaunchScreen.storyboard */,
 				35002D661E5F6B1B0090E733 /* Main.storyboard */,
 				35002D5F1E5F6ADB0090E733 /* Assets.xcassets */,
+				3BF05E6F26E42DD000C8C313 /* MeteredParking.svg */,
+				3BF05E6D26E42DD000C8C313 /* NoParking.svg */,
+				3BF05E6E26E42DD000C8C313 /* Park.svg */,
+				3BF05E6B26E2A43600C8C313 /* MainButton.svg */,
 				35002D5D1E5F6ABB0090E733 /* Info.plist */,
 				C57AD98920EAA39A0087B24B /* Entitlements.plist */,
 				E27A2202265674E400AA935F /* Localizable.strings */,
@@ -149,6 +163,7 @@
 				C51FC31620F689F800400CE7 /* CustomStyles.swift */,
 				C5D9800C1EFA8BA9006DBF2E /* CustomViewController.swift */,
 				8A0D5DB525DF2A86006F0919 /* StyledFeature.swift */,
+				3BF05E6926E29D1300C8C313 /* UhSpotViewController.swift */,
 			);
 			name = Example;
 			sourceTree = "<group>";
@@ -324,12 +339,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BF05E7226E42DD000C8C313 /* MeteredParking.svg in Resources */,
 				C57AD98A20EAA39A0087B24B /* Entitlements.plist in Resources */,
 				E27A2204265674E400AA935F /* Localizable.strings in Resources */,
 				35002D691E5F6B2F0090E733 /* Main.storyboard in Resources */,
 				35002D611E5F6ADB0090E733 /* Assets.xcassets in Resources */,
+				3BF05E7026E42DD000C8C313 /* NoParking.svg in Resources */,
 				DA303C9F21B76B5C00F921DC /* LaunchScreen.storyboard in Resources */,
+				3BF05E6C26E2A43600C8C313 /* MainButton.svg in Resources */,
 				DA303CA421B76CB000F921DC /* Localizable.stringsdict in Resources */,
+				3BF05E7126E42DD000C8C313 /* Park.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -375,7 +394,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This Run Script build phase helps to keep the navigation SDK’s developers from exposing their own access tokens during development. See <https://www.mapbox.com/help/ios-private-access-token/> for more information. If you are developing an application privately, you may add the MGLMapboxAccessToken key directly to your Info.plist file and delete this build phase.\n\ntoken_file=~/.mapbox\ntoken_file2=~/mapbox\ntoken=\"$(cat $token_file 2>/dev/null || cat $token_file2 2>/dev/null)\"\nif [ \"$token\" ]; then\n  plutil -replace MBXAccessToken -string $token \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\nelse\n  echo 'warning: Missing Mapbox access token'\n  open 'https://www.mapbox.com/account/access-tokens/'\n  echo \"warning: Get an access token from <https://www.mapbox.com/account/access-tokens/>, then create a new file at $token_file or $token_file2 that contains the access token.\"\nfi\n";
+			shellScript = "# This Run Script build phase helps to keep the navigation SDK’s developers from exposing their own access tokens during development. See <https://www.mapbox.com/help/ios-private-access-token/> for more information. If you are developing an application privately, you may add the MGLMapboxAccessToken key directly to your Info.plist file and delete this build phase.\n\ntoken_file=~/.mapbox\ntoken_file2=~/mapbox\ntoken=\"$(cat $token_file 2>/dev/null || cat $token_file2 2>/dev/null)\"\nif [ \"$token\" ]; then\n  plutil -replace MBXAccessToken -string $token \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\nelse\n  echo 'warning: Missing Mapbox access token'\n  \n  echo \"warning: Get an access token from <https://www.mapbox.com/account/access-tokens/>, then create a new file at $token_file or $token_file2 that contains the access token.\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -391,6 +410,7 @@
 				C51FC31720F689F800400CE7 /* CustomStyles.swift in Sources */,
 				8A0D5DB625DF2A86006F0919 /* StyledFeature.swift in Sources */,
 				358D14661E5E3B7700ADE590 /* AppDelegate.swift in Sources */,
+				3BF05E6A26E29D1300C8C313 /* UhSpotViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

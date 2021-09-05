@@ -223,16 +223,21 @@ class ViewController: UIViewController {
         let day: ActionHandler = { _ in self.startNavigation(styles: [DayStyle()]) }
         let night: ActionHandler = { _ in self.startNavigation(styles: [NightStyle()]) }
         let custom: ActionHandler = { _ in self.startCustomNavigation() }
+        let uhspotNavigation: ActionHandler = {_ in self.startUhSpotNavigation()}
         let styled: ActionHandler = { _ in self.startStyledNavigation() }
         let guidanceCards: ActionHandler = { _ in self.startGuidanceCardsNavigation() }
+        let uhspotNavigationCard: ActionHandler = {_ in self.startUhSpotNavigationCard() }
+        
         
         let actionPayloads: [(String, UIAlertAction.Style, ActionHandler?)] = [
             ("Default UI", .default, basic),
             ("DayStyle UI", .default, day),
             ("NightStyle UI", .default, night),
             ("Custom UI", .default, custom),
+            ("UhSpot Navigation", .default, uhspotNavigation),
             ("Guidance Card UI", .default, guidanceCards),
             ("Styled UI", .default, styled),
+            ("UhSpot Navigation", .default, uhspotNavigationCard),
             ("Cancel", .cancel, nil)
         ]
         
@@ -302,6 +307,25 @@ class ViewController: UIViewController {
             }
         }
     }
+    
+    func startUhSpotNavigation() {
+        guard let response = response,
+              let route = response.routes?.first,
+              case let .route(routeOptions) = response.options,
+              let customViewController = storyboard?.instantiateViewController(withIdentifier: "uhspotNavigation") as? UhSpotViewController else { return }
+
+        customViewController.indexedUserRouteResponse = .init(routeResponse: response, routeIndex: 0)
+        customViewController.userRouteOptions = routeOptions
+        customViewController.simulateLocation = simulationButton.isSelected
+        
+        present(customViewController, animated: true) {
+            if let destinationCoordinate = route.shape?.coordinates.last {
+                var destinationAnnotation = PointAnnotation(coordinate: destinationCoordinate)
+                destinationAnnotation.image = .default
+                customViewController.destinationAnnotation = destinationAnnotation
+            }
+        }
+    }
 
     func startStyledNavigation() {
         guard let response = response, case let .route(routeOptions) = response.options else { return }
@@ -327,6 +351,18 @@ class ViewController: UIViewController {
         presentAndRemoveNavigationMapView(navigationViewController, completion: beginCarPlayNavigation)
     }
     
+    func startUhSpotNavigationCard() {
+        guard let response = response, case let .route(routeOptions) = response.options else { return }
+        
+        let uhspotCardCollection = UhSpotCardViewController()
+        uhspotCardCollection.cardCollectionDelegate = self
+        
+        let options = NavigationOptions(navigationService: navigationService(response: response, routeIndex: 0, options: routeOptions), topBanner: uhspotCardCollection, predictiveCacheOptions: PredictiveCacheOptions())
+        let navigationViewController = NavigationViewController(for: response, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
+        navigationViewController.delegate = self
+        
+        presentAndRemoveNavigationMapView(navigationViewController, completion: beginCarPlayNavigation)
+    }
     // MARK: - UIGestureRecognizer methods
     
     func setupGestureRecognizers() {
