@@ -4,7 +4,7 @@ import MapboxDirections
 import CoreLocation
 import TestHelper
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class ManeuverViewSnapshotTests: TestCase {
     let maneuverView = ManeuverView(frame: CGRect(origin: .zero, size: CGSize(width: 50, height: 50)))

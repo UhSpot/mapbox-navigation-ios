@@ -1,7 +1,7 @@
 import CoreLocation
 import UIKit
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import Turf
 import MapboxMaps
 

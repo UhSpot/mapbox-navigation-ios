@@ -1,6 +1,6 @@
 import UIKit
 import Solar
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import CoreLocation
 
 /**

@@ -1,6 +1,6 @@
 import UIKit
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxMobileEvents
 import MapboxMaps
 

@@ -1,6 +1,6 @@
 import UIKit
 import MapboxNavigation
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 class ViewController: UIViewController {
 

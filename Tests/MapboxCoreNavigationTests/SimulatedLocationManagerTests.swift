@@ -2,7 +2,7 @@ import XCTest
 import MapboxDirections
 import Turf
 import CoreLocation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 import TestHelper
 
 class SimulatedLocationManagerTests: TestCase {

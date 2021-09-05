@@ -1,6 +1,6 @@
 import XCTest
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class DateTests: TestCase {
     func testISO8601() {

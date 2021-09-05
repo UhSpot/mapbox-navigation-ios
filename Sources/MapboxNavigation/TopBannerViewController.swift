@@ -1,7 +1,7 @@
 import CoreLocation
 import Foundation
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 
 public protocol TopBannerViewControllerDelegate: AnyObject, UnimplementedLogging {

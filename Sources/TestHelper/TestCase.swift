@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 #if canImport(MapboxMaps)
 import MapboxMaps
 #endif

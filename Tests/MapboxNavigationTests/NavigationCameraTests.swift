@@ -6,7 +6,7 @@ import Nimble
 
 @testable import TestHelper
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class ViewportDataSourceMock: ViewportDataSource {
     

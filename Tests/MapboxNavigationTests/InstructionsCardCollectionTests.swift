@@ -3,7 +3,7 @@ import MapboxDirections
 import CoreLocation
 @testable import TestHelper
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 /// :nodoc:
 class InstructionsCardCollectionTests: TestCase {

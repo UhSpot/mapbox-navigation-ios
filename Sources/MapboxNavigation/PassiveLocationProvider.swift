@@ -1,6 +1,6 @@
 import CoreLocation
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxMaps
 
 /**

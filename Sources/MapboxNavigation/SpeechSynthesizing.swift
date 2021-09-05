@@ -1,6 +1,6 @@
 import Foundation
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 /**
  Protocol for implementing speech synthesizer to be used in `RouteVoiceController`.

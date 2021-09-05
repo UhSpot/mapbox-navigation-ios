@@ -1,6 +1,6 @@
 import AVFoundation
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxSpeech
 
 /// `SpeechSynthesizing`implementation, aggregating other implementations, to allow 'fallback' mechanism.

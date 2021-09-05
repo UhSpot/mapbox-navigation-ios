@@ -1,6 +1,6 @@
 import AVFoundation
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxSpeech
 
 /**

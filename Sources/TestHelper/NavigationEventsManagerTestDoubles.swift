@@ -1,6 +1,6 @@
 import Foundation
 import MapboxMobileEvents
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 import MapboxDirections
 #if SWIFT_PACKAGE
 import CTestHelper

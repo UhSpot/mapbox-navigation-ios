@@ -1,5 +1,5 @@
 import XCTest
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 import MapboxMobileEvents
 import CarPlay

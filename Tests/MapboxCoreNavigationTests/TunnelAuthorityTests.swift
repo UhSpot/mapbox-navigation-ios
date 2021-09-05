@@ -4,7 +4,7 @@ import Polyline
 import MapKit
 import MapboxDirections
 @testable import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 
 let tunnelOptions: RouteOptions = {

@@ -3,7 +3,7 @@ import CoreLocation
 import MapboxDirections
 import Turf
 import UIKit.UIImage
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 public class Fixture: NSObject {
     public class var bundle: Bundle {

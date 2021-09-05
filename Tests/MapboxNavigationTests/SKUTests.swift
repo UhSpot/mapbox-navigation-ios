@@ -1,6 +1,6 @@
 import XCTest
 import TestHelper
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 import MapboxSpeech
 import MapboxNavigation

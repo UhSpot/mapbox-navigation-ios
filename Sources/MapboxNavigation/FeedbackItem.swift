@@ -1,5 +1,5 @@
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 extension UIImage {
     fileprivate class func feedbackImage(named: String) -> UIImage {

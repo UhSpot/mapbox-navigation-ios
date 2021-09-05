@@ -9,10 +9,10 @@ let package = Package(
     platforms: [.iOS(.v11)],
     products: [
         .library(
-            name: "MapboxCoreNavigation",
+            name: "UhSpotCoreNavigation",
             targets: [
-                "CMapboxCoreNavigation",
-                "MapboxCoreNavigation",
+                "CUhSpotCoreNavigation",
+                "UhSpotCoreNavigation",
             ]
         ),
         .library(
@@ -36,20 +36,20 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MapboxCoreNavigation",
+            name: "UhSpotCoreNavigation",
             dependencies: [
-                "CMapboxCoreNavigation",
+                "CUhSpotCoreNavigation",
                 "MapboxDirections",
                 "MapboxMobileEvents",
                 "MapboxNavigationNative",
             ],
             exclude: ["Info.plist"],
             resources: [.copy("MBXInfo.plist")]),
-        .target(name: "CMapboxCoreNavigation"),
+        .target(name: "CUhSpotCoreNavigation"),
         .target(
             name: "MapboxNavigation",
             dependencies: [
-                "MapboxCoreNavigation",
+                "UhSpotCoreNavigation",
                 "MapboxDirections",
                 "MapboxMaps",
                 "MapboxSpeech",
@@ -61,7 +61,7 @@ let package = Package(
             name: "CTestHelper",
             dependencies: [
                 "MapboxMobileEvents",
-                "MapboxCoreNavigation",
+                "UhSpotCoreNavigation",
             ]),
         .target(
             name: "TestHelper",
@@ -69,7 +69,7 @@ let package = Package(
                 "CTestHelper",
                 "Quick",
                 "Nimble",
-                "MapboxCoreNavigation",
+                "UhSpotCoreNavigation",
                 "MapboxNavigation",
                 "MapboxMaps",
             ],
@@ -87,7 +87,7 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "MapboxCoreNavigationTests",
+            name: "UhSpotCoreNavigationTests",
             dependencies: ["TestHelper"],
             exclude: ["Info.plist"],
             resources: [

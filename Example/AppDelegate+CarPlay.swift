@@ -2,7 +2,7 @@ import UIKit
 import MapboxNavigation
 import CarPlay
 import MapboxGeocoder
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 
 let CarPlayWaypointKey: String = "MBCarPlayWaypoint"

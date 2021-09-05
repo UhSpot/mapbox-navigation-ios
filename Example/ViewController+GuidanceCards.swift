@@ -1,4 +1,4 @@
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxNavigation
 import MapboxMaps
 import MapboxDirections

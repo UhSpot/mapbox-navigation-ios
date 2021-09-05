@@ -1,7 +1,7 @@
 import CoreLocation
 import UIKit
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 /**
  A view controller that displays the current maneuver instruction as a “card” resembling a user notification. A subsequent maneuver is always partially visible on one side of the view; swiping to one side reveals the full maneuver.

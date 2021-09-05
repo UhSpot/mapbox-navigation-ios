@@ -97,7 +97,7 @@ extension NavigationEventDetails {
     var operatingSystem: String { "\(ProcessInfo.systemName) \(ProcessInfo.systemVersion)" }
     var platform: String { ProcessInfo.systemName }
     var sdkVersion: String {
-        guard let stringForShortVersion = Bundle.string(forMapboxCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else {
+        guard let stringForShortVersion = Bundle.string(forUhSpotCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else {
             preconditionFailure("CFBundleShortVersionString must be set in the Info.plist.")
         }
         return stringForShortVersion

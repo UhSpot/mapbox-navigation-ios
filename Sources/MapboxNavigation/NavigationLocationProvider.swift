@@ -1,6 +1,6 @@
 import Foundation
 import CoreLocation
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxMaps
 
 /**

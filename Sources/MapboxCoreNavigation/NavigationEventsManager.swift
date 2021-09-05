@@ -28,7 +28,7 @@ public protocol EventsManagerDataSource: AnyObject {
 }
 
 /**
- The `NavigationEventsManager` is responsible for being the liaison between MapboxCoreNavigation and the Mapbox telemetry framework.
+ The `NavigationEventsManager` is responsible for being the liaison between UhSpotCoreNavigation and the Mapbox telemetry framework.
  */
 open class NavigationEventsManager {
     static let applicationSessionIdentifier = UUID()
@@ -64,7 +64,7 @@ open class NavigationEventsManager {
     public var userInfo: [String: String?]? = nil
     
     /**
-     Indicates whether the application depends on MapboxNavigation in addition to MapboxCoreNavigation.
+     Indicates whether the application depends on MapboxNavigation in addition to UhSpotCoreNavigation.
      */
     var usesDefaultUserInterface = {
         return Bundle.mapboxNavigationIfInstalled != nil
@@ -122,7 +122,7 @@ open class NavigationEventsManager {
     func start() {
         let userAgent = usesDefaultUserInterface ? "mapbox-navigation-ui-ios" : "mapbox-navigation-ios"
 
-        guard let stringForShortVersion = Bundle.string(forMapboxCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else {
+        guard let stringForShortVersion = Bundle.string(forUhSpotCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else {
             preconditionFailure("CFBundleShortVersionString must be set in the Info.plist.")
         }
         mobileEventsManager.initialize(withAccessToken: accessToken, userAgentBase: userAgent, hostSDKVersion: String(describing:stringForShortVersion))

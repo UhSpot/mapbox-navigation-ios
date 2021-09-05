@@ -31,7 +31,7 @@ class Navigator {
     private(set) var tileVersionState: TileVersionState
     
     /**
-     Provides a new or an existing `MapboxCoreNavigation.Navigator` instance. Upon first initialization will trigger creation of `MapboxNavigationNative.Navigator` and `HistoryRecorderHandle` instances,
+     Provides a new or an existing `UhSpotCoreNavigation.Navigator` instance. Upon first initialization will trigger creation of `MapboxNavigationNative.Navigator` and `HistoryRecorderHandle` instances,
      satisfying provided configuration (`tilesVersion` and `NavigationSettings`).
      */
     static var shared: Navigator {

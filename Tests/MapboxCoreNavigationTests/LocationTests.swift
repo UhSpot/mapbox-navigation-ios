@@ -1,6 +1,6 @@
 import XCTest
 import CoreLocation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 @testable import TestHelper
 
 class LocationTests: TestCase {

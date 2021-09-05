@@ -1,5 +1,5 @@
 import MapboxMaps
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import Turf
 import MapboxDirections
 

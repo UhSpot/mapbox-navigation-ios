@@ -2,7 +2,7 @@ import XCTest
 import MapboxNavigationNative
 import MapboxDirections
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 private let customConfigKey = "com.mapbox.navigation.custom-config"
 

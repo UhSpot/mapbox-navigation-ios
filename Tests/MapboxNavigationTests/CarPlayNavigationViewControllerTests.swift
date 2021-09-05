@@ -1,5 +1,5 @@
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 import MapboxDirections
 import XCTest
 import Foundation

@@ -2,7 +2,7 @@ import XCTest
 import Foundation
 import SnapshotTesting
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import CoreLocation
 @testable import MapboxNavigation
 @testable import TestHelper

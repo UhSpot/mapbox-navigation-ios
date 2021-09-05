@@ -1,7 +1,7 @@
 import XCTest
 import CoreLocation
 import MapboxDirections
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 /**
  A hypothetical set of options optimized for golf carts.

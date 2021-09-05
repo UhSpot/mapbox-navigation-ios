@@ -4,7 +4,7 @@ import MapboxDirections
 import SnapshotTesting
 @testable import TestHelper
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class BottomBannerSnapshotTests: TestCase {
     override func setUp() {

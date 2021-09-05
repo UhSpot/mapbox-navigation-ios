@@ -1,7 +1,7 @@
 import XCTest
 import CoreLocation
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 @testable import MapboxNavigationNative
 
 class CLLocationTests: TestCase {

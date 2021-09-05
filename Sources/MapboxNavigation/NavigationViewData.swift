@@ -1,5 +1,5 @@
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 /// Protocol used by `NavigationViewController`'s components to get required data and manipulate it's contents.
 protocol NavigationViewData: AnyObject {

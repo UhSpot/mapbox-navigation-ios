@@ -1,6 +1,6 @@
 import XCTest
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class StringTests: TestCase {
     func testMinimumEditDistance() {

@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
 
   # ―――  Spec Metadata  ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
-  s.name = "MapboxCoreNavigation"
+  s.name = "UhSpotCoreNavigation"
   s.version = '2.0.0-beta.24'
   s.summary = "Core components for turn-by-turn navigation on iOS."
 
@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
 
   # ――― Source Location ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
-  s.source = { :git => "https://github.com/mapbox/mapbox-navigation-ios.git", :tag => "v#{s.version.to_s}" }
+  s.source = { :git => "https://github.com/UhSpot/mapbox-navigation-ios.git", :tag => "v#{s.version.to_s}" }
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
@@ -38,7 +38,7 @@ Pod::Spec.new do |s|
   # ――― Project Settings ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
   s.requires_arc = true
-  s.module_name = "MapboxCoreNavigation"
+  s.module_name = "UhSpotCoreNavigation"
 
   s.dependency "MapboxNavigationNative", "~> 64.0"
   s.dependency "MapboxDirections-pre", "2.0.0-beta.8"

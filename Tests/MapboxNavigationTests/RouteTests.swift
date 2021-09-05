@@ -2,7 +2,7 @@ import XCTest
 import MapboxDirections
 import TestHelper
 import Turf
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 @testable import MapboxNavigation
 
 class RouteTests: TestCase {

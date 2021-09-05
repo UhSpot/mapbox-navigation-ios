@@ -3,13 +3,13 @@ import XCTest
 import MapboxNavigationNative
 import TestHelper
 import MapboxDirections
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 final class TilesetDescriptorFactoryTests: TestCase {
     func testLatestDescriptorsAreFromGlobalNavigatorCacheHandle() {
         NavigationSettings.shared.initialize(directions: .mocked,
                                              tileStoreConfiguration: .custom(FileManager.default.temporaryDirectory))
-        MapboxCoreNavigation.Navigator._recreateNavigator()
+        UhSpotCoreNavigation.Navigator._recreateNavigator()
 
         let tilesetReceived = expectation(description: "Tileset received")
         TilesetDescriptorFactory.getLatest(completionQueue: .global()) { latestTilesetDescriptor in

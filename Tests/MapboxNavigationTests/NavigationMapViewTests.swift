@@ -4,7 +4,7 @@ import TestHelper
 import Turf
 import MapboxMaps
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class NavigationMapViewTests: TestCase {
     let response = Fixture.routeResponse(from: "route-with-instructions", options: NavigationRouteOptions(coordinates: [

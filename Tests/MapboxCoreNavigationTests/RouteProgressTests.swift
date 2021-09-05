@@ -5,7 +5,7 @@ import MapboxDirections
 import TestHelper
 import struct Polyline.Polyline
 import Turf
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class RouteProgressTests: TestCase {
 

@@ -380,7 +380,7 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
     private func checkForUpdates() {
         #if TARGET_IPHONE_SIMULATOR
         guard (NSClassFromString("XCTestCase") == nil) else { return } // Short-circuit when running unit tests
-        guard let version = Bundle.string(forMapboxCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else { return }
+        guard let version = Bundle.string(forUhSpotCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString") else { return }
             let latestVersion = String(describing: version)
             _ = URLSession.shared.dataTask(with: URL(string: "https://docs.mapbox.com/ios/navigation/latest_version.txt")!, completionHandler: { (data, response, error) in
                 if let _ = error { return }
@@ -531,7 +531,7 @@ open class LegacyRouteController: NSObject, Router, InternalRouter, CLLocationMa
     
     // MARK: Obsolete methods
     
-    @available(swift, obsoleted: 0.1, message: "MapboxNavigationService is now the point-of-entry to MapboxCoreNavigation. Direct use of RouteController is no longer reccomended. See MapboxNavigationService for more information.")
+    @available(swift, obsoleted: 0.1, message: "MapboxNavigationService is now the point-of-entry to UhSpotCoreNavigation. Direct use of RouteController is no longer reccomended. See MapboxNavigationService for more information.")
     /// :nodoc: Obsoleted method.
     public convenience init(along route: Route, directions: Directions = Directions.shared, dataSource: NavigationLocationManager = NavigationLocationManager(), eventsManager: NavigationEventsManager) {
         fatalError()

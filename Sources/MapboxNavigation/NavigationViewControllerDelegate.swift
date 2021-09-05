@@ -3,7 +3,7 @@ import CoreGraphics
 import Foundation
 import MapboxMaps
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import Turf
 
 /**

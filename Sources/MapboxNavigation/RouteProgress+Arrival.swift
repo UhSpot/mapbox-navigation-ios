@@ -1,4 +1,4 @@
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 extension RouteProgress {
     /**

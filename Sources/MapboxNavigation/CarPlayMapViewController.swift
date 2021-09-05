@@ -1,6 +1,6 @@
 import Foundation
 import MapboxMaps
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 
 #if canImport(CarPlay)

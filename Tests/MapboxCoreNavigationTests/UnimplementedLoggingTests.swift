@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 final class UnimplementedLoggingTests: TestCase {
     class UnimplementedClass: UnimplementedLogging {

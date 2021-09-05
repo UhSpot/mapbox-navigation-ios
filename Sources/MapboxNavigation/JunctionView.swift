@@ -1,5 +1,5 @@
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 
 /**

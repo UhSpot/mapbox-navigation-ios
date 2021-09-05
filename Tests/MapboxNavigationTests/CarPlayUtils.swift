@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 import CarPlay
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 @testable import MapboxDirections
 import CarPlayTestHelper
 import TestHelper

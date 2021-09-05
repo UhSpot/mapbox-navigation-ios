@@ -3,7 +3,7 @@ import CoreLocation
 import MapboxDirections
 import Turf
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 let jsonFileName = "routeWithInstructions"
 var routeOptions: NavigationRouteOptions {
@@ -19,7 +19,7 @@ let route: Route = {
 
 let waitForInterval: TimeInterval = 5
 
-class MapboxCoreNavigationTests: TestCase {
+class UhSpotCoreNavigationTests: TestCase {
     var navigation: MapboxNavigationService!
     
     override func setUp() {

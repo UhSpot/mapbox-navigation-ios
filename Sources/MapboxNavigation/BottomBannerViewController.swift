@@ -1,6 +1,6 @@
 import CoreLocation
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import MapboxDirections
 
 /**
@@ -173,7 +173,7 @@ open class BottomBannerViewController: UIViewController, NavigationComponent {
     
     @objc func resetETATimer() {
         removeTimer()
-        timer = MapboxCoreNavigation.DispatchTimer(countdown: .seconds(30), repeating: .seconds(30)) { [weak self] in
+        timer = UhSpotCoreNavigation.DispatchTimer(countdown: .seconds(30), repeating: .seconds(30)) { [weak self] in
             self?.refreshETA()
         }
         timer?.arm()

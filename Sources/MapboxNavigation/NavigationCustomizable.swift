@@ -1,5 +1,5 @@
 import Foundation
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 /**
  The `NavigationCustomizable` protocol represents a UI-based mechanism that allows for customization of its visual style, as well as the navigation service that powers it.

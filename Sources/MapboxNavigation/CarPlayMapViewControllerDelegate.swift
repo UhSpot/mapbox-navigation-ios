@@ -1,5 +1,5 @@
 import MapboxMaps
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 /**
  The `CarPlayMapViewControllerDelegate` protocol provides methods for reacting to events during free-drive navigation or route previewing in `CarPlayMapViewController`.

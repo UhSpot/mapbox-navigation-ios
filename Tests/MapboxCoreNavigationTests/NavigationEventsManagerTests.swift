@@ -1,7 +1,7 @@
 import XCTest
 import MapboxMobileEvents
 @testable import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class NavigationEventsManagerTests: TestCase {
     func testMobileEventsManagerIsInitializedImmediately() {

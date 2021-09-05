@@ -2,7 +2,7 @@ import XCTest
 import TestHelper
 import MapboxDirections
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 func instructionsView(size: CGSize = .iPhone6Plus) -> InstructionsBannerView {
     let bannerHeight: CGFloat = 96

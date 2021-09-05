@@ -3,7 +3,7 @@ import Quick
 import Nimble
 import MapboxDirections
 import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class MapboxNavigationServiceSpec: QuickSpec {
     override func spec() {

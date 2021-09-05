@@ -4,7 +4,7 @@ import Turf
 import MapboxMobileEvents
 import os.log
 @testable import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 fileprivate let mbTestHeading: CLLocationDirection = 50
 
@@ -64,7 +64,7 @@ class NavigationServiceTests: TestCase {
     }
 
     func testDefaultUserInterfaceUsage() {
-        XCTAssertTrue(!dependencies.navigationService.eventsManager.usesDefaultUserInterface, "MapboxCoreNavigationTests shouldn't have an implicit dependency on MapboxNavigation due to removing the Example application target as the test host.")
+        XCTAssertTrue(!dependencies.navigationService.eventsManager.usesDefaultUserInterface, "UhSpotCoreNavigationTests shouldn't have an implicit dependency on MapboxNavigation due to removing the Example application target as the test host.")
     }
     
     func testUserIsOnRoute() {

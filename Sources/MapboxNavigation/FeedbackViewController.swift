@@ -1,5 +1,5 @@
 import UIKit
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 extension FeedbackViewController: UIViewControllerTransitioningDelegate {
     public func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {

@@ -3,7 +3,7 @@ import TestHelper
 import SnapshotTesting
 import MapboxDirections
 @testable import MapboxNavigation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class InstructionsBannerViewSnapshotTests: TestCase {
     let imageRepository: ImageRepository = ImageRepository.shared

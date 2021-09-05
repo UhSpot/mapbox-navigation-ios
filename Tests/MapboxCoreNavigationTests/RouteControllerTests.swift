@@ -2,7 +2,7 @@ import XCTest
 import Turf
 import MapboxDirections
 import CoreLocation
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 import TestHelper
 import MapboxNavigationNative
 

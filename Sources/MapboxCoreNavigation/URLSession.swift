@@ -5,7 +5,7 @@ extension URLSession {
     /**
      :nodoc:
      
-     The user agent string for any HTTP requests performed directly within MapboxCoreNavigation or MapboxNavigation.
+     The user agent string for any HTTP requests performed directly within UhSpotCoreNavigation or MapboxNavigation.
      */
     public static let userAgent: String = {
         let bundles: [Bundle?] = [
@@ -21,8 +21,8 @@ extension URLSession {
                 switch name {
                 case "MapboxNavigation":
                     return Bundle.string(forMapboxNavigationInfoDictionaryKey: "CFBundleShortVersionString")
-                case "MapboxCoreNavigation":
-                    return Bundle.string(forMapboxCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString")
+                case "UhSpotCoreNavigation":
+                    return Bundle.string(forUhSpotCoreNavigationInfoDictionaryKey: "CFBundleShortVersionString")
                 default:
                     return bundle?.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String
                 }

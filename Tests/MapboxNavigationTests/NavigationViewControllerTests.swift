@@ -3,7 +3,7 @@ import Turf
 import MapboxMaps
 @testable import MapboxDirections
 @testable import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 @testable import MapboxNavigation
 
 let otherResponse = Fixture.JSONFromFileNamed(name: "route-for-lane-testing")

@@ -3,7 +3,7 @@ import Quick
 import Nimble
 import MapboxMaps
 @testable import TestHelper
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 @testable import MapboxNavigation
 @testable import MapboxDirections
 

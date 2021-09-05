@@ -1,5 +1,5 @@
 import Foundation
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 
 /**
  Customization options for the turn-by-turn navigation user experience in a `NavigationViewController`.

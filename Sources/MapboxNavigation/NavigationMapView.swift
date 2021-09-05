@@ -2,7 +2,7 @@ import UIKit
 import MapboxMaps
 import MapboxCoreMaps
 import MapboxDirections
-import MapboxCoreNavigation
+import UhSpotCoreNavigation
 import Turf
 
 private enum RouteDurationAnnotationTailPosition: Int {

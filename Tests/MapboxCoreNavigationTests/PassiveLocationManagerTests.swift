@@ -2,7 +2,7 @@ import Foundation
 import MapboxNavigationNative
 import TestHelper
 import XCTest
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 
 class Road {
     let from: CLLocationCoordinate2D

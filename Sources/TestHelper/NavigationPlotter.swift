@@ -2,7 +2,7 @@ import Foundation
 import Turf
 import MapboxMaps
 import MapboxDirections
-@testable import MapboxCoreNavigation
+@testable import UhSpotCoreNavigation
 @testable import MapboxNavigation
 
 fileprivate struct Constants {
