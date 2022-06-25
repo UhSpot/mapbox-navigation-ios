@@ -44,7 +44,7 @@ class UhSpotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationMapView.mapView.mapboxMap.style.uri = StyleURI(rawValue: "mapbox://styles/mapbox-map-design/ckd6dqf981hi71iqlyn3e896y")
+        //navigationMapView.mapView.mapboxMap.style.uri = StyleURI(rawValue: "mapbox://styles/mapbox-map-design/ckd6dqf981hi71iqlyn3e896y")
         navigationMapView.userCourseView.isHidden = false
         
         let locationManager = simulateLocation ? SimulatedLocationManager(route: indexedUserRouteResponse!.routeResponse.routes!.first!) : NavigationLocationManager()
@@ -72,7 +72,7 @@ class UhSpotViewController: UIViewController {
         
         // By default `NavigationViewportDataSource` tracks location changes from `PassiveLocationManager`, to consume
         // locations in active guidance navigation `ViewportDataSourceType` should be set to `.active`.
-        let navigationViewportDataSource = NavigationViewportDataSource(navigationMapView.mapView, viewportDataSourceType: .active)
+        /*let navigationViewportDataSource = NavigationViewportDataSource(navigationMapView.mapView, viewportDataSourceType: .active)
         
         // Disable any updates to `CameraOptions.padding` in `NavigationCameraState.following` state
         // to prevent overlapping.
@@ -87,7 +87,7 @@ class UhSpotViewController: UIViewController {
         navigationMapView.mapView.mapboxMap.onNext(.styleLoaded) { [weak self] _ in
             guard let self = self else { return }
             self.pointAnnotationManager = self.navigationMapView.mapView.annotations.makePointAnnotationManager()
-        }
+        }*/
 
     }
     
