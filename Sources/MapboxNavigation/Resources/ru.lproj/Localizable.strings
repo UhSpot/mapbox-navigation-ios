@@ -55,8 +55,8 @@
 /* Specific route feedback that audio guidance was provided too late for a maneuever. */
 "CONFUSING_AUDIO_GUIDANCE_TOO_LATE_FEEDBACK" = "Подсказка слишком поздно";
 
-/* Specific route feedback that an audio guidance problem was encountered but not listed as a choice. */
-"CONFUSING_AUDIO_OTHER_FEEDBACK" = "Другое";
+/* Specific route feedback that audio guidance instruction is missing */
+"CONFUSING_AUDIO_INSTRUCTION_MISSING_FEEDBACK" = "Пропущена подсказка";
 
 /* Specific route feedback that audio guidance used incorrect pronunciation. */
 "CONFUSING_AUDIO_PRONUNCIATION_INCORRECT_FEEDBACK" = "Неправильное произношение";
@@ -85,17 +85,14 @@
 /* Title of view controller for sending feedback */
 "FEEDBACK_TITLE" = "Сообщить о проблеме";
 
-/* Specific route feedback that a illegal route problem was encountered but not listed as a choice. */
-"ILLEGAL_ROUTE_OTHER_FEEDBACK" = "Другое";
-
 /* Label indicating the device volume is too low to hear spoken instructions and needs to be manually increased */
 "INAUDIBLE_INSTRUCTIONS_CTA" = "Увеличить громкость для голосовых инструкций";
 
 /* Specific route feedback that a speed limit is incorrect. */
-"INCORRECT_SPEED_LIMIT" = "Неправильное ограничение скорости";
+"INCORRECT_SPEED_LIMIT" = "Неверное ограничение скорости";
 
 /* Specific route feedback that an exit was incorrect. */
-"INCORRECT_VISUAL_EXIT_INFO_INCORRECT_FEEDBACK" = "Неправильный съезд";
+"INCORRECT_VISUAL_EXIT_INFO_INCORRECT_FEEDBACK" = "Неверный съезд";
 
 /* General category of route feedback where visual instruction was incorrect. */
 "INCORRECT_VISUAL_FEEDBACK" = "Неверная подсказка";
@@ -111,12 +108,6 @@
 
 /* Specific route feedback that a maneuver specified was incorrect. */
 "INCORRECT_VISUAL_MANEUVER_INCORRECT_FEEDBACK" = "Неверный манёвр";
-
-/* Specific route feedback that a visual instruction problem was encountered but not listed as a choice. */
-"INCORRECT_VISUAL_OTHER_FEEDBACK" = "Другое";
-
-/* Specific route feedback that a road is known by another name. */
-"INCORRECT_VISUAL_ROAD_NAME_DIFFERENT_FEEDBACK" = "Дорога известна под другим названием";
 
 /* Specific route feedback for incorrect street name. */
 "INCORRECT_VISUAL_STREET_NAME_INCORRECT_FEEDBACK" = "Неверное название дороги";
@@ -139,11 +130,44 @@
 /* Accessibility value of label indicating the absence of a rating */
 "NO_RATING" = "Нет рейтинга.";
 
+/* Specific route feedback that user positioning is incorrect. */
+"PASSIVE_NAVIGATION_FEEDBACK_BAD_GPS" = "Плохой GPS";
+
+/* General category of feedback where something looks incorrect. */
+"PASSIVE_NAVIGATION_FEEDBACK_INCORRECT_VISUAL" = "Неверная подсказка";
+
+/* Specific route feedback that a speed limit is incorrect. */
+"PASSIVE_NAVIGATION_FEEDBACK_INCORRECT_VISUAL_INCORRECT_SPEED_LIMIT" = "Неверное ограничение скорости";
+
+/* Specific route feedback for incorrect street name. */
+"PASSIVE_NAVIGATION_FEEDBACK_INCORRECT_VISUAL_STREET_NAME_INCORRECT" = "Неверное название дороги";
+
+/* General category of feedback where there is an issue on the road. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE" = "Проблема с дорогой";
+
+/* Feedback that map shows a non-existant road. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE_MISSING_ROAD" = "Не хватает дороги";
+
+/* Feedback that a street is permanently blocked off. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE_STREET_PERMANENTLY_BLOCKED_OFF" = "Дорога закрыта навсегда";
+
+/* Feedback that a street is temporary blocked off. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE_STREET_TEMPORARILY_BLOCKED_OFF" = "Дорога временно закрыта";
+
+/* Feedback that there is a congestion on the road. */
+"PASSIVE_NAVIGATION_FEEDBACK_WRONG_TRAFFIC_CONGESTION" = "Затор";
+
+/* Feedback that there is a moderate traffic on the road. */
+"PASSIVE_NAVIGATION_FEEDBACK_WRONG_TRAFFIC_MODERATE" = "Плотно";
+
+/* Feedback that there is no traffic on the road. */
+"PASSIVE_NAVIGATION_FEEDBACK_WRONG_TRAFFIC_NO_TRAFFIC" = "Никого";
+
+/* General category of feedback where there is a wrong traffic. */
+"PASSIVE_NAVIGATION_WRONG_TRAFFIC" = "Неверная информация о трафике";
+
 /* General category of route feedback where user position is incorrect. */
 "POSITIONING" = "Позиционирование";
-
-/* Specific route feedback that user positioning is incorrect. */
-"POSITIONING_USER" = "Ваше местоположение";
 
 /* Rating Reset To Zero Accessability Hint */
 "RATING_ACCESSIBILITY_RESET" = "Нажмите для обнуления рейтинга.";
@@ -159,9 +183,6 @@
 
 /* Button title for resume tracking */
 "RESUME" = "Возобновить";
-
-/* Specific route feedback that a road closure type was encountered but not listed as a choice. */
-"ROAD_CLOSURE_OTHER_FEEDBACK" = "Другое";
 
 /* This route does not have tolls */
 "ROUTE_HAS_NO_TOLLS" = "Нет оплаты";
@@ -187,9 +208,6 @@
 /* Specific route feedback that route suggested an illegal turn. */
 "ROUTE_QUALITY_ILLEGAL_ROUTE_TURN_NOT_ALLOWED_FEEDBACK" = "Поворот не разрешён";
 
-/* Specific route feedback that route suggested an illegal unprotected turn. */
-"ROUTE_QUALITY_ILLEGAL_ROUTE_UNPROTECTED_TURN_FEEDBACK" = "Поворот на перекрёстке был небезопасен";
-
 /* Specific route feedback that route contained non-existant roads. */
 "ROUTE_QUALITY_INCLUDED_MISSING_ROADS_FEEDBACK" = "Маршрут включал отсутствующие дороги";
 
@@ -199,17 +217,11 @@
 /* Specific route feedback that route was not ideal according to user. */
 "ROUTE_QUALITY_NOT_PREFERRED_FEEDBACK" = "Маршрут не самый подходящий";
 
-/* Specific route feedback that a route quality problem was encountered but not listed as a choice. */
-"ROUTE_QUALITY_OTHER_FEEDBACK" = "Другое";
-
 /* General route feedback that route contained closed road. */
 "ROUTE_QUALITY_ROAD_CLOSURE_FEEDBACK" = "Дорога закрыта";
 
 /* Specifc route feedback that route contained road that is permanently closed. */
 "ROUTE_QUALITY_ROAD_CLOSURE_PERMANENT_FEEDBACK" = "Дорога перекрыта навсегда";
-
-/* Specifc route feedback that route contained road not shown on map. */
-"ROUTE_QUALITY_ROAD_MISSING_FROM_MAP_FEEDBACK" = "Дорога отсутствует на карте";
 
 /* Specific route feedback that route contained impassible, narrow roads. */
 "ROUTE_QUALITY_ROADS_TOO_NARROW_FEEDBACK" = "Маршрут включал слишком узкие дороги";

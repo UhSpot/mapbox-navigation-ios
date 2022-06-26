@@ -1,5 +1,5 @@
 import UIKit
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxDirections
 import MapboxMaps
@@ -15,6 +15,8 @@ class CustomViewController: UIViewController {
     var navigationService: NavigationService!
     
     var simulateLocation = false
+    
+    var currentLegIndex: Int = 0
 
     var indexedUserRouteResponse: IndexedRouteResponse?
         
@@ -26,7 +28,7 @@ class CustomViewController: UIViewController {
     var previewStepIndex: Int?
     
     // View that is placed over the instructions banner while we are previewing
-    var previewInstructionsView: StepInstructionsView?
+    var previewBannerView: InstructionsBannerView?
     
     @IBOutlet var navigationMapView: NavigationMapView!
     @IBOutlet weak var cancelButton: UIButton!
@@ -42,14 +44,16 @@ class CustomViewController: UIViewController {
         super.viewDidLoad()
         
         navigationMapView.mapView.mapboxMap.style.uri = StyleURI(rawValue: "mapbox://styles/mapbox-map-design/ckd6dqf981hi71iqlyn3e896y")
-        navigationMapView.userCourseView.isHidden = false
+        navigationMapView.userLocationStyle = .courseView()
         
         let locationManager = simulateLocation ? SimulatedLocationManager(route: indexedUserRouteResponse!.routeResponse.routes!.first!) : NavigationLocationManager()
         navigationService = MapboxNavigationService(routeResponse: indexedUserRouteResponse!.routeResponse,
                                                     routeIndex: indexedUserRouteResponse!.routeIndex,
                                                     routeOptions: userRouteOptions!,
+                                                    customRoutingProvider: nil,
+                                                    credentials: NavigationSettings.shared.directions.credentials,
                                                     locationSource: locationManager,
-                                                    simulating: simulateLocation ? .always : .onPoorGPS)
+                                                    simulating: simulateLocation ? .always : .inTunnels)
         
         navigationMapView.mapView.ornaments.options.compass.visibility = .hidden
         
@@ -64,7 +68,10 @@ class CustomViewController: UIViewController {
         
         navigationMapView.mapView.mapboxMap.onNext(.styleLoaded, handler: { [weak self] _ in
             guard let route = self?.navigationService.route else { return }
-            self?.navigationMapView.show([route])
+            // By setting the `NavigationMapView.routeLineTracksTraversal` to `true`, it would allow the main route shown with
+            // traversed part disappearing effect in a standalone `NavigationMapView` during active navigation.
+            self?.navigationMapView.routeLineTracksTraversal = true
+            self?.navigationMapView.show([route], legIndex: 0)
         })
         
         // By default `NavigationViewportDataSource` tracks location changes from `PassiveLocationManager`, to consume
@@ -98,21 +105,25 @@ class CustomViewController: UIViewController {
     }
 
     func resumeNotifications() {
+        // Add observers for the route refresh, rerouting and route progress update events to update the main route line
+        // when `NavigationMapView.routeLineTracksTraversal` set to `true`.
         NotificationCenter.default.addObserver(self, selector: #selector(progressDidChange(_ :)), name: .routeControllerProgressDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(rerouted(_:)), name: .routeControllerDidReroute, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(refresh(_:)), name: .routeControllerDidRefreshRoute, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(updateInstructionsBanner(notification:)), name: .routeControllerDidPassVisualInstructionPoint, object: navigationService.router)
     }
 
     func suspendNotifications() {
         NotificationCenter.default.removeObserver(self, name: .routeControllerProgressDidChange, object: nil)
         NotificationCenter.default.removeObserver(self, name: .routeControllerDidReroute, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .routeControllerDidRefreshRoute, object: nil)
         NotificationCenter.default.removeObserver(self, name: .routeControllerDidPassVisualInstructionPoint, object: nil)
     }
 
     // Notifications sent on all location updates
     @objc func progressDidChange(_ notification: NSNotification) {
         // do not update if we are previewing instruction steps
-        guard previewInstructionsView == nil,
+        guard previewBannerView == nil,
               let routeProgress = notification.userInfo?[RouteController.NotificationUserInfoKey.routeProgressKey] as? RouteProgress,
               let location = notification.userInfo?[RouteController.NotificationUserInfoKey.locationKey] as? CLLocation else { return }
         
@@ -123,12 +134,23 @@ class CustomViewController: UIViewController {
             navigationMapView.removeArrow()
         }
         
+        if routeProgress.legIndex != currentLegIndex {
+            navigationMapView.showWaypoints(on: routeProgress.route, legIndex: routeProgress.legIndex)
+            navigationMapView.show([routeProgress.route], legIndex: routeProgress.legIndex)
+            currentLegIndex = routeProgress.legIndex
+        }
+        
         // Update the top banner with progress updates
         instructionsBannerView.updateDistance(for: routeProgress.currentLegProgress.currentStepProgress)
         instructionsBannerView.isHidden = false
         
         // Update `UserCourseView` to be placed on the most recent location.
         navigationMapView.moveUserLocation(to: location, animated: true)
+        
+        // Update the main route line during active navigation when `NavigationMapView.routeLineTracksTraversal` set to `true`
+        // and route progress change, by calling `NavigationMapView.updateRouteLine(routeProgress:coordinate:shouldRedraw:)`
+        // without redrawing the main route.
+        navigationMapView.updateRouteLine(routeProgress: routeProgress, coordinate: location.coordinate)
     }
     
     @objc func updateInstructionsBanner(notification: NSNotification) {
@@ -143,8 +165,23 @@ class CustomViewController: UIViewController {
     // Fired when the user is no longer on the route.
     // Update the route on the map.
     @objc func rerouted(_ notification: NSNotification) {
-        self.navigationMapView.removeWaypoints()
-        self.navigationMapView.show([navigationService.route])
+        navigationMapView.removeWaypoints()
+        
+        // Update the main route line during active navigation when `NavigationMapView.routeLineTracksTraversal` set to `true`
+        // and rerouting happens, by calling `NavigationMapView.updateRouteLine(routeProgress:coordinate:shouldRedraw:)`
+        // with `shouldRedraw` as `true`.
+        navigationMapView.updateRouteLine(routeProgress: navigationService.routeProgress,
+                                          coordinate: navigationService.router.location?.coordinate,
+                                          shouldRedraw: true)
+    }
+    
+    @objc func refresh(_ notification: NSNotification) {
+        // Update the main route line during active navigation when `NavigationMapView.routeLineTracksTraversal` set to `true`
+        // and route refresh happens, by calling `NavigationMapView.updateRouteLine(routeProgress:coordinate:shouldRedraw:)`
+        // with `shouldRedraw` as `true`.
+        navigationMapView.updateRouteLine(routeProgress: navigationService.routeProgress,
+                                          coordinate: navigationService.router.location?.coordinate,
+                                          shouldRedraw: true)
     }
 
     @IBAction func cancelButtonPressed(_ sender: Any) {
@@ -220,33 +257,33 @@ class CustomViewController: UIViewController {
         guard let instructions = step.instructionsDisplayedAlongStep?.last else { return }
         
         // create a StepInstructionsView and display that over the current instructions banner
-        let previewInstructionsView = StepInstructionsView(frame: instructionsBannerView.frame)
-        previewInstructionsView.delegate = self
-        previewInstructionsView.swipeable = true
-        previewInstructionsView.backgroundColor = instructionsBannerView.backgroundColor
-        view.addSubview(previewInstructionsView)
+        let previewBannerView = InstructionsBannerView(frame: instructionsBannerView.frame)
+        previewBannerView.delegate = self
+        previewBannerView.swipeable = true
+        view.addSubview(previewBannerView)
         
         // update instructions banner to show all information about this step
-        previewInstructionsView.updateDistance(for: RouteStepProgress(step: step))
-        previewInstructionsView.update(for: instructions)
+        previewBannerView.updateDistance(for: RouteStepProgress(step: step))
+        previewBannerView.update(for: instructions)
         
-        self.previewInstructionsView = previewInstructionsView
+        self.previewBannerView = previewBannerView
     }
     
     func removePreviewInstruction() {
-        guard let view = previewInstructionsView else { return }
+        guard let view = previewBannerView else { return }
         view.removeFromSuperview()
         
         // reclaim the delegate, from the preview banner
         instructionsBannerView.delegate = self
         
         // nil out both the view and index
-        previewInstructionsView = nil
+        previewBannerView = nil
         previewStepIndex = nil
     }
 }
 
 extension CustomViewController: InstructionsBannerViewDelegate {
+    
     func didTapInstructionsBanner(_ sender: BaseInstructionsBannerView) {
         toggleStepsList()
     }
@@ -298,13 +335,17 @@ extension CustomViewController: InstructionsBannerViewDelegate {
 }
 
 extension CustomViewController: StepsViewControllerDelegate {
+    
     func didDismissStepsViewController(_ viewController: StepsViewController) {
         viewController.dismiss { [weak self] in
             self?.stepsViewController = nil
         }
     }
     
-    func stepsViewController(_ viewController: StepsViewController, didSelect legIndex: Int, stepIndex: Int, cell: StepTableViewCell) {
+    func stepsViewController(_ viewController: StepsViewController,
+                             didSelect legIndex: Int,
+                             stepIndex: Int,
+                             cell: StepTableViewCell) {
         viewController.dismiss { [weak self] in
             self?.stepsViewController = nil
         }

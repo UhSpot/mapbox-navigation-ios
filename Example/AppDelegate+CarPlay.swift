@@ -2,8 +2,9 @@ import UIKit
 import MapboxNavigation
 import CarPlay
 import MapboxGeocoder
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxDirections
+import MapboxMaps
 
 let CarPlayWaypointKey: String = "MBCarPlayWaypoint"
 
@@ -83,18 +84,25 @@ extension AppDelegate: CarPlayManagerDelegate {
         return MapboxNavigationService(routeResponse: routeResponse,
                                        routeIndex: routeIndex,
                                        routeOptions: routeOptions,
+                                       customRoutingProvider: nil,
+                                       credentials: NavigationSettings.shared.directions.credentials,
                                        simulating: desiredSimulationMode)
     }
     
-    func carPlayManager(_ carPlayManager: CarPlayManager, didBeginNavigationWith service: NavigationService) {
-        currentAppRootViewController?.beginNavigationWithCarPlay(navigationService: service)
-        carPlayManager.carPlayNavigationViewController?.compassView.isHidden = false
+    func carPlayManager(_ carPlayManager: CarPlayManager, didPresent navigationViewController: CarPlayNavigationViewController) {
+        currentAppRootViewController?.beginNavigationWithCarPlay(navigationService: navigationViewController.navigationService)
+        navigationViewController.compassView.isHidden = false
         
         // Render part of the route that has been traversed with full transparency, to give the illusion of a disappearing route.
-        carPlayManager.carPlayNavigationViewController?.routeLineTracksTraversal = true
+        navigationViewController.routeLineTracksTraversal = true
+        navigationViewController.navigationMapView?.showsRestrictedAreasOnRoute = true
+        
+        // Example of building highlighting in 3D.
+        navigationViewController.waypointStyle = .extrudedBuilding
     }
     
-    func carPlayManagerDidEndNavigation(_ carPlayManager: CarPlayManager) {
+    func carPlayManagerDidEndNavigation(_ carPlayManager: CarPlayManager,
+                                        byCanceling canceled: Bool) {
         // Dismiss NavigationViewController if it's present in the navigation stack
         currentAppRootViewController?.dismissActiveNavigationViewController()
     }
@@ -119,7 +127,7 @@ extension AppDelegate: CarPlayManagerDelegate {
                                                                             interfaceController: interfaceController,
                                                                             traitCollection: traitCollection)
             return [searchButton]
-        case .navigating, .previewing, .panningInBrowsingMode:
+        case .navigating, .previewing, .panningInBrowsingMode, .panningInNavigationMode:
             return nil
         }
     }
@@ -200,7 +208,7 @@ extension AppDelegate: CarPlayManagerDelegate {
             }
             favoriteTemplateButton.image = UIImage(named: "carplay_star", in: nil, compatibleWith: traitCollection)
             return [favoriteTemplateButton]
-        case .navigating, .panningInBrowsingMode:
+        case .navigating, .panningInBrowsingMode, .panningInNavigationMode:
             return nil
         }
     }
@@ -216,17 +224,36 @@ extension AppDelegate: CarPlayManagerDelegate {
                 return nil
             }
             
-            var mapButtons = [
+            let mapButtons = [
                 carPlayMapViewController.recenterButton,
+                carPlayMapViewController.panningInterfaceDisplayButton(for: mapTemplate),
                 carPlayMapViewController.zoomInButton,
                 carPlayMapViewController.zoomOutButton
             ]
             
-            mapButtons.insert(carPlayMapViewController.panningInterfaceDisplayButton(for: mapTemplate), at: 1)
             return mapButtons
-        case .previewing, .navigating, .panningInBrowsingMode:
+        case .previewing, .navigating, .panningInBrowsingMode, .panningInNavigationMode:
             return nil
         }
+    }
+    
+    func carPlayManager(_ carPlayManager: CarPlayManager,
+                        shouldShowNotificationFor maneuver: CPManeuver,
+                        in mapTemplate: CPMapTemplate) -> Bool {
+        return true
+    }
+    
+    func carPlayManager(_ carPlayManager: CarPlayManager,
+                        shouldShowNotificationFor navigationAlert: CPNavigationAlert,
+                        in mapTemplate: CPMapTemplate) -> Bool {
+        return true
+    }
+    
+    func carPlayManager(_ carPlayManager: CarPlayManager,
+                        shouldUpdateNotificationFor maneuver: CPManeuver,
+                        with travelEstimates: CPTravelEstimates,
+                        in mapTemplate: CPMapTemplate) -> Bool {
+        return true
     }
 }
 
@@ -256,7 +283,7 @@ extension AppDelegate: CarPlaySearchControllerDelegate {
     }
     
     func popTemplate(animated: Bool) {
-        carPlayManager.interfaceController?.popTemplate(animated: animated)
+        carPlayManager.interfaceController?.safePopTemplate(animated: animated)
     }
     
     func forwardGeocodeOptions(_ searchText: String) -> ForwardGeocodeOptions {
@@ -347,7 +374,7 @@ extension AppDelegate: CarPlaySearchControllerDelegate {
     func searchTemplate(_ searchTemplate: CPSearchTemplate,
                         selectedResult item: CPListItem,
                         completionHandler: @escaping () -> Void) {
-        guard let userInfo = item.userInfo as? [String: Any],
+        guard let userInfo = item.userInfo as? CarPlayUserInfo,
               let placemark = userInfo[CarPlaySearchController.CarPlayGeocodedPlacemarkKey] as? NavigationGeocodedPlacemark,
               let location = placemark.routableLocations?.first ?? placemark.location else {
             completionHandler()
@@ -423,15 +450,17 @@ extension GeocodedPlacemark {
 @available(iOS 12.0, *)
 extension AppDelegate: CPListTemplateDelegate {
     
-    func listTemplate(_ listTemplate: CPListTemplate, didSelect item: CPListItem, completionHandler: @escaping () -> Void) {
-        // Selected a favorite
-        if let userInfo = item.userInfo as? [String: Any],
-            let waypoint = userInfo[CarPlayWaypointKey] as? Waypoint {
-            carPlayManager.previewRoutes(to: waypoint, completionHandler: completionHandler)
-            return
-        }
+    func listTemplate(_ listTemplate: CPListTemplate,
+                      didSelect item: CPListItem,
+                      completionHandler: @escaping () -> Void) {
+        // Selected a list item for the list of favorites.
+        guard let userInfo = item.userInfo as? CarPlayUserInfo,
+              let waypoint = userInfo[CarPlayWaypointKey] as? Waypoint else {
+                  completionHandler()
+                  return
+              }
         
-        completionHandler()
+        carPlayManager.previewRoutes(to: waypoint, completionHandler: completionHandler)
     }
 }
 
@@ -450,6 +479,11 @@ class CarPlaySceneDelegate: NSObject, CPTemplateApplicationSceneDelegate {
         appDelegate.carPlayManager.templateApplicationScene(templateApplicationScene,
                                                             didConnectCarInterfaceController: interfaceController,
                                                             to: window)
+        // NOTE: When CarPlay is connected, we check if there is an active navigation in progress and start CarPlay
+        //       navigation as well, otherwise, CarPlay will be in passive navigation and stay out of sync with iOS app. 
+        if appDelegate.currentAppRootViewController?.activeNavigationViewController != nil {
+            appDelegate.currentAppRootViewController?.beginCarPlayNavigation()
+        }
     }
 
     func templateApplicationScene(_ templateApplicationScene: CPTemplateApplicationScene,

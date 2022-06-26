@@ -4,7 +4,7 @@ import TestHelper
 import Turf
 import MapboxMaps
 @testable import MapboxNavigation
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 class NavigationMapViewTests: TestCase {
     let response = Fixture.routeResponse(from: "route-with-instructions", options: NavigationRouteOptions(coordinates: [
@@ -47,7 +47,7 @@ class NavigationMapViewTests: TestCase {
         ])
         
         XCTAssertEqual(congestionSegments.count, 1)
-        XCTAssertEqual(congestionSegments[0].0.count, 10)
+        XCTAssertEqual(congestionSegments[0].0.count, 6)
         XCTAssertEqual(congestionSegments[0].1, .low)
     }
     
@@ -64,13 +64,49 @@ class NavigationMapViewTests: TestCase {
         // Any time the current congestion level is different than the previous segment, we have to create a new congestion segment.
         XCTAssertEqual(congestionSegmentsSevere.count, 3)
         
-        XCTAssertEqual(congestionSegmentsSevere[0].0.count, 4)
+        XCTAssertEqual(congestionSegmentsSevere[0].0.count, 3)
         XCTAssertEqual(congestionSegmentsSevere[1].0.count, 2)
-        XCTAssertEqual(congestionSegmentsSevere[2].0.count, 4)
+        XCTAssertEqual(congestionSegmentsSevere[2].0.count, 3)
         
         XCTAssertEqual(congestionSegmentsSevere[0].1, .low)
         XCTAssertEqual(congestionSegmentsSevere[1].1, .severe)
         XCTAssertEqual(congestionSegmentsSevere[2].1, .low)
+    }
+    
+    func testNavigationMapViewCombineWithSimilarRoadClasses() {
+        let congestionSegments = coordinates.combined([
+            .restricted,
+            [.restricted, .toll],
+            [.restricted, .toll],
+            .restricted,
+            .restricted
+        ], combiningRoadClasses: .restricted)
+        
+        XCTAssertEqual(congestionSegments.count, 1)
+        XCTAssertEqual(congestionSegments[0].0.count, 6)
+        XCTAssertEqual(congestionSegments[0].1, .restricted)
+    }
+    
+    func testNavigationMapViewCombineWithDissimilarRoadClasses() {
+        let congestionSegmentsSevere = coordinates.combined([
+            .restricted,
+            [.restricted, .ferry],
+            .ferry,
+            [.restricted, .ferry],
+            .restricted
+        ], combiningRoadClasses: .restricted)
+        
+        // The ferry breaks the trend of .restricted.
+        // Any time the current road class is different than the previous segment, we have to create a new road class segment.
+        XCTAssertEqual(congestionSegmentsSevere.count, 3)
+        
+        XCTAssertEqual(congestionSegmentsSevere[0].0.count, 3)
+        XCTAssertEqual(congestionSegmentsSevere[1].0.count, 2)
+        XCTAssertEqual(congestionSegmentsSevere[2].0.count, 3)
+        
+        XCTAssertEqual(congestionSegmentsSevere[0].1, .restricted)
+        XCTAssertEqual(congestionSegmentsSevere[1].1, RoadClasses())
+        XCTAssertEqual(congestionSegmentsSevere[2].1, .restricted)
     }
     
     func testRemoveWaypointsDoesNotRemoveUserAnnotations() {
@@ -97,62 +133,6 @@ class NavigationMapViewTests: TestCase {
         XCTAssertEqual(0, pointAnnotationManager?.annotations.count)
     }
 
-    func setUpVanishingRouteLine() -> Route {
-        let routeData = Fixture.JSONFromFileNamed(name: "route-for-vanishing-route-line")
-        let routeOptions = NavigationRouteOptions(coordinates: [
-            CLLocationCoordinate2DMake(-122.5237734,37.9753973),
-            CLLocationCoordinate2DMake(-122.5264995,37.9709171)
-        ])
-        let decoder = JSONDecoder()
-        decoder.userInfo[.options] = routeOptions
-        var testRoute: Route?
-        XCTAssertNoThrow(testRoute = try decoder.decode(Route.self, from: routeData))
-        guard let route = testRoute else {
-            preconditionFailure("Route is invalid.")
-        }
-        return route
-    }
-    
-    func testUpdateVanishingPoint() {
-        let route = setUpVanishingRouteLine()
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
-        let shape = route.shape!
-        let targetPoint = Turf.mid(shape.coordinates[6], shape.coordinates[7])
-        //which is between route.legs[0].steps[1].shape!.coordinates[3] and  route.legs[0].steps[1].shape!.coordinates[4]
-        let traveledCoordinates = Array(route.legs[0].steps[1].shape!.coordinates[0...3])
-        let stepTraveledDistancePrep = navigationMapView.calculateGranularDistances(traveledCoordinates)?.distance
-        guard let stepTraveledDistanceSep = stepTraveledDistancePrep else {
-            preconditionFailure("Granular distances are invalid")
-        }
-
-        let testRouteProgress: RouteProgress = RouteProgress(route: route, options: routeOptions, legIndex: 0, spokenInstructionIndex: 0)
-        testRouteProgress.currentLegProgress = RouteLegProgress(leg: route.legs[0], stepIndex: 1, spokenInstructionIndex: 0)
-        testRouteProgress.currentLegProgress.currentStepProgress = RouteStepProgress(step: route.legs[0].steps[1], spokenInstructionIndex: 0)
-        testRouteProgress.currentLegProgress.currentStepProgress.distanceTraveled = stepTraveledDistanceSep
-
-        navigationMapView.initPrimaryRoutePoints(route: route)
-        navigationMapView.updateUpcomingRoutePointIndex(routeProgress: testRouteProgress)
-        navigationMapView.updateFractionTraveled(coordinate: targetPoint)
-
-        let expectedTraveledFraction = 0.06383308537010246
-
-        XCTAssertTrue(abs(navigationMapView.fractionTraveled - expectedTraveledFraction) < 0.000000000001)
-    }
-    
-    func testParseRoutePoints() {
-        let route = setUpVanishingRouteLine()
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
-        
-        navigationMapView.initPrimaryRoutePoints(route: route)
-        let nestedList = navigationMapView.routePoints?.nestedList
-        let flatList = navigationMapView.routePoints?.flatList
-        let distanceArray = navigationMapView.routeLineGranularDistances?.distanceArray
-        XCTAssertEqual(nestedList?.first?.count, 8)
-        XCTAssertEqual(flatList?.count, 33)
-        XCTAssertEqual(distanceArray?.count, 33)
-        XCTAssertEqual(distanceArray?[32].distanceRemaining, 0)
-    }
-
     // MARK: - Route congestion consistency tests
     
     func loadRoute(from jsonFile: String) -> Route {
@@ -176,7 +156,7 @@ class NavigationMapViewTests: TestCase {
     }
     
     func congestionLevel(_ feature: Turf.Feature) -> CongestionLevel? {
-        guard let congestionLevel = feature.properties?["congestion"] as? String else { return nil }
+        guard case let .string(congestionLevel) = feature.properties?["congestion"] else { return nil }
         
         return CongestionLevel(rawValue: congestionLevel)
     }
@@ -356,15 +336,129 @@ class NavigationMapViewTests: TestCase {
         }
     }
     
+    func testRestrictedRoadFeaturesNotPresent() {
+        let route = loadRoute(from: "route-with-missing-road-classes")
+        let restrictedFeatures = route.restrictedRoadsFeatures()
+        
+        XCTAssertTrue(restrictedFeatures.isEmpty, "Restricted Road Features should be empty")
+    }
+    
+    func isRestricted(_ feature: Turf.Feature) -> Bool? {
+        guard case let .boolean(isRestricted) = feature.properties?["isRestrictedRoad"] else { return nil }
+        
+        return isRestricted
+    }
+    
+    func testRestrictedRoadFeaturesMixed() {
+        let route = loadRoute(from: "route-with-mixed-road-classes")
+        let restrictedFeatures = route.restrictedRoadsFeatures()
+        
+        let expectedRestrictions: [Bool] = [
+            true,
+            false,
+            true,
+            false,
+        ]
+        
+        restrictedFeatures.enumerated().forEach {
+            XCTAssertEqual(isRestricted($0.element), expectedRestrictions[$0.offset])
+        }
+    }
+    
+    func testGenerateRouteLineGradientWithSingleCongestion() {
+        let coordinates: [CLLocationCoordinate2D] = [
+            CLLocationCoordinate2D(latitude: 37.798, longitude: -122.398),
+            CLLocationCoordinate2D(latitude: 37.795, longitude: -122.398),
+            CLLocationCoordinate2D(latitude: 37.795, longitude: -122.395),
+        ]
+        let congestionSegment: CongestionSegment = (coordinates, CongestionLevel.low)
+        var feature = Feature(geometry: .lineString(LineString(congestionSegment.0)))
+        feature.properties = [
+            CongestionAttribute: .string(String(describing: congestionSegment.1)),
+            CurrentLegAttribute: true
+        ]
+        let congestionFeatures = [feature]
+        
+        var fractionTraveled = 0.0
+        var routeLineGradient = navigationMapView.routeLineCongestionGradient(congestionFeatures: congestionFeatures,
+                                                                              fractionTraveled: fractionTraveled,
+                                                                              isMain: true,
+                                                                              isSoft: false)
+        XCTAssertEqual(routeLineGradient[0.0], navigationMapView.trafficLowColor)
+        
+        fractionTraveled = 0.3
+        var fractionTraveledNextDown = Double(CGFloat(fractionTraveled).nextDown)
+        routeLineGradient = navigationMapView.routeLineCongestionGradient(congestionFeatures: congestionFeatures,
+                                                                          fractionTraveled: fractionTraveled,
+                                                                          isMain: true,
+                                                                          isSoft: false)
+        XCTAssertEqual(routeLineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveled], navigationMapView.trafficLowColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveledNextDown], navigationMapView.traversedRouteColor)
+        
+        fractionTraveled = 0.999999999
+        fractionTraveledNextDown = Double(CGFloat(fractionTraveled).nextDown)
+        routeLineGradient = navigationMapView.routeLineCongestionGradient(congestionFeatures: congestionFeatures,
+                                                                          fractionTraveled: fractionTraveled,
+                                                                          isMain: true,
+                                                                          isSoft: true)
+        XCTAssertEqual(routeLineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveled], navigationMapView.trafficLowColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveledNextDown], navigationMapView.traversedRouteColor)
+    }
+    
+    func testSoftRouteLineGradient() {
+        let route = loadRoute(from: "route-with-road-classes-single-congestion")
+        var congestions = route.congestionFeatures()
+        var fractionTraveled = 0.0
+        var lineGradient = navigationMapView.routeLineCongestionGradient(congestionFeatures: congestions,
+                                                                         fractionTraveled: fractionTraveled,
+                                                                         isMain: true,
+                                                                         isSoft: true)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.trafficUnknownColor)
+        
+        lineGradient = [
+            0.0: navigationMapView.trafficSevereColor,
+            0.295: navigationMapView.trafficSevereColor,
+            0.305: navigationMapView.trafficModerateColor,
+            0.695: navigationMapView.trafficModerateColor,
+            0.705: navigationMapView.trafficHeavyColor,
+            1.0: navigationMapView.trafficHeavyColor
+        ]
+        fractionTraveled = 0.3
+        let nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled,
+                                                                      gradientStops: lineGradient,
+                                                                      baseColor: navigationMapView.trafficUnknownColor)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficSevereColor)
+        XCTAssertEqual(lineGradient[0.305], navigationMapView.trafficModerateColor)
+        
+        congestions = [Turf.Feature]()
+        lineGradient = navigationMapView.routeLineCongestionGradient(congestionFeatures: congestions,
+                                                                     fractionTraveled: fractionTraveled,
+                                                                     isMain: true,
+                                                                     isSoft: true)
+        XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficUnknownColor)
+        
+    }
+    
     func testUpdateRouteLineGradient() {
         let route = loadRoute(from: "route-with-road-classes-single-congestion")
         let congestions = route.congestionFeatures()
-        var lineGradient = navigationMapView.routeLineGradient(congestions, fractionTraveled: 0.0, isMain: true)
+        var lineGradient = navigationMapView.routeLineCongestionGradient(congestionFeatures: congestions,
+                                                                         fractionTraveled: 0.0,
+                                                                         isMain: true)
         XCTAssertEqual(lineGradient[0.0], navigationMapView.trafficUnknownColor)
         
         var fractionTraveled = 0.5
         var nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
-        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled,
+                                                                      gradientStops: lineGradient,
+                                                                      baseColor: navigationMapView.trafficUnknownColor)
 
         XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
@@ -382,21 +476,21 @@ class NavigationMapViewTests: TestCase {
         
         fractionTraveled = 0.3
         nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
-        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient, baseColor: navigationMapView.trafficUnknownColor)
         XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficModerateColor)
         
         fractionTraveled = 0.35
         nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
-        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient, baseColor: navigationMapView.trafficUnknownColor)
         XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficModerateColor)
         
         fractionTraveled = 0.45
         nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
-        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient, baseColor: navigationMapView.trafficUnknownColor)
         XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficHeavyColor)
@@ -404,10 +498,88 @@ class NavigationMapViewTests: TestCase {
         lineGradient = [Double:UIColor]()
         fractionTraveled = 0.45
         nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
-        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient)
+        lineGradient = navigationMapView.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: lineGradient, baseColor: navigationMapView.trafficUnknownColor)
         XCTAssertEqual(lineGradient[0.0], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[nextDownFractionTraveled], navigationMapView.traversedRouteColor)
         XCTAssertEqual(lineGradient[fractionTraveled], navigationMapView.trafficUnknownColor)
+    }
+    
+    func testGenerateRouteLineRestrictedGradient() {
+        let coordinates: [CLLocationCoordinate2D] = [
+            CLLocationCoordinate2D(latitude: 1, longitude: 0),
+            CLLocationCoordinate2D(latitude: 2, longitude: 0),
+            CLLocationCoordinate2D(latitude: 3, longitude: 0),
+            CLLocationCoordinate2D(latitude: 4, longitude: 0),
+            CLLocationCoordinate2D(latitude: 5, longitude: 0),
+        ]
+        
+        let composeFeature = { (index: Int, isRestricted: Bool) -> Turf.Feature in
+            var feature = Feature.init(geometry: .lineString(LineString([coordinates[index],coordinates[index+1]])))
+            feature.properties = ["isRestrictedRoad": .boolean(isRestricted)]
+            return feature
+        }
+        
+        let features:[Turf.Feature] = [
+            composeFeature(0, true),
+            composeFeature(1, false),
+            composeFeature(2, true),
+            composeFeature(3, false)
+        ]
+        
+        let featureBorderStop = 0.75.nextUp
+        
+        var fractionTraveled = 0.0 // not traversed at all
+        var routeLineGradient = navigationMapView.routeLineRestrictionsGradient(features, fractionTraveled: fractionTraveled)
+        XCTAssertEqual(routeLineGradient[0.0], navigationMapView.routeRestrictedAreaColor)
+        XCTAssertEqual(routeLineGradient[0.25.nextUp], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[0.25.nextDown], navigationMapView.routeRestrictedAreaColor)
+        XCTAssertEqual(routeLineGradient[featureBorderStop.nextUp], navigationMapView.traversedRouteColor)
+        
+        fractionTraveled = 0.25 // border between restricted and not restricted
+        var fractionTraveledNextDown = Double(CGFloat(fractionTraveled).nextDown)
+        routeLineGradient = navigationMapView.routeLineRestrictionsGradient(features, fractionTraveled: fractionTraveled)
+        XCTAssertEqual(routeLineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[featureBorderStop.nextUp], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveled], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveledNextDown], navigationMapView.traversedRouteColor)
+        
+        fractionTraveled = 0.999999999 // almost finished
+        fractionTraveledNextDown = Double(CGFloat(fractionTraveled).nextDown)
+        routeLineGradient = navigationMapView.routeLineRestrictionsGradient(features, fractionTraveled: fractionTraveled)
+        XCTAssertEqual(routeLineGradient[0.0], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveled], navigationMapView.routeRestrictedAreaColor)
+        XCTAssertEqual(routeLineGradient[fractionTraveledNextDown], navigationMapView.traversedRouteColor)
+    }
+
+    // If fractionTraveled is higher than first restricted region, the next region will become restricted as well.
+    func testGenerateRouteLineRestrictedGradientBug() {
+        let coordinates: [CLLocationCoordinate2D] = [
+            CLLocationCoordinate2D(latitude: 1, longitude: 0),
+            CLLocationCoordinate2D(latitude: 2, longitude: 0),
+            CLLocationCoordinate2D(latitude: 3, longitude: 0),
+            CLLocationCoordinate2D(latitude: 4, longitude: 0),
+        ]
+
+        let composeFeature = { (index: Int, isRestricted: Bool) -> Turf.Feature in
+            var feature = Feature.init(geometry: .lineString(LineString([coordinates[index],coordinates[index+1]])))
+            feature.properties = ["isRestrictedRoad": .boolean(isRestricted)]
+            return feature
+        }
+
+        let features:[Turf.Feature] = [
+            composeFeature(0, true),
+            composeFeature(1, false),
+            composeFeature(2, true),
+        ]
+
+        let featureBorderStop = 0.6666666666666667
+
+        let fractionTraveled = 0.44 // not traversed at all
+        let routeLineGradient = navigationMapView.routeLineRestrictionsGradient(features,
+                                                                                fractionTraveled: fractionTraveled)
+        XCTAssertEqual(routeLineGradient[0.44], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[0.44.nextDown], navigationMapView.traversedRouteColor)
+        XCTAssertEqual(routeLineGradient[featureBorderStop], navigationMapView.routeRestrictedAreaColor)
     }
     
     func testRoadClassesWithOverriddenCongestionLevelsRemovesDuplicates() {
@@ -415,31 +587,6 @@ class NavigationMapViewTests: TestCase {
         navigationMapView.roadClassesWithOverriddenCongestionLevels = [.aerialway, .construction, .construction, .golf]
         
         XCTAssertEqual(navigationMapView.roadClassesWithOverriddenCongestionLevels?.count, 3)
-    }
-
-    // Disabled. TODO: Find out why buildings aren't highlighted
-    func disabled_testHighlightBuildings() {
-        let featureQueryExpectation = XCTestExpectation(description: "Wait for building to be highlighted.")
-
-        let navigationMapView = NavigationMapView(frame: CGRect(origin: .zero, size: .iPhone6Plus))
-        let cameraOptions = CameraOptions(center: CLLocationCoordinate2D(latitude: 37.79060960181454, longitude: -122.39564506250244),
-                                          zoom: 17.0,
-                                          bearing: 0.0,
-                                          pitch: 0.0)
-        navigationMapView.mapView.mapboxMap.setCamera(to: cameraOptions)
-        let buildingHighlightCoordinates: [CLLocationCoordinate2D] = [
-            CLLocationCoordinate2D(latitude: 37.79066471218174, longitude: -122.39581404166825),
-            CLLocationCoordinate2D(latitude: 37.78999490647732, longitude: -122.39485917526815)
-        ]
-        navigationMapView.highlightBuildings(at: buildingHighlightCoordinates, in3D: true, completion: { (result) -> Void in
-            if result == true  {
-                featureQueryExpectation.fulfill()
-            } else {
-                XCTFail("Building highlighted failed.")
-            }
-        })
-        
-        wait(for: [featureQueryExpectation], timeout: 5.0)
     }
     
     func testFinalDestinationAnnotationIsPresent() {
@@ -499,5 +646,115 @@ class NavigationMapViewTests: TestCase {
         XCTAssertEqual(navigationMapView.pointAnnotationManager?.annotations.first?.id,
                        NavigationMapView.AnnotationIdentifier.finalDestinationAnnotation,
                        "Point annotation identifiers should be equal.")
+    }
+    
+    func testRouteLineLayerPosition() {
+        
+        let navigationMapView = NavigationMapView(frame: UIScreen.main.bounds)
+        
+        let styleJSONObject: [String: Any] = [
+            "version": 8,
+            "center": [
+                -122.385563, 37.763330
+            ],
+            "zoom": 15,
+            "sources": [
+                "composite": [
+                    "url": "mapbox://mapbox.mapbox-streets-v8,mapbox.mapbox-terrain-v2",
+                    "type": "vector"
+                ],
+                "custom": [
+                    "url": "http://api.example.com/tilejson.json",
+                    "type": "raster"
+                ]
+            ],
+            "layers": []
+        ]
+        
+        let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
+        XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
+        
+        let mapLoadingErrorExpectation = expectation(description: "Map loading error expectation")
+        mapLoadingErrorExpectation.assertForOverFulfill = false
+        
+        navigationMapView.mapView.mapboxMap.onNext(.mapLoadingError, handler: { event in
+            mapLoadingErrorExpectation.fulfill()
+        })
+        
+        navigationMapView.mapView.mapboxMap.loadStyleJSON(styleJSON)
+        
+        wait(for: [mapLoadingErrorExpectation], timeout: 1.0)
+        
+        let mainRouteIdentifier = route.identifier(.route(isMainRoute: true))
+        let mainRouteCasingIdentifier = route.identifier(.routeCasing(isMainRoute: true))
+        
+        navigationMapView.show([route])
+        
+        // Style doesn't contain any layers besides main route layer and its casing. In case if
+        // layer position wasn't provided main route line casing layer should be placed below the
+        // main route line layer.
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 0]?.id,
+                       mainRouteCasingIdentifier,
+                       "Route line casing layer identifiers should be equal.")
+        
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 1]?.id,
+                       mainRouteIdentifier,
+                       "Route line layer identifiers should be equal.")
+        
+        navigationMapView.removeRoutes()
+        
+        // After removing all routes there should be no layers in style.
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers.count,
+                       0,
+                       "Unexpected number of layer identifiers in style.")
+        
+        var source = GeoJSONSource()
+        source.data = .geometry(.point(.init(.init(latitude: 0.0, longitude: 0.0))))
+        
+        let sourceIdentifier = "test_source"
+        try? navigationMapView.mapView.mapboxMap.style.addSource(source, id: sourceIdentifier)
+        
+        let layerIdentifier = "test_dentifier"
+        var layer = LineLayer(id: layerIdentifier)
+        layer.source = sourceIdentifier
+        try? navigationMapView.mapView.mapboxMap.style.addLayer(layer)
+        
+        navigationMapView.show([route], layerPosition: .above(layerIdentifier))
+        
+        // In case if layer position was provided to be placed above specific layer,
+        // main route line casing layer should be placed above that specific layer followed by the
+        // main route line layer.
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 0]?.id,
+                       layerIdentifier,
+                       "Custom line layer identifiers should be equal.")
+        
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 1]?.id,
+                       mainRouteCasingIdentifier,
+                       "Route line casing layer identifiers should be equal.")
+        
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 2]?.id,
+                       mainRouteIdentifier,
+                       "Route line layer identifiers should be equal.")
+        
+        navigationMapView.removeRoutes()
+        
+        navigationMapView.show([route], layerPosition: .below(layerIdentifier))
+        
+        // In case if layer position was provided to be placed below specific layer,
+        // main route line casing layer should be placed below that specific layer followed by the
+        // main route line layer.
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 0]?.id,
+                       mainRouteCasingIdentifier,
+                       "Route line casing layer identifiers should be equal.")
+        
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 1]?.id,
+                       mainRouteIdentifier,
+                       "Route line layer identifiers should be equal.")
+        
+        XCTAssertEqual(navigationMapView.mapView.mapboxMap.style.allLayerIdentifiers[safe: 2]?.id,
+                       layerIdentifier,
+                       "Custom line layer identifiers should be equal.")
+        
+        navigationMapView.removeRoutes()
     }
 }

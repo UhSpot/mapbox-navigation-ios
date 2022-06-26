@@ -1,7 +1,7 @@
 import UIKit
 import Turf
 import MapboxDirections
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxNavigation
 import MapboxCoreMaps
 import MapboxMaps
@@ -14,7 +14,8 @@ extension ViewController {
         setupFreeDriveStyledFeatures()
 
         let passiveLocationManager = PassiveLocationManager()
-        eventsManager = NavigationEventsManager(passiveNavigationDataSource: passiveLocationManager)
+        self.passiveLocationManager = passiveLocationManager
+        
         let passiveLocationProvider = PassiveLocationProvider(locationManager: passiveLocationManager)
         navigationMapView.mapView.location.overrideLocationProvider(with: passiveLocationProvider)
         
@@ -43,7 +44,11 @@ extension ViewController {
         }
         
         if let location = notification.userInfo?[PassiveLocationManager.NotificationUserInfoKey.locationKey] as? CLLocation {
+            speedLimitView.currentSpeed = location.speed
             trackStyledFeature.lineString.coordinates.append(contentsOf: [location.coordinate])
+            
+            // Update user puck to the most recent location.
+            navigationMapView.moveUserLocation(to: location, animated: true)
         }
         
         if let rawLocation = notification.userInfo?[PassiveLocationManager.NotificationUserInfoKey.rawLocationKey] as? CLLocation {
@@ -80,13 +85,15 @@ extension ViewController {
         do {
             let style = navigationMapView.mapView.mapboxMap.style
             if style.sourceExists(withId: trackStyledFeature.sourceIdentifier) {
+                let feature = Feature(geometry: .lineString(trackStyledFeature.lineString))
                 try style.updateGeoJSONSource(withId: trackStyledFeature.sourceIdentifier,
-                                              geoJSON: Feature(geometry: .lineString(trackStyledFeature.lineString)))
+                                              geoJSON: .feature(feature))
             }
             
             if style.sourceExists(withId: rawTrackStyledFeature.sourceIdentifier) {
+                let feature = Feature(geometry: .lineString(rawTrackStyledFeature.lineString))
                 try style.updateGeoJSONSource(withId: rawTrackStyledFeature.sourceIdentifier,
-                                              geoJSON: Feature(geometry: .lineString(rawTrackStyledFeature.lineString)))
+                                              geoJSON: .feature(feature))
             }
         } catch {
             NSLog("Error occured while performing operation with source: \(error.localizedDescription).")
@@ -103,8 +110,8 @@ extension ViewController {
             var layer = LineLayer(id: styledFeature.layerIdentifier)
             layer.source = styledFeature.sourceIdentifier
             layer.lineWidth = .constant(styledFeature.lineWidth)
-            layer.lineColor = .constant(.init(color: styledFeature.color))
-            try style.addLayer(layer)
+            layer.lineColor = .constant(.init(styledFeature.color))
+            try style.addPersistentLayer(layer)
         } catch {
             NSLog("Failed to perform operation with error: \(error.localizedDescription).")
         }

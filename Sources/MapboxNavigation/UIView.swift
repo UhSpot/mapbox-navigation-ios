@@ -1,17 +1,52 @@
 import UIKit
 
 extension UIView {
-    class func defaultAnimation(_ duration: TimeInterval, delay: TimeInterval = 0, animations: @escaping () -> Void, completion: ((_ completed: Bool) -> Void)?) {
-        UIView.animate(withDuration: duration, delay: delay, options: .curveEaseInOut, animations: animations, completion: completion)
-    }
-    
-    class func defaultSpringAnimation(_ duration: TimeInterval, delay: TimeInterval = 0, animations: @escaping () -> Void, completion: ((_ completed: Bool) -> Void)?) {
-        UIView.animate(withDuration: duration, delay: delay, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.6, options: [.beginFromCurrentState], animations: animations, completion: completion)
-    }
     
     func addSubviews(_ subviews: [UIView]) {
         subviews.forEach(addSubview(_:))
     }
+    
+    var imageRepresentation: UIImage? {
+        let size = CGSize(width: frame.size.width, height: frame.size.height)
+        UIGraphicsBeginImageContextWithOptions(size, false, (window?.screen ?? UIScreen.main).scale)
+        guard let currentContext = UIGraphicsGetCurrentContext() else { return nil }
+        layer.render(in:currentContext)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        // Check the transform property to see if the view was flipped.
+        // If it was then we need to apply a flip transform here as well since layer.render() ignores the view's transform when it is rendered
+        let isFlipped = transform.a == -1
+        return isFlipped ? image?.withHorizontallyFlippedOrientation() : image
+    }
+    
+    // MARK: Animating
+    
+    class func defaultAnimation(_ duration: TimeInterval,
+                                delay: TimeInterval = 0,
+                                animations: @escaping () -> Void,
+                                completion: ((_ completed: Bool) -> Void)?) {
+        UIView.animate(withDuration: duration,
+                       delay: delay,
+                       options: .curveEaseInOut,
+                       animations: animations,
+                       completion: completion)
+    }
+    
+    class func defaultSpringAnimation(_ duration: TimeInterval,
+                                      delay: TimeInterval = 0,
+                                      animations: @escaping () -> Void,
+                                      completion: ((_ completed: Bool) -> Void)?) {
+        UIView.animate(withDuration: duration,
+                       delay: delay,
+                       usingSpringWithDamping: 0.6,
+                       initialSpringVelocity: 0.6,
+                       options: [.beginFromCurrentState],
+                       animations: animations,
+                       completion: completion)
+    }
+    
+    // MARK: Layer Styling
     
     func applyDefaultCornerRadiusShadow(cornerRadius: CGFloat? = 4, shadowOpacity: CGFloat? = 0.1) {
         layer.cornerRadius = cornerRadius!
@@ -32,6 +67,8 @@ extension UIView {
             layer.addSublayer(gradient)
         }
     }
+    
+    // MARK: Constraining the View
     
     func constraints(affecting view: UIView?) -> [NSLayoutConstraint]? {
         guard let view = view else { return nil }
@@ -75,6 +112,8 @@ extension UIView {
         return view
     }
     
+    // MARK: Anchors Access
+    
     var safeArea: UIEdgeInsets {
         guard #available(iOS 11.0, *) else { return .zero }
         return safeAreaInsets
@@ -115,18 +154,32 @@ extension UIView {
         return trailingAnchor
     }
     
-    var imageRepresentation: UIImage? {
-        let size = CGSize(width: frame.size.width, height: frame.size.height)
-        UIGraphicsBeginImageContextWithOptions(size, false, (window?.screen ?? UIScreen.main).scale)
-        guard let currentContext = UIGraphicsGetCurrentContext() else { return nil }
-        layer.render(in:currentContext)
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        // Check the transform property to see if the view was flipped.
-        // If it was then we need to apply a flip transform here as well since layer.render() ignores the view's transform when it is rendered
-        let isFlipped = transform.a == -1
-        return isFlipped ? image?.withHorizontallyFlippedOrientation() : image
+    var safeWidthAnchor: NSLayoutDimension {
+        if #available(iOS 11.0, *) {
+            return safeAreaLayoutGuide.widthAnchor
+        }
+        return widthAnchor
+    }
+    
+    var safeHeightAnchor: NSLayoutDimension {
+        if #available(iOS 11.0, *) {
+            return safeAreaLayoutGuide.heightAnchor
+        }
+        return heightAnchor
+    }
+    
+    var safeCenterXAnchor: NSLayoutXAxisAnchor {
+        if #available(iOS 11.0, *) {
+            return safeAreaLayoutGuide.centerXAnchor
+        }
+        return centerXAnchor
+    }
+    
+    var safeCenterYAnchor: NSLayoutYAxisAnchor {
+        if #available(iOS 11.0, *) {
+            return safeAreaLayoutGuide.centerYAnchor
+        }
+        return centerYAnchor
     }
 }
 
@@ -141,4 +194,3 @@ protocol Anchorable {
 
 extension UIView: Anchorable {}
 extension UILayoutGuide: Anchorable {}
-

@@ -1,4 +1,5 @@
 import UIKit
+import CoreLocation
 import MapboxDirections
 
 /**
@@ -52,6 +53,12 @@ public class SpeedLimitView: UIView {
     }
     
     /**
+     :nodoc:
+     The current speed to display.
+     */
+    public var currentSpeed: CLLocationSpeed?
+    
+    /**
      The sign standard that specifies the design that the view depicts.
      */
     public var signStandard: SignStandard? {
@@ -59,6 +66,25 @@ public class SpeedLimitView: UIView {
             if signStandard != oldValue {
                 update()
             }
+        }
+    }
+    
+    /**
+     Allows to completely hide `SpeedLimitView`.
+     */
+    public var isAlwaysHidden: Bool = false {
+        didSet {
+            update()
+        }
+    }
+
+    /**
+     Defines the view behavior if the `speedLimit` property is `nil`.
+     Setting this property to `true` will cause the view to display `"--"` as a speed limit instead of the `SeedLimitView` being invisible.
+     */
+    public var shouldShowUnknownSpeedLimit: Bool = false {
+        didSet {
+            update()
         }
     }
     
@@ -81,14 +107,8 @@ public class SpeedLimitView: UIView {
         isOpaque = false
     }
     
-    var isAlwaysHidden: Bool = false {
-        didSet {
-            update()
-        }
-    }
-    
     var canDraw: Bool {
-        return !isAlwaysHidden && speedLimit != nil && signStandard != nil
+        return !isAlwaysHidden && signStandard != nil && (speedLimit != nil || shouldShowUnknownSpeedLimit)
     }
     
     func update() {
@@ -103,15 +123,20 @@ public class SpeedLimitView: UIView {
     override public func draw(_ rect: CGRect) {
         super.draw(rect)
         
-        guard let speedLimit = speedLimit, let signStandard = signStandard else {
-            return
-        }
+        guard let signStandard = signStandard else { return }
         
         let formattedSpeedLimit: String
-        if speedLimit.value.isInfinite {
-            formattedSpeedLimit = "∞"
+
+        if let speedLimit = speedLimit {
+            if speedLimit.value.isInfinite {
+                formattedSpeedLimit = "∞"
+            } else {
+                formattedSpeedLimit = measurementFormatter.numberFormatter.string(for: speedLimit.value) ?? "\(speedLimit.value)"
+            }
+        } else if shouldShowUnknownSpeedLimit {
+            formattedSpeedLimit = "--"
         } else {
-            formattedSpeedLimit = measurementFormatter.numberFormatter.string(for: speedLimit.value) ?? "\(speedLimit.value)"
+            return
         }
         
         switch signStandard {

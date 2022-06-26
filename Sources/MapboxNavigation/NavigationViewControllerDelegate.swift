@@ -3,8 +3,7 @@ import CoreGraphics
 import Foundation
 import MapboxMaps
 import MapboxDirections
-import UhSpotCoreNavigation
-import Turf
+import MapboxCoreNavigation
 
 /**
  The `NavigationViewControllerDelegate` protocol provides methods for configuring the map view shown by a `NavigationViewController` and responding to the cancellation of a navigation session.
@@ -12,6 +11,9 @@ import Turf
  For convenience, several location-related methods in the `NavigationServiceDelegate` protocol have corresponding methods in this protocol.
  */
 public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
+    
+    // MARK: Monitoring Route Progress
+    
     /**
      Called when the navigation view controller is dismissed, such as when the user ends a trip.
      
@@ -31,6 +33,15 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
     func navigationViewController(_ navigationViewController: NavigationViewController, didUpdate progress: RouteProgress, with location: CLLocation, rawLocation: CLLocation)
     
     /**
+     Tells the receiver that the final destination `PointAnnotation` was added to the `NavigationViewController`.
+     
+     - parameter navigationViewController: The `NavigationViewController` object.
+     - parameter finalDestinationAnnotation: The point annotation that was added to the map view.
+     - parameter pointAnnotationManager: The object that manages the point annotation in the map view.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didAdd finalDestinationAnnotation: PointAnnotation, pointAnnotationManager: PointAnnotationManager)
+    
+    /**
      Called as the user approaches a waypoint.
      
      This message is sent, once per progress update, as the user is approaching a waypoint. You can use this to cue UI, to do network pre-loading, etc.
@@ -46,13 +57,15 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
      Called when the user arrives at the destination waypoint for a route leg.
      
      This method is called when the navigation view controller arrives at the waypoint. You can implement this method to prevent the navigation view controller from automatically advancing to the next leg. For example, you can and show an interstitial sheet upon arrival and pause navigation by returning `false`, then continue the route when the user dismisses the sheet. If this method is unimplemented, the navigation view controller automatically advances to the next leg when arriving at a waypoint.
-     
-     - postcondition: If you return `false` within this method, you must manually advance to the next leg: obtain the value of the `navigationService` and its `NavigationService.routeProgress` property, then increment the `RouteProgress.legIndex` property.
+
+     - postcondition: If you return `false` within this method, you must manually advance to the next leg using the `Router.advanceLegIndex(completionHandler:)` method. Obtain `Router` via the `NavigationViewController.navigationService` and `NavigationService.router` properties.
      - parameter navigationViewController: The navigation view controller that has arrived at a waypoint.
      - parameter waypoint: The waypoint that the user has arrived at.
      - returns: True to automatically advance to the next leg, or false to remain on the now completed leg.
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, didArriveAt waypoint: Waypoint) -> Bool
+    
+    // MARK: Rerouting and Refreshing the Route
     
     /**
      Returns whether the navigation view controller should be allowed to calculate a new route.
@@ -69,7 +82,7 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
      Called when the user arrives at a waypoint.
 
      Return false to continue checking if reroute is needed. By default, the user will not be rerouted when arriving at a waypoint.
-
+     
      - parameter navigationViewController: The navigation view controller that has detected the need to calculate a new route.
      - parameter waypoint: The waypoint that the controller has arrived at.
      - returns: True to prevent reroutes.
@@ -78,6 +91,10 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
 
     /**
      Called immediately before the navigation view controller calculates a new route.
+     
+     This method also allows customizing the rerouting by providing custom `RouteResponse`. SDK will then treat it as if it was fetched as usual and apply as a reroute.
+     
+     - note: Multiple method calls will not interrupt the first ongoing request.
      
      This method is called after `navigationViewController(_:shouldRerouteFrom:)` is called, simultaneously with the `Notification.Name.routeControllerWillReroute` notification being posted, and before `navigationViewController(_:didRerouteAlong:)` is called.
      
@@ -95,6 +112,56 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
      - parameter route: The new route.
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, didRerouteAlong route: Route)
+    
+    /**
+     Called when navigation view controller has detected a change in alternative routes list.
+     
+     - parameter navigationViewController: The navigation view controller reporting an update.
+     - parameter updatedAlternatives: Array of actual alternative routes.
+     - parameter removedAlternatives: Array of alternative routes which are no longer actual.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didUpdateAlternatives updatedAlternatives: [AlternativeRoute], removedAlternatives: [AlternativeRoute])
+    
+    /**
+     Called when navigation view controller has failed to  change alternative routes list.
+     
+     - parameter navigationViewController: The navigation view controller reporting an update.
+     - parameter error: An error occured.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didFailToUpdateAlternatives error: AlternativeRouteError)
+    
+    /**
+     Called when navigation view controller has detected user taking an alternative route.
+     
+     This method is called before updating main route.
+     
+     - parameter navigationViewController: The navigation view controller that has detected turning to the alternative.
+     - parameter route: The alternative route which will be taken as new main.
+     - parameter location: The user’s current location.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, willTakeAlternativeRoute route: Route, at location: CLLocation?)
+    
+    /**
+     Called when navigation view controller has finished switching to an alternative route
+     
+     This method is called after `navigationViewController(_:willTakeAlternativeRoute:)`
+     
+     - parameter navigationViewController: The navigation view controller that switched to the alternative.
+     - parameter location: The user’s current location.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didTakeAlternativeRouteAt location: CLLocation?)
+    
+    /**
+     Called when navigation view controller has failed to take an alternative route.
+     
+     This method is called after `navigationViewController(_:willTakeAlternativeRoute:)`.
+     
+     This call would indicate that something went wrong during setting new main route.
+     
+     - parameter navigationViewController: The navigation view controller which tried to switch to the alternative.
+     - parameter location: The user’s current location.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didFailToTakeAlternativeRouteAt location: CLLocation?)
     
     /**
      Called when the navigation view controller fails to receive a new route.
@@ -116,6 +183,8 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, didRefresh routeProgress: RouteProgress)
     
+    // MARK: Customizing the Route Elements
+    
     /**
      Returns an `LineLayer` that determines the appearance of the route line.
      
@@ -125,6 +194,9 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
      - parameter identifier: The `LineLayer` identifier.
      - parameter sourceIdentifier: Identifier of the source, which contains the route data that this method would style.
      - returns: A `LineLayer` that is applied to the route line.
+     
+     - seealso: `NavigationMapViewDelegate.navigationMapView(_:routeLineLayerWithIdentifier:sourceIdentifier:)`,
+     `CarPlayManagerDelegate.carPlayManager(_:routeLineLayerWithIdentifier:sourceIdentifier:for:)`.
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, routeLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer?
     
@@ -137,8 +209,24 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
      - parameter identifier: The `LineLayer` identifier.
      - parameter sourceIdentifier: Identifier of the source, which contains the route data that this method would style.
      - returns: A `LineLayer` that is applied as a casing around the route line.
+     
+     - seealso: `NavigationMapViewDelegate.navigationMapView(_:routeCasingLineLayerWithIdentifier:sourceIdentifier:)`,
+     `CarPlayManagerDelegate.carPlayManager(_:routeCasingLineLayerWithIdentifier:sourceIdentifier:for:)`.
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, routeCasingLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer?
+    
+    /**
+     Returns an `LineLayer` that determines the appearance of the restricted areas portions of the route line.
+     
+     If this method is not implemented, the navigation view controller’s map view draws the areas using default `LineLayer`.
+     
+     
+     - parameter navigationViewController: The `NavigationViewController` object, on surface of which route line is drawn.
+     - parameter identifier: The `LineLayer` identifier.
+     - parameter sourceIdentifier: Identifier of the source, which contains the route data that this method would style.
+     - returns: A `LineLayer` that is applied as restricted areas on the route line.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, routeRestrictedAreasLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer?
     
     /**
      Returns an `CircleLayer` that marks the location of each destination along the route when there are multiple destinations. The returned layer is added to the map below the layer returned by `navigationViewController(_:waypointSymbolLayerWithIdentifier:sourceIdentifier:)`.
@@ -177,6 +265,19 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
     func navigationViewController(_ navigationViewController: NavigationViewController, shapeFor waypoints: [Waypoint], legIndex: Int) -> FeatureCollection?
     
     /**
+     Called to allow the delegate to customize the contents of the road name label that is displayed towards the bottom of the map view.
+     
+     This method is called on each location update. By default, the label displays the name of the road the user is currently traveling on.
+     
+     - parameter navigationViewController: The navigation view controller that will display the road name.
+     - parameter location: The user’s current location.
+     - returns: The road name to display in the label, or nil to hide the label.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, roadNameAt location: CLLocation) -> String?
+    
+    // MARK: Filtering Location Updates
+    
+    /**
      Allows the delegate to decide whether to ignore a location update.
      
      This method is called on every location update. By default, the navigation view controller ignores certain location updates that appear to be unreliable, as determined by the `CLLocation.isQualified` property.
@@ -188,24 +289,12 @@ public protocol NavigationViewControllerDelegate: VisualInstructionDelegate {
     func navigationViewController(_ navigationViewController: NavigationViewController, shouldDiscard location: CLLocation) -> Bool
     
     /**
-     Called to allow the delegate to customize the contents of the road name label that is displayed towards the bottom of the map view.
-     
-     This method is called on each location update. By default, the label displays the name of the road the user is currently traveling on.
-     
-     - parameter navigationViewController: The navigation view controller that will display the road name.
-     - parameter location: The user’s current location.
-     - returns: The road name to display in the label, or nil to hide the label.
-     */
-    func navigationViewController(_ navigationViewController: NavigationViewController, roadNameAt location: CLLocation) -> String?
-    
-    /**
-     Tells the receiver that the final destination `PointAnnotation` was added to the `NavigationViewController`.
+     Called to notify that the user submitted the end of route feedback.
      
      - parameter navigationViewController: The `NavigationViewController` object.
-     - parameter finalDestinationAnnotation: The point annotation that was added to the map view.
-     - parameter pointAnnotationManager: The object that manages the point annotation in the map view.
+     - parameter feedback: The `EndOfRouteFeedback` that was submitted by the user.
      */
-    func navigationViewController(_ navigationViewController: NavigationViewController, didAdd finalDestinationAnnotation: PointAnnotation, pointAnnotationManager: PointAnnotationManager)
+    func navigationViewController(_ navigationViewController: NavigationViewController, didSubmitArrivalFeedback feedback: EndOfRouteFeedback)
 }
 
 public extension NavigationViewControllerDelegate {
@@ -268,6 +357,41 @@ public extension NavigationViewControllerDelegate {
     /**
      `UnimplementedLogging` prints a warning to standard output the first time this method is called.
      */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didUpdateAlternatives updatedAlternatives: [AlternativeRoute], removedAlternatives: [AlternativeRoute]) {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didFailToUpdateAlternatives error: AlternativeRouteError) {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, willTakeAlternativeRoute route: Route, at location: CLLocation?) {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didTakeAlternativeRouteAt location: CLLocation?) {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didFailToTakeAlternativeRouteAt location: CLLocation?) {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
     func navigationViewController(_ navigationViewController: NavigationViewController, didFailToRerouteWith error: Error) {
         logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
     }
@@ -291,6 +415,14 @@ public extension NavigationViewControllerDelegate {
      `UnimplementedLogging` prints a warning to standard output the first time this method is called.
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, routeCasingLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer? {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+        return nil
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, routeRestrictedAreasLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer? {
         logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
         return nil
     }
@@ -347,5 +479,12 @@ public extension NavigationViewControllerDelegate {
      */
     func navigationViewController(_ navigationViewController: NavigationViewController, didAdd finalDestinationAnnotation: PointAnnotation, pointAnnotationManager: PointAnnotationManager) {
         logUnimplemented(protocolType: NavigationViewControllerDelegate.self,  level: .debug)
+    }
+
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationViewController(_ navigationViewController: NavigationViewController, didSubmitArrivalFeedback feedback: EndOfRouteFeedback) {
+        logUnimplemented(protocolType: NavigationViewControllerDelegate.self, level: .debug)
     }
 }

@@ -1,9 +1,11 @@
 import XCTest
 import MapboxDirections
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 import TestHelper
 import CoreLocation
 @testable import MapboxNavigation
+import class MapboxSpeech.SpeechSynthesizer
+import class MapboxSpeech.SpeechOptions
 
 class FailingSpeechSynthesizerMock: SpeechSynthesizerStub {
     var failing = false
@@ -30,6 +32,10 @@ class MapboxSpeechSynthMock: MapboxSpeechSynthesizer {
         super.init(accessToken: .mockedAccessToken, host: nil)
     }
     
+    override init(remoteSpeechSynthesizer: SpeechSynthesizer) {
+        super.init(remoteSpeechSynthesizer: remoteSpeechSynthesizer)
+    }
+    
     override func speak(_ instruction: SpokenInstruction, during legProgress: RouteLegProgress, locale: Locale?) {
         super.speak(instruction, during: legProgress,locale: locale)
         
@@ -47,6 +53,15 @@ class SystemSpeechSynthMock: SystemSpeechSynthesizer {
     }
 }
 
+class SpeechSythesizerMock: SpeechSynthesizer {
+    var dataExpectation: XCTestExpectation?
+    
+    override func audioData(with options: SpeechOptions, completionHandler: @escaping SpeechSynthesizer.CompletionHandler) -> URLSessionDataTask {
+        dataExpectation?.fulfill()
+        return super.audioData(with: options, completionHandler: completionHandler)
+    }
+}
+
 class SpeechSynthesizersControllerTests: TestCase {
     
     var delegateErrorBlock: ((SpeechError) -> ())?
@@ -61,6 +76,7 @@ class SpeechSynthesizersControllerTests: TestCase {
     }()
     
     override func setUp() {
+        super.setUp()
         synthesizers = [
             FailingSpeechSynthesizerMock(),
             FailingSpeechSynthesizerMock()
@@ -68,9 +84,9 @@ class SpeechSynthesizersControllerTests: TestCase {
     }
 
     override func tearDown() {
+        super.tearDown()
         synthesizers = []
         delegateErrorBlock = nil
-        Navigator.shared.navigator.resetRideSession()
     }
 
     func testNoFallback() {
@@ -114,7 +130,11 @@ class SpeechSynthesizersControllerTests: TestCase {
         deinitExpectation.expectedFulfillmentCount = 2
         (synthesizers[0] as! FailingSpeechSynthesizerMock).deinitExpectation = deinitExpectation
         (synthesizers[1] as! FailingSpeechSynthesizerMock).deinitExpectation = deinitExpectation
-        let dummyService = MapboxNavigationService(routeResponse: routeResponse, routeIndex: 0, routeOptions: routeOptions)
+        let dummyService = MapboxNavigationService(routeResponse: routeResponse,
+                                                   routeIndex: 0,
+                                                   routeOptions: routeOptions,
+                                                   customRoutingProvider: nil,
+                                                   credentials: Fixture.credentials)
         
         var routeController: RouteVoiceController? = RouteVoiceController(navigationService: dummyService,
                                                                           speechSynthesizer: MultiplexedSpeechSynthesizer(synthesizers))
@@ -130,7 +150,12 @@ class SpeechSynthesizersControllerTests: TestCase {
         let expectation = XCTestExpectation(description: "Synthesizers speak should be called")
         let sut = SystemSpeechSynthMock()
         sut.speakExpectation = expectation
-        let dummyService = MapboxNavigationService(routeResponse: routeResponse, routeIndex: 0, routeOptions: routeOptions, simulating: .always)
+        let dummyService = MapboxNavigationService(routeResponse: routeResponse,
+                                                   routeIndex: 0,
+                                                   routeOptions: routeOptions,
+                                                   customRoutingProvider: MapboxRoutingProvider(.offline),
+                                                   credentials: Fixture.credentials,
+                                                   simulating: .always)
         let routeController: RouteVoiceController? = RouteVoiceController(navigationService: dummyService,
                                                                           speechSynthesizer: sut)
         XCTAssertNotNil(routeController)
@@ -144,7 +169,12 @@ class SpeechSynthesizersControllerTests: TestCase {
         let expectation = XCTestExpectation(description: "Synthesizers speak should be called")
         let sut = MapboxSpeechSynthMock()
         sut.speakExpectation = expectation
-        let dummyService = MapboxNavigationService(routeResponse: routeResponse, routeIndex: 0, routeOptions: routeOptions, simulating: .always)
+        let dummyService = MapboxNavigationService(routeResponse: routeResponse,
+                                                   routeIndex: 0,
+                                                   routeOptions: routeOptions,
+                                                   customRoutingProvider: MapboxRoutingProvider(.offline),
+                                                   credentials: Fixture.credentials,
+                                                   simulating: .always)
         let routeController: RouteVoiceController? = RouteVoiceController(navigationService: dummyService,
                                                                           speechSynthesizer: sut)
         XCTAssertNotNil(routeController)
@@ -196,6 +226,21 @@ class SpeechSynthesizersControllerTests: TestCase {
                                     ssmlText: "text"),
                   during: Fixture.routeLegProgress(),
                   locale: nil)
+        
+        wait(for: [expectation], timeout: 2)
+    }
+    
+    func testCustomSynthesizerOnMapboxSynth() {
+        let expectation = XCTestExpectation(description: "Custom SpeechSynthesizer should be called")
+        let sut = SpeechSythesizerMock(accessToken: .mockedAccessToken)
+        sut.dataExpectation = expectation
+        let synth = MapboxSpeechSynthMock(remoteSpeechSynthesizer: sut)
+        
+        synth.speak(SpokenInstruction(distanceAlongStep: .init(),
+                                      text: "text",
+                                      ssmlText: "text"),
+                    during: Fixture.routeLegProgress(),
+                    locale: nil)
         
         wait(for: [expectation], timeout: 2)
     }

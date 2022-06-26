@@ -2,13 +2,14 @@ import UIKit
 import CoreLocation
 import MapboxDirections
 import Turf
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxMaps
 import MapboxCoreMaps
 import MapboxNavigation
 
 class ViewController: UIViewController {
-    
+
+    @IBOutlet weak var mapHostView: UIView!
     @IBOutlet weak var longPressHintView: UIView!
     @IBOutlet weak var simulationButton: UIButton!
     @IBOutlet weak var startButton: UIButton!
@@ -25,7 +26,7 @@ class ViewController: UIViewController {
     var trackStyledFeature: StyledFeature!
     var rawTrackStyledFeature: StyledFeature!
     var speedLimitView: SpeedLimitView!
-    var eventsManager: NavigationEventsManager!
+    weak var passiveLocationManager: PassiveLocationManager?
     
     var currentEdgeIdentifier: RoadGraph.Edge.Identifier?
     var nextEdgeIdentifier: RoadGraph.Edge.Identifier?
@@ -41,11 +42,13 @@ class ViewController: UIViewController {
             }
             
             if let navigationMapView = navigationMapView {
+                mapHostView.addSubview(navigationMapView)
                 configure(navigationMapView)
-                view.insertSubview(navigationMapView, belowSubview: longPressHintView)
             }
         }
     }
+    
+    var styleManager = MapboxNavigation.StyleManager()
     
     var waypoints: [Waypoint] = [] {
         didSet {
@@ -54,25 +57,49 @@ class ViewController: UIViewController {
             }
         }
     }
+    
+    var currentRouteIndex = 0 {
+        didSet {
+            showCurrentRoute()
+        }
+    }
 
+    func showCurrentRoute() {
+        guard var prioritizedRoutes = routes else { return }
+        
+        prioritizedRoutes.insert(prioritizedRoutes.remove(at: currentRouteIndex),
+                                 at: 0)
+        
+        // Show congestion levels on alternative route lines if there're multiple routes in the response.
+        navigationMapView.showsCongestionForAlternativeRoutes = true
+        navigationMapView.showsRestrictedAreasOnRoute = true
+        navigationMapView.show(prioritizedRoutes)
+        navigationMapView.showWaypoints(on: prioritizedRoutes.first!)
+        navigationMapView.showRouteDurations(along: prioritizedRoutes)
+    }
+    
+    var currentRoute: Route? {
+        return routes?[currentRouteIndex]
+    }
+    
+    var routes: [Route]? {
+        return response?.routes
+    }
+    
     var response: RouteResponse? {
         didSet {
-            guard let routes = response?.routes, let currentRoute = routes.first else {
+            guard let routes = response?.routes, !routes.isEmpty else {
                 clearNavigationMapView()
                 return
             }
             
             startButton.isEnabled = true
-            // Show congestion levels on alternative route lines if there're multiple routes in the response.
-            navigationMapView.showsCongestionForAlternativeRoutes = true
-            navigationMapView.show(routes)
-            navigationMapView.showWaypoints(on: currentRoute)
-            navigationMapView.showRouteDurations(along: routes)
+            currentRouteIndex = 0
         }
     }
     
     weak var activeNavigationViewController: NavigationViewController?
-    
+
     // MARK: - Initializer methods
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -129,7 +156,10 @@ class ViewController: UIViewController {
         super.viewWillAppear(animated)
         
         if navigationMapView == nil {
-            navigationMapView = NavigationMapView(frame: view.bounds)
+            navigationMapView = NavigationMapView(frame: .zero)
+            navigationMapView.mapView.mapboxMap.onEvery(.styleLoaded) { [weak self] _ in
+                self?.navigationMapView.localizeLabels()
+            }
         }
     }
     
@@ -138,17 +168,38 @@ class ViewController: UIViewController {
 
         requestNotificationCenterAuthorization()
     }
-    
+
     private func configure(_ navigationMapView: NavigationMapView) {
         setupPassiveLocationProvider()
         
-        navigationMapView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        
+        navigationMapView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            navigationMapView.topAnchor.constraint(equalTo: mapHostView.topAnchor),
+            navigationMapView.leadingAnchor.constraint(equalTo: mapHostView.leadingAnchor),
+            navigationMapView.bottomAnchor.constraint(equalTo: mapHostView.bottomAnchor),
+            navigationMapView.trailingAnchor.constraint(equalTo: mapHostView.trailingAnchor),
+        ])
+
+        let mapOrnamentsMargin: CGFloat = 55
+        navigationMapView.mapView.ornaments.options.logo.margins.y = mapOrnamentsMargin
+        navigationMapView.mapView.ornaments.options.attributionButton.margins.y = mapOrnamentsMargin
         navigationMapView.delegate = self
         navigationMapView.userLocationStyle = .puck2D()
         
+        setupStyleManager()
         setupGestureRecognizers()
         setupPerformActionBarButtonItem()
+        if let cameraState = activeNavigationViewController?.navigationMapView?.mapView.cameraState {
+            navigationMapView.mapView.camera.fly(to: .init(center: cameraState.center,
+                                                           zoom: cameraState.zoom),
+                                                 duration: 0,
+                                                 completion: nil)
+        }
+    }
+    
+    private func setupStyleManager() {
+        styleManager.delegate = self
+        styleManager.styles = [DayStyle(), NightStyle()]
     }
     
     private func uninstall(_ navigationMapView: NavigationMapView) {
@@ -190,7 +241,10 @@ class ViewController: UIViewController {
     }
     
     @objc func feedback(_ sender: Any) {
-        let feedbackViewController = FeedbackViewController(eventsManager: eventsManager)
+        guard let passiveNavigationEventsManager = passiveLocationManager?.eventsManager else {
+            assertionFailure("Not in Passive Navigation"); return
+        }
+        let feedbackViewController = FeedbackViewController(eventsManager: passiveNavigationEventsManager, type: .passiveNavigation)
         feedbackViewController.detailedFeedbackEnabled = true
         present(feedbackViewController, animated: true)
     }
@@ -223,21 +277,16 @@ class ViewController: UIViewController {
         let day: ActionHandler = { _ in self.startNavigation(styles: [DayStyle()]) }
         let night: ActionHandler = { _ in self.startNavigation(styles: [NightStyle()]) }
         let custom: ActionHandler = { _ in self.startCustomNavigation() }
-        let uhspotNavigation: ActionHandler = {_ in self.startUhSpotNavigation()}
         let styled: ActionHandler = { _ in self.startStyledNavigation() }
-        let guidanceCards: ActionHandler = { _ in self.startGuidanceCardsNavigation() }
-        let uhspotNavigationCard: ActionHandler = {_ in self.startUhSpotNavigationCard() }
-        
+        let instructionsCard: ActionHandler = { _ in self.startInstructionsCardNavigation() }
         
         let actionPayloads: [(String, UIAlertAction.Style, ActionHandler?)] = [
             ("Default UI", .default, basic),
             ("DayStyle UI", .default, day),
             ("NightStyle UI", .default, night),
             ("Custom UI", .default, custom),
-            ("UhSpot Navigation", .default, uhspotNavigation),
-            ("Guidance Card UI", .default, guidanceCards),
+            ("Instructions Card UI", .default, instructionsCard),
             ("Styled UI", .default, styled),
-            ("UhSpot Navigation", .default, uhspotNavigationCard),
             ("Cancel", .cancel, nil)
         ]
         
@@ -258,8 +307,8 @@ class ViewController: UIViewController {
     func startNavigation(styles: [MapboxNavigation.Style]) {
         guard let response = response, case let .route(routeOptions) = response.options else { return }
         
-        let options = NavigationOptions(styles: styles, navigationService: navigationService(response: response, routeIndex: 0, options: routeOptions), predictiveCacheOptions: PredictiveCacheOptions())
-        let navigationViewController = NavigationViewController(for: response, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
+        let options = NavigationOptions(styles: styles, navigationService: navigationService(response: response, routeIndex: currentRouteIndex, options: routeOptions), predictiveCacheOptions: PredictiveCacheOptions())
+        let navigationViewController = NavigationViewController(for: response, routeIndex: currentRouteIndex, routeOptions: routeOptions, navigationOptions: options)
         navigationViewController.delegate = self
         
         // Example of building highlighting in 2D.
@@ -271,7 +320,7 @@ class ViewController: UIViewController {
     func startBasicNavigation() {
         guard let response = response, case let .route(routeOptions) = response.options else { return }
         
-        let service = navigationService(response: response, routeIndex: 0, options: routeOptions)
+        let service = navigationService(response: response, routeIndex: currentRouteIndex, options: routeOptions)
         let navigationViewController = self.navigationViewController(navigationService: service)
         
         // Render part of the route that has been traversed with full transparency, to give the illusion of a disappearing route.
@@ -295,33 +344,15 @@ class ViewController: UIViewController {
               case let .route(routeOptions) = response.options,
               let customViewController = storyboard?.instantiateViewController(withIdentifier: "custom") as? CustomViewController else { return }
 
-        customViewController.indexedUserRouteResponse = .init(routeResponse: response, routeIndex: 0)
+        customViewController.indexedUserRouteResponse = .init(routeResponse: response, routeIndex: currentRouteIndex)
         customViewController.userRouteOptions = routeOptions
         customViewController.simulateLocation = simulationButton.isSelected
         
         present(customViewController, animated: true) {
             if let destinationCoordinate = route.shape?.coordinates.last {
                 var destinationAnnotation = PointAnnotation(coordinate: destinationCoordinate)
-                destinationAnnotation.image = .default
-                customViewController.destinationAnnotation = destinationAnnotation
-            }
-        }
-    }
-    
-    func startUhSpotNavigation() {
-        guard let response = response,
-              let route = response.routes?.first,
-              case let .route(routeOptions) = response.options,
-              let customViewController = storyboard?.instantiateViewController(withIdentifier: "uhspotNavigation") as? UhSpotViewController else { return }
-
-        customViewController.indexedUserRouteResponse = .init(routeResponse: response, routeIndex: 0)
-        customViewController.userRouteOptions = routeOptions
-        customViewController.simulateLocation = simulationButton.isSelected
-        
-        present(customViewController, animated: true) {
-            if let destinationCoordinate = route.shape?.coordinates.last {
-                var destinationAnnotation = PointAnnotation(coordinate: destinationCoordinate)
-                destinationAnnotation.image = .default
+                let markerImage = UIImage(named: "default_marker", in: .mapboxNavigation, compatibleWith: nil)!
+                destinationAnnotation.image = .init(image: markerImage, name: "marker")
                 customViewController.destinationAnnotation = destinationAnnotation
             }
         }
@@ -331,38 +362,45 @@ class ViewController: UIViewController {
         guard let response = response, case let .route(routeOptions) = response.options else { return }
 
         let styles = [CustomDayStyle(), CustomNightStyle()]
-        let options = NavigationOptions(styles: styles, navigationService: navigationService(response: response, routeIndex: 0, options: routeOptions), predictiveCacheOptions: PredictiveCacheOptions())
-        let navigationViewController = NavigationViewController(for: response, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
+        let options = NavigationOptions(styles: styles, navigationService: navigationService(response: response, routeIndex: currentRouteIndex, options: routeOptions), predictiveCacheOptions: PredictiveCacheOptions())
+        let navigationViewController = NavigationViewController(for: response, routeIndex: currentRouteIndex, routeOptions: routeOptions, navigationOptions: options)
         navigationViewController.delegate = self
 
         presentAndRemoveNavigationMapView(navigationViewController, completion: beginCarPlayNavigation)
     }
     
-    func startGuidanceCardsNavigation() {
+    func startInstructionsCardNavigation() {
         guard let response = response, case let .route(routeOptions) = response.options else { return }
+        
+        // Styles are passed explicitly to be able to easily test how instructions cards look.
+        let styles = [
+            DayStyle(),
+            NightStyle()
+        ]
+        let navigationService = self.navigationService(response: response,
+                                                       routeIndex: currentRouteIndex,
+                                                       options: routeOptions)
         
         let instructionsCardCollection = InstructionsCardViewController()
         instructionsCardCollection.cardCollectionDelegate = self
         
-        let options = NavigationOptions(navigationService: navigationService(response: response, routeIndex: 0, options: routeOptions), topBanner: instructionsCardCollection, predictiveCacheOptions: PredictiveCacheOptions())
-        let navigationViewController = NavigationViewController(for: response, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
+        let navigationOptions = NavigationOptions(styles: styles,
+                                                  navigationService: navigationService,
+                                                  topBanner: instructionsCardCollection,
+                                                  predictiveCacheOptions: PredictiveCacheOptions())
+        
+        let navigationViewController = NavigationViewController(for: response,
+                                                                   routeIndex: currentRouteIndex,
+                                                                   routeOptions: routeOptions,
+                                                                   navigationOptions: navigationOptions)
         navigationViewController.delegate = self
+        
+        // Example of building highlighting in 2D.
+        navigationViewController.waypointStyle = .building
         
         presentAndRemoveNavigationMapView(navigationViewController, completion: beginCarPlayNavigation)
     }
     
-    func startUhSpotNavigationCard() {
-        guard let response = response, case let .route(routeOptions) = response.options else { return }
-        
-        let uhspotCardCollection = UhSpotCardViewController()
-        uhspotCardCollection.cardCollectionDelegate = self
-        
-        let options = NavigationOptions(navigationService: navigationService(response: response, routeIndex: 0, options: routeOptions), topBanner: uhspotCardCollection, predictiveCacheOptions: PredictiveCacheOptions())
-        let navigationViewController = NavigationViewController(for: response, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
-        navigationViewController.delegate = self
-        
-        presentAndRemoveNavigationMapView(navigationViewController, completion: beginCarPlayNavigation)
-    }
     // MARK: - UIGestureRecognizer methods
     
     func setupGestureRecognizers() {
@@ -408,12 +446,16 @@ class ViewController: UIViewController {
         let toggleDayNightStyle: ActionHandler = { _ in self.toggleDayNightStyle() }
         let requestFollowCamera: ActionHandler = { _ in self.requestFollowCamera() }
         let requestIdleCamera: ActionHandler = { _ in self.requestIdleCamera() }
+        let turnOnHistoryRecording: ActionHandler = { _ in self.turnOnHistoryRecording() }
+        let turnOffHistoryRecording: ActionHandler = { _ in self.turnOffHistoryRecording() }
         
         let actions: [(String, UIAlertAction.Style, ActionHandler?)] = [
             ("Toggle Day/Night Style", .default, toggleDayNightStyle),
             ("Request Following Camera", .default, requestFollowCamera),
             ("Request Idle Camera", .default, requestIdleCamera),
-            ("Cancel", .cancel, nil)
+            ("Turn On History Recording", .default, turnOnHistoryRecording),
+            ("Turn Off History Recording", .default, turnOffHistoryRecording),
+            ("Cancel", .cancel, nil),
         ]
         
         actions
@@ -428,11 +470,10 @@ class ViewController: UIViewController {
     }
     
     func toggleDayNightStyle() {
-        let style = navigationMapView.mapView?.mapboxMap.style
-        if style?.uri?.rawValue == MapboxMaps.Style.navigationNightStyleURL.absoluteString {
-            style?.uri = StyleURI(url: MapboxMaps.Style.navigationDayStyleURL)
+        if styleManager.currentStyleType == .day {
+            styleManager.applyStyle(type: .night)
         } else {
-            style?.uri = StyleURI(url: MapboxMaps.Style.navigationNightStyleURL)
+            styleManager.applyStyle(type: .day)
         }
     }
     
@@ -443,17 +484,37 @@ class ViewController: UIViewController {
     func requestIdleCamera() {
         navigationMapView.navigationCamera.stop()
     }
+
+    func turnOnHistoryRecording() {
+        PassiveLocationManager.startRecordingHistory()
+    }
+
+    func turnOffHistoryRecording() {
+        PassiveLocationManager.stopRecordingHistory { historyFileUrl in
+            guard let historyFileUrl = historyFileUrl else { return }
+            DispatchQueue.main.async {
+                #if targetEnvironment(simulator)
+                print("History file saved at path: \(historyFileUrl.path)")
+                #else
+                let shareVC = UIActivityViewController(activityItems: [historyFileUrl], applicationActivities: nil)
+                self.present(shareVC, animated: true, completion: nil)
+                #endif
+            }
+        }
+    }
     
     func requestRoute() {
         guard waypoints.count > 0 else { return }
-        guard let coordinate = navigationMapView.mapView.location.latestLocation?.coordinate else {
+        guard let currentLocation = passiveLocationManager?.location else {
             print("User location is not valid. Make sure to enable Location Services.")
             return
         }
-        
-        let location = CLLocation(latitude: coordinate.latitude,
-                                  longitude: coordinate.longitude)
-        let userWaypoint = Waypoint(location: location)
+
+        let userWaypoint = Waypoint(location: currentLocation)
+        if currentLocation.course >= 0 {
+            userWaypoint.heading = currentLocation.course
+            userWaypoint.headingAccuracy = 90
+        }
         waypoints.insert(userWaypoint, at: 0)
 
         let navigationRouteOptions = NavigationRouteOptions(waypoints: waypoints)
@@ -486,7 +547,7 @@ class ViewController: UIViewController {
     }
 
     func requestRoute(with options: RouteOptions, success: @escaping RouteRequestSuccess, failure: RouteRequestFailure?) {
-        Directions.shared.calculateWithCache(options: options) { (session, result) in
+        MapboxRoutingProvider().calculateRoutes(options: options) { (session, result) in
             switch result {
             case let .success(response):
                 success(response)
@@ -515,7 +576,10 @@ class ViewController: UIViewController {
         
         present(navigationViewController, animated: true) {
             completion?()
+            // Cleaning up the `PassiveLocationManager`. The `PassiveLocationManager` during active navigation may lead to location jump.
             self.navigationMapView = nil
+            self.passiveLocationManager = nil
+            navigationViewController.navigationMapView?.showsRestrictedAreasOnRoute = true
         }
     }
     
@@ -532,9 +596,14 @@ class ViewController: UIViewController {
     }
 
     func navigationService(response: RouteResponse, routeIndex: Int, options: RouteOptions) -> NavigationService {
-        let mode: SimulationMode = simulationButton.isSelected ? .always : .onPoorGPS
+        let mode: SimulationMode = simulationButton.isSelected ? .always : .inTunnels
         
-        return MapboxNavigationService(routeResponse: response, routeIndex: routeIndex, routeOptions: options, simulating: mode)
+        return MapboxNavigationService(routeResponse: response,
+                                       routeIndex: routeIndex,
+                                       routeOptions: options,
+                                       customRoutingProvider: nil,
+                                       credentials: NavigationSettings.shared.directions.credentials,
+                                       simulating: mode)
     }
     
     // MARK: - Utility methods
@@ -552,7 +621,7 @@ class ViewController: UIViewController {
 // MARK: - NavigationMapViewDelegate methods
 
 extension ViewController: NavigationMapViewDelegate {
-    
+
     func navigationMapView(_ mapView: NavigationMapView, didSelect waypoint: Waypoint) {
         guard let responseOptions = response?.options, case let .route(routeOptions) = responseOptions else { return }
         let modifiedOptions = routeOptions.without(waypoint)
@@ -563,9 +632,8 @@ extension ViewController: NavigationMapViewDelegate {
     }
 
     func navigationMapView(_ mapView: NavigationMapView, didSelect route: Route) {
-        guard let routes = response?.routes else { return }
-        guard let index = routes.firstIndex(where: { $0 === route }) else { return }
-        self.response?.routes?.swapAt(index, 0)
+        guard let index = routes?.firstIndex(where: { $0 === route }) else { return }
+        currentRouteIndex = index
     }
 
     private func presentWaypointRemovalAlert(completionHandler approve: @escaping ((UIAlertAction) -> Void)) {

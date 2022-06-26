@@ -6,7 +6,7 @@ import Nimble
 
 @testable import TestHelper
 @testable import MapboxNavigation
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 class ViewportDataSourceMock: ViewportDataSource {
     
@@ -155,7 +155,7 @@ extension LocationProviderMock: LocationProviderDelegate {
     }
 }
 
-class NavigationCameraTests: XCTestCase {
+class NavigationCameraTests: TestCase {
     
     override func setUp() {
         super.setUp()
@@ -510,6 +510,62 @@ class NavigationCameraTests: XCTestCase {
         XCTAssertEqual(cameraOptions?.padding, expectedPadding, "Paddings should be equal.")
     }
     
+    func testFollowingCameraModificationsDisabled() {
+        let navigationMapView = NavigationMapView(frame: .zero)
+        
+        // Create new `NavigationViewportDataSource` instance, which listens to the
+        // `Notification.Name.routeControllerProgressDidChange` notification, which is sent during
+        // active guidance navigation.
+        let navigationViewportDataSource = NavigationViewportDataSource(navigationMapView.mapView,
+                                                                        viewportDataSourceType: .active)
+        
+        // Some camera related modifications disabled while others not. It is expected that `CameraOptions` should
+        // still have non-nil default values after the progress update. Camera related properties with disabled
+        // modifications should also keep default value unchanged.
+        navigationViewportDataSource.options.followingCameraOptions.centerUpdatesAllowed = true
+        navigationViewportDataSource.options.followingCameraOptions.zoomUpdatesAllowed = false
+        navigationViewportDataSource.options.followingCameraOptions.bearingUpdatesAllowed = false
+        navigationViewportDataSource.options.followingCameraOptions.pitchUpdatesAllowed = true
+        navigationViewportDataSource.options.followingCameraOptions.paddingUpdatesAllowed = true
+        
+        let expectedZoom: CGFloat = 11.1
+        navigationViewportDataSource.followingMobileCamera.zoom = expectedZoom
+        
+        let expectedBearing = 22.2
+        navigationViewportDataSource.followingMobileCamera.bearing = expectedBearing
+        
+        navigationMapView.navigationCamera.viewportDataSource = navigationViewportDataSource
+        
+        let viewportDataSourceDelegateMock = ViewportDataSourceDelegateMock()
+        navigationMapView.navigationCamera.viewportDataSource.delegate = viewportDataSourceDelegateMock
+        
+        guard let route = self.route(from: "route-for-navigation-camera") else {
+            XCTFail("Route should be valid.")
+            return
+        }
+        
+        let routeProgress = RouteProgress(route: route,
+                                          options: NavigationRouteOptions(coordinates: []))
+        routeProgress.currentLegProgress.stepIndex = 1
+        let expectation = self.expectation(forNotification: .routeControllerProgressDidChange,
+                                           object: self) { _ in
+            return true
+        }
+        
+        let location = CLLocation(latitude: 37.765469, longitude: -122.415279)
+        
+        sendRouteControllerProgressDidChangeNotification(routeProgress, location: location)
+        
+        wait(for: [expectation], timeout: 1.0)
+        
+        let cameraOptions = viewportDataSourceDelegateMock.cameraOptions?[CameraOptions.followingMobileCamera]
+        XCTAssertNotNil(cameraOptions?.center, "Center coordinates should be valid.")
+        XCTAssertEqual(cameraOptions?.zoom, expectedZoom, "Zooms should be equal.")
+        XCTAssertEqual(cameraOptions?.bearing, expectedBearing, "Bearings should be equal.")
+        XCTAssertNotNil(cameraOptions?.pitch, "Pitches should be valid.")
+        XCTAssertNotNil(cameraOptions?.padding, "Paddings should be valid.")
+    }
+    
     func testBearingSmoothingIsDisabled() {
         let navigationMapView = NavigationMapView(frame: .zero)
         
@@ -562,7 +618,9 @@ class NavigationCameraTests: XCTestCase {
     }
     
     func testRunningAnimators() {
+        let window = UIWindow()
         let navigationMapView = NavigationMapView(frame: .zero)
+        window.addSubview(navigationMapView)
         
         let navigationCameraStateTransition = NavigationCameraStateTransition(navigationMapView.mapView)
         
@@ -574,17 +632,21 @@ class NavigationCameraTests: XCTestCase {
                                           bearing: 0.0,
                                           pitch: 45.0)
         
+        // Starting from Mapbox Maps SDK `v10.2.0-beta.1` `BasicCameraAnimator`s, which were created, but
+        // haven't started yet, will still have `isRunning` flag set to `true`. This means, that
+        // if such animators are stopped right after starting transition, completion block will not be called.
         let followingExpectation = expectation(description: "Camera transition expectation.")
+        followingExpectation.isInverted = true
         
         navigationCameraStateTransition.transitionToFollowing(cameraOptions) {
             followingExpectation.fulfill()
         }
         
-        // Attempt to stop animators right away to verify that no side effects occur. Based on Maps SDK
-        // behavior it should not be possible to stop animator, which has not started yet.
-        navigationCameraStateTransition.stopAnimators()
+        // Attempt to stop animators right away to verify that no side effects occur.
+        navigationCameraStateTransition.cancelPendingTransition()
         
-        wait(for: [followingExpectation], timeout: 5.0)
+        // This expectation should not be fulfilled.
+        wait(for: [followingExpectation], timeout: 1.0)
         
         // Anchor and padding animators are not created when performing transition to the
         // `NavigationCameraState.following` state.
@@ -602,40 +664,50 @@ class NavigationCameraTests: XCTestCase {
         XCTAssertFalse(animatorPitch.isRunning, "Pitch animator should not be running.")
     }
     
+#if arch(x86_64) && DEBUG
     func testNavigationCameraFollowingCameraOptionsZoomRanges() {
         let navigationMapView = NavigationMapView(frame: .zero)
-        let navigationViewportDataSource = navigationMapView.navigationCamera.viewportDataSource as? NavigationViewportDataSource
+        guard let navigationViewportDataSource = navigationMapView.navigationCamera.viewportDataSource as? NavigationViewportDataSource else {
+            XCTFail(); return
+        }
         
-        navigationViewportDataSource?.options.followingCameraOptions.zoomRange = 10.0...22.0
+        navigationViewportDataSource.options.followingCameraOptions.zoomRange = 10.0...22.0
         
-        let zoomRange = navigationViewportDataSource?.options.followingCameraOptions.zoomRange
-        XCTAssertEqual(zoomRange?.lowerBound, 10.0, "Lower bounds should be equal.")
-        XCTAssertEqual(zoomRange?.upperBound, 22.0, "Upper bounds should be equal.")
-        
-        var appliedChanges = false
+        let zoomRange = navigationViewportDataSource.options.followingCameraOptions.zoomRange
+        XCTAssertEqual(zoomRange.lowerBound, 10.0, "Lower bounds should be equal.")
+        XCTAssertEqual(zoomRange.upperBound, 22.0, "Upper bounds should be equal.")
+
+        // It should only be possible to set zoom range levels from `0.0` to `22.0`.
         expect {
-            // It should only be possible to set zoom range levels from `0.0` to `22.0`.
-            navigationViewportDataSource?.options.followingCameraOptions.zoomRange = -1.0...100.0
-            appliedChanges = true
+            navigationViewportDataSource.options.followingCameraOptions.zoomRange = -1.0...100.0
         }.to(throwAssertion())
-        
-        XCTAssertFalse(appliedChanges, "Zoom range changes should not be applied.")
+        XCTAssertEqual(navigationViewportDataSource.options.followingCameraOptions.zoomRange,
+                       0...22)
     }
+#endif
     
+#if arch(x86_64) && DEBUG
+    // NOTE: We are running this test only on arch(x86_64) because `throwAssertion` doesn't work on ARM chips.
     func testNavigationCameraOverviewCameraOptionsMaximumZoomLevel() {
         let navigationMapView = NavigationMapView(frame: .zero)
-        let navigationViewportDataSource = navigationMapView.navigationCamera.viewportDataSource as? NavigationViewportDataSource
-        
-        var appliedChanges = false
+        guard let navigationViewportDataSource = navigationMapView.navigationCamera.viewportDataSource as? NavigationViewportDataSource else {
+            XCTFail(); return
+        }
+
+        // It should only be possible to set maximum zoom level between `0.0` and `22.0`.
         expect {
-            // It should only be possible to set maximum zoom level between `0.0` and `22.0`.
-            navigationViewportDataSource?.options.overviewCameraOptions.maximumZoomLevel = 23.0
-            appliedChanges = true
+            navigationViewportDataSource.options.overviewCameraOptions.maximumZoomLevel = 23.0
         }.to(throwAssertion())
-        
-        XCTAssertFalse(appliedChanges, "Maximum zoom level changes should not be applied.")
+
+        XCTAssertEqual(navigationViewportDataSource.options.overviewCameraOptions.maximumZoomLevel, 22)
+        expect {
+            navigationViewportDataSource.options.overviewCameraOptions.maximumZoomLevel = -1
+        }.to(throwAssertion())
+
+        XCTAssertEqual(navigationViewportDataSource.options.overviewCameraOptions.maximumZoomLevel, 0)
     }
-    
+#endif
+
     func testNavigationViewportDataSourceOptionsInitializer() {
         // `NavigationViewportDataSourceOptions` initializers should be available for public usage.
         let navigationViewportDataSourceOptions = NavigationViewportDataSourceOptions()
@@ -661,6 +733,39 @@ class NavigationCameraTests: XCTestCase {
         XCTAssertEqual(modifiedNavigationViewportDataSourceOptions.overviewCameraOptions,
                        overviewCameraOptions,
                        "OverviewCameraOptions instances should be equal.")
+    }
+    
+    func testInvalidCameraOptions() {
+        let navigationMapView = NavigationMapView(frame: .zero)
+        
+        let navigationCameraStateTransition = NavigationCameraStateTransition(navigationMapView.mapView)
+        
+        let invalidCoordinates = [
+            CLLocationCoordinate2D(latitude: CLLocationDegrees.nan,
+                                   longitude: CLLocationDegrees.nan),
+            CLLocationCoordinate2D(latitude: Double.greatestFiniteMagnitude,
+                                   longitude: Double.greatestFiniteMagnitude),
+            CLLocationCoordinate2D(latitude: Double.leastNormalMagnitude,
+                                   longitude: Double.greatestFiniteMagnitude)
+        ]
+        
+        invalidCoordinates.forEach { invalidCoordinate in
+            let cameraOptions = CameraOptions(center: invalidCoordinate,
+                                              padding: .zero,
+                                              anchor: .zero,
+                                              zoom: 15.0,
+                                              bearing: 0.0,
+                                              pitch: 45.0)
+            
+            XCTAssertNoThrow(navigationCameraStateTransition.update(to: cameraOptions, state: .overview),
+                             "Update animation should not be performed for invalid coordinate.")
+            
+            XCTAssertNoThrow(navigationCameraStateTransition.transitionToOverview(cameraOptions, completion: {}),
+                             "Transition animation should not be performed for invalid coordinate.")
+            
+            XCTAssertNoThrow(navigationCameraStateTransition.transitionToFollowing(cameraOptions, completion: {}),
+                             "Transition animation should not be performed for invalid coordinate.")
+        }
     }
     
     // MARK: - Helper methods

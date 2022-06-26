@@ -1,5 +1,5 @@
 import Foundation
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import CoreLocation
 import MapboxDirections
 
@@ -19,7 +19,12 @@ public final class RouterDelegateSpy: RouterDelegate {
     public var onDidArriveAt: ((Waypoint) -> Bool)?
     public var onShouldPreventReroutesWhenArrivingAt: ((Waypoint) -> Bool)?
     public var onRouterShouldDisableBatteryMonitoring: (() -> Bool)?
-
+    public var onDidUpdateAlternativeRoutes: (([AlternativeRoute], [AlternativeRoute]) -> Void)?
+    public var onDidFailToUpdateAlternativeRoutes: ((AlternativeRouteError) -> Void)?
+    public var onWillTakeAlternativeRoute: ((Route, CLLocation?) -> Void)?
+    public var onDidTakeAlternativeRoute: ((CLLocation?) -> Void)?
+    public var onDidFailToTakeAlternativeRoute: ((CLLocation?) -> Void)?
+    
     public init() {}
 
     public func router(_ router: Router, didRefresh routeProgress: RouteProgress) {
@@ -35,7 +40,7 @@ public final class RouterDelegateSpy: RouterDelegate {
                        willRerouteFrom location: CLLocation) {
         onWillRerouteFrom?(location)
     }
-
+    
     public func router(_ router: Router,
                        shouldDiscard location: CLLocation) -> Bool {
         return onShouldDiscard?(location) ?? RouteController.DefaultBehavior.shouldDiscardLocation
@@ -93,5 +98,25 @@ public final class RouterDelegateSpy: RouterDelegate {
     public func routerShouldDisableBatteryMonitoring(_ router: Router) -> Bool {
         return onRouterShouldDisableBatteryMonitoring?() ??
             RouteController.DefaultBehavior.shouldDisableBatteryMonitoring
+    }
+    
+    public func router(_ router: Router, didUpdateAlternatives updatedAlternatives: [AlternativeRoute], removedAlternatives: [AlternativeRoute]) {
+        onDidUpdateAlternativeRoutes?(updatedAlternatives, removedAlternatives)
+    }
+    
+    public func router(_ router: Router, didFailToUpdateAlternatives error: AlternativeRouteError) {
+        onDidFailToUpdateAlternativeRoutes?(error)
+    }
+    
+    public func router(_ router: Router, willTakeAlternativeRoute route: Route, at location: CLLocation?) {
+        onWillTakeAlternativeRoute?(route, location)
+    }
+    
+    public func router(_ router: Router, didTakeAlternativeRouteAt location: CLLocation?) {
+        onDidTakeAlternativeRoute?(location)
+    }
+    
+    public func router(_ router: Router, didFailToTakeAlternativeRouteAt location: CLLocation?) {
+        onDidFailToTakeAlternativeRoute?(location)
     }
 }

@@ -21,16 +21,14 @@ class UserPuckCourseViewSnapshotTests: TestCase {
         let lightUserPuckСourseView = UserPuckCourseView(frame: frame)
         lightUserPuckСourseView.puckView.overrideUserInterfaceStyle = .light
         lightUserPuckСourseView.puckColor = puckColor
-        lightUserPuckСourseView.stalePuckColor = puckColor
-        lightUserPuckСourseView.puckView.draw(frame)
+        lightUserPuckСourseView.setNeedsDisplay()
         assertImageSnapshot(matching: lightUserPuckСourseView, as: .image(precision: 0.95))
         
         // Simulate `UserPuckCourseView` puck color appearance in dark mode.
         let darkUserPuckСourseView = UserPuckCourseView(frame: frame)
         darkUserPuckСourseView.puckView.overrideUserInterfaceStyle = .dark
         darkUserPuckСourseView.puckColor = puckColor
-        darkUserPuckСourseView.stalePuckColor = puckColor
-        darkUserPuckСourseView.puckView.draw(frame)
+        darkUserPuckСourseView.setNeedsDisplay()
         assertImageSnapshot(matching: darkUserPuckСourseView, as: .image(precision: 0.95))
     }
     
@@ -45,7 +43,7 @@ class UserPuckCourseViewSnapshotTests: TestCase {
         lightUserPuckСourseView.puckView.overrideUserInterfaceStyle = .light
         lightUserPuckСourseView.fillColor = fillColor
         lightUserPuckСourseView.shadowColor = shadowColor
-        lightUserPuckСourseView.puckView.draw(frame)
+        lightUserPuckСourseView.setNeedsDisplay()
         assertImageSnapshot(matching: lightUserPuckСourseView, as: .image(precision: 0.95))
         
         // Simulate `UserPuckCourseView` fill and shadow colors appearance in dark mode.
@@ -53,40 +51,8 @@ class UserPuckCourseViewSnapshotTests: TestCase {
         darkUserPuckСourseView.puckView.overrideUserInterfaceStyle = .dark
         darkUserPuckСourseView.fillColor = fillColor
         darkUserPuckСourseView.shadowColor = shadowColor
-        darkUserPuckСourseView.puckView.draw(frame)
+        darkUserPuckСourseView.setNeedsDisplay()
         assertImageSnapshot(matching: darkUserPuckСourseView, as: .image(precision: 0.95))
-    }
-    
-    func testUserPuckCourseViewStalePuckColor() {
-        let frame = CGRect(x: 0.0, y: 0.0, width: 100.0, height: 100.0)
-        let userPuckСourseView = UserPuckCourseView(frame: frame)
-        userPuckСourseView.puckColor = .green
-        userPuckСourseView.stalePuckColor = .red
-        userPuckСourseView.staleInterval = 1.0
-        userPuckСourseView.staleRefreshInterval = 0.1
-        userPuckСourseView.puckView.draw(frame)
-        
-        // Right after `UserPuckCourseView` creation and when it's not yet stale its puck color
-        // should be green.
-        assertImageSnapshot(matching: userPuckСourseView, as: .image(precision: 0.95))
-        
-        // Simulate location update to be able to move puck to the stale state.
-        NotificationCenter.default.post(name: .routeControllerProgressDidChange,
-                                        object: self,
-                                        userInfo: nil)
-        
-        let stalePuckExpectation = expectation(description: "Stale puck expectation")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            userPuckСourseView.puckView.draw(frame)
-            stalePuckExpectation.fulfill()
-        }
-        
-        wait(for: [stalePuckExpectation], timeout: 10.0)
-        
-        // It is expected that puck moves to the stale state within one second and gradually changes
-        // its color to red.
-        assertImageSnapshot(matching: userPuckСourseView, as: .image(precision: 0.95))
     }
     
     func testCourseUpdatable() {
@@ -116,5 +82,17 @@ class UserPuckCourseViewSnapshotTests: TestCase {
         let angle = CLLocationDegrees(atan2f(Float(courseUpdatableMock.transform.b),
                                              Float(courseUpdatableMock.transform.a))).toDegrees()
         XCTAssertEqual(angle, course - direction, accuracy: 0.1, "Direction angles of the puck should be almost equal.")
+    }
+    
+    func testUserPuckCourseViewScale() {
+        let frame = CGRect(x: 0.0, y: 0.0, width: 50.0, height: 50.0)
+        let userPuckСourseView = UserPuckCourseView(frame: frame)
+        userPuckСourseView.puckColor = .red
+        userPuckСourseView.fillColor = .green
+        userPuckСourseView.shadowColor = .blue
+        userPuckСourseView.setNeedsDisplay()
+        
+        // It is expected that the `UserPuckCourseView` is scaled by the customized frame instead of being trimmed.
+        assertImageSnapshot(matching: userPuckСourseView, as: .image(precision: 0.95))
     }
 }

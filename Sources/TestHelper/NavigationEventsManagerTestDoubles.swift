@@ -1,6 +1,6 @@
 import Foundation
 import MapboxMobileEvents
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 import MapboxDirections
 #if SWIFT_PACKAGE
 import CTestHelper
@@ -24,7 +24,7 @@ public class NavigationEventsManagerSpy: NavigationEventsManager {
         super.init(activeNavigationDataSource: nil, accessToken: "fake token", mobileEventsManager: mobileEventsManagerSpy)
     }
     
-    required convenience init(activeNavigationDataSource: EventsManagerDataSource? = nil,
+    required convenience init(activeNavigationDataSource: ActiveNavigationEventsManagerDataSource? = nil,
                   passiveNavigationDataSource: PassiveNavigationEventsManagerDataSource? = nil,
                   accessToken possibleToken: String? = nil,
                   mobileEventsManager: MMEEventsManager = .shared()) {
@@ -106,6 +106,7 @@ class MMEEventsManagerSpy: MMEEventsManager {
         enqueuedEvents.forEach { (event: FakeTelemetryEvent) in
             flushedEvents.append(event)
         }
+        enqueuedEvents.removeAll()
     }
 
     public func hasFlushedEvent(with name: String) -> Bool {

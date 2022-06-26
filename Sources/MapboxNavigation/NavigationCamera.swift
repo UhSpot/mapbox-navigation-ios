@@ -9,52 +9,6 @@ import MapboxMaps
 public class NavigationCamera: NSObject, ViewportDataSourceDelegate {
     
     /**
-     Current state of `NavigationCamera`. Defaults to `NavigationCameraState.idle`.
-     */
-    public private(set) var state: NavigationCameraState = .idle {
-        didSet {
-            NotificationCenter.default.post(name: .navigationCameraStateDidChange,
-                                            object: self,
-                                            userInfo: [
-                                                NavigationCamera.NotificationUserInfoKey.state: state
-                                            ])
-        }
-    }
-    
-    /**
-     Protocol, which is used to provide location related data to continuously perform camera related updates.
-     By default `NavigationMapView` uses `NavigationViewportDataSource`.
-     */
-    public var viewportDataSource: ViewportDataSource {
-        didSet {
-            viewportDataSource.delegate = self
-            
-            debugView?.navigationViewportDataSource = viewportDataSource as? NavigationViewportDataSource
-        }
-    }
-    
-    /**
-     Protocol, which is used to execute camera transitions. By default `NavigationMapView` uses
-     `NavigationCameraStateTransition`.
-     */
-    public var cameraStateTransition: CameraStateTransition
-    
-    /**
-     `MapView` instance, which will be used for performing camera related transitions.
-     */
-    weak var mapView: MapView?
-    
-    /**
-     Type of `NavigationCamera`. Used to decide on which platform (iOS or CarPlay) transitions and updates should be executed.
-     */
-    var type: NavigationCameraType = .mobile
-    
-    /**
-     Instance of `NavigationCameraDebugView`, which is drawn on `MapView` surface for debugging purposes.
-     */
-    var debugView: NavigationCameraDebugView? = nil
-    
-    /**
      Initializer of `NavigationCamera` object.
      
      - parameter mapView: Instance of `MapView`, on which camera related transitions will be executed.
@@ -62,15 +16,15 @@ public class NavigationCamera: NSObject, ViewportDataSourceDelegate {
      */
     public required init(_ mapView: MapView, navigationCameraType: NavigationCameraType = .mobile) {
         self.mapView = mapView
-        self.viewportDataSource = NavigationViewportDataSource(mapView)
-        self.cameraStateTransition = NavigationCameraStateTransition(mapView)
-        self.type = navigationCameraType
+        viewportDataSource = NavigationViewportDataSource(mapView)
+        cameraStateTransition = NavigationCameraStateTransition(mapView)
+        type = navigationCameraType
         
         super.init()
         
-        self.viewportDataSource.delegate = self
+        viewportDataSource.delegate = self
         
-        setupGestureRegonizers()
+        setupGestureRecognizers()
         
         // Uncomment to be able to see `NavigationCameraDebugView`.
         // setupDebugView(mapView,
@@ -78,13 +32,12 @@ public class NavigationCamera: NSObject, ViewportDataSourceDelegate {
         //                navigationViewportDataSource: self.viewportDataSource as? NavigationViewportDataSource)
     }
     
-    // MARK: - Setting-up methods
-    
-    func setupGestureRegonizers() {
+    func setupGestureRecognizers() {
         makeGestureRecognizersDisableCameraFollowing()
+        makeTapGestureRecognizerStopAnimatedTransitions()
     }
     
-    // MARK: - ViewportDataSourceDelegate methods
+    // MARK: Reacting to ViewportDataSourceDelegate Updates
     
     public func viewportDataSource(_ dataSource: ViewportDataSource, didUpdate cameraOptions: [String: CameraOptions]) {
         switch state {
@@ -119,7 +72,53 @@ public class NavigationCamera: NSObject, ViewportDataSourceDelegate {
         }
     }
     
-    // MARK: - NavigationCamera state related methods
+    // MARK: Changing NavigationCamera State
+    
+    /**
+     Protocol, which is used to provide location related data to continuously perform camera related updates.
+     By default `NavigationMapView` uses `NavigationViewportDataSource`.
+     */
+    public var viewportDataSource: ViewportDataSource {
+        didSet {
+            viewportDataSource.delegate = self
+            
+            debugView?.navigationViewportDataSource = viewportDataSource as? NavigationViewportDataSource
+        }
+    }
+    
+    /**
+     Current state of `NavigationCamera`. Defaults to `NavigationCameraState.idle`.
+     */
+    public private(set) var state: NavigationCameraState = .idle {
+        didSet {
+            NotificationCenter.default.post(name: .navigationCameraStateDidChange,
+                                            object: self,
+                                            userInfo: [
+                                                NavigationCamera.NotificationUserInfoKey.state: state
+                                            ])
+        }
+    }
+    
+    /**
+     Protocol, which is used to execute camera transitions. By default `NavigationMapView` uses
+     `NavigationCameraStateTransition`.
+     */
+    public var cameraStateTransition: CameraStateTransition
+    
+    /**
+     `MapView` instance, which will be used for performing camera related transitions.
+     */
+    weak var mapView: MapView?
+    
+    /**
+     Type of `NavigationCamera`. Used to decide on which platform (iOS or CarPlay) transitions and updates should be executed.
+     */
+    var type: NavigationCameraType = .mobile
+    
+    /**
+     Instance of `NavigationCameraDebugView`, which is drawn on `MapView` surface for debugging purposes.
+     */
+    var debugView: NavigationCameraDebugView? = nil
     
     /**
      Call to this method executes a transition to `NavigationCameraState.following` state.
@@ -196,11 +195,19 @@ public class NavigationCamera: NSObject, ViewportDataSourceDelegate {
      and stops all pending transitions.
      */
     @objc public func stop() {
-        if state == .idle { return }
-        
+        stopTransition(ignoring: .idle)
+    }
+    
+    @objc func stopNonFollowingTransition() {
+        stopTransition(ignoring: .following)
+    }
+    
+    private func stopTransition(ignoring state: NavigationCameraState) {
+        if self.state == state { return }
+
         cameraStateTransition.cancelPendingTransition()
-        
-        state = .idle
+
+        self.state = .idle
     }
     
     /**
@@ -213,6 +220,14 @@ public class NavigationCamera: NSObject, ViewportDataSourceDelegate {
             || gestureRecognizer is UIRotationGestureRecognizer
             || gestureRecognizer is UIPinchGestureRecognizer {
             gestureRecognizer.addTarget(self, action: #selector(stop))
+        }
+    }
+    
+    func makeTapGestureRecognizerStopAnimatedTransitions() {
+        for gestureRecognizer in mapView?.gestureRecognizers ?? []
+        where gestureRecognizer is UITapGestureRecognizer
+        {
+            gestureRecognizer.addTarget(self, action: #selector(stopNonFollowingTransition))
         }
     }
     

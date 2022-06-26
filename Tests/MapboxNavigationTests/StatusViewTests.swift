@@ -2,7 +2,7 @@ import XCTest
 import UIKit
 import TestHelper
 @testable import MapboxNavigation
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 class StatusViewTests: TestCase {
     lazy var statusView: StatusView = {

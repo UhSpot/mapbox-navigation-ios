@@ -1,13 +1,13 @@
 import AVFoundation
 import MapboxDirections
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxSpeech
 
 /// `SpeechSynthesizing`implementation, aggregating other implementations, to allow 'fallback' mechanism.
 /// Can be initialized with array of synthesizers which will be called in order of appearance, until one of them is capable to vocalize current `SpokenInstruction`
 open class MultiplexedSpeechSynthesizer: SpeechSynthesizing {
     
-    // MARK: - Properties
+    // MARK: Speech Configuration
     
     public weak var delegate: SpeechSynthesizingDelegate?
     
@@ -21,13 +21,41 @@ open class MultiplexedSpeechSynthesizer: SpeechSynthesizing {
             applyVolume()
         }
     }
-    public var isSpeaking: Bool {
-        return speechSynthesizers.first(where: { $0.isSpeaking }) != nil
-    }
+    
     public var locale: Locale? = Locale.autoupdatingCurrent {
         didSet {
             applyLocale()
         }
+    }
+    
+    private func applyMute() {
+        speechSynthesizers.forEach { $0.muted = muted }
+    }
+    
+    private func applyVolume() {
+        speechSynthesizers.forEach { $0.volume = volume }
+    }
+    
+    private func applyLocale() {
+        speechSynthesizers.forEach { $0.locale = locale }
+    }
+    
+    /// Controls if this speech synthesizer is allowed to manage the shared `AVAudioSession`.
+    /// Set this field to `false` if you want to manage the session yourself, for example if your app has background music.
+    /// Default value is `true`.
+    public var managesAudioSession: Bool {
+        get {
+            speechSynthesizers.allSatisfy { $0.managesAudioSession == true }
+        }
+        set {
+            speechSynthesizers.forEach { $0.managesAudioSession = newValue }
+        }
+    }
+    
+    // MARK: Instructions vocalization
+    
+    public var isSpeaking: Bool {
+        return speechSynthesizers.first(where: { $0.isSpeaking }) != nil
     }
     
     public var speechSynthesizers: [SpeechSynthesizing] {
@@ -60,8 +88,6 @@ open class MultiplexedSpeechSynthesizer: SpeechSynthesizing {
     
     private var currentLegProgress: RouteLegProgress?
     
-    // MARK: - Lifecycle
-    
     public init(_ speechSynthesizers: [SpeechSynthesizing]? = nil, accessToken: String? = nil, host: String? = nil) {
         let synthesizers = speechSynthesizers ?? [
             MapboxSpeechSynthesizer(accessToken: accessToken, host: host),
@@ -73,20 +99,6 @@ open class MultiplexedSpeechSynthesizer: SpeechSynthesizing {
             self.speechSynthesizers = Array(synthesizers)
         }
     }
-    
-    private func applyVolume() {
-        speechSynthesizers.forEach { $0.volume = volume }
-    }
-    
-    private func applyMute() {
-        speechSynthesizers.forEach { $0.muted = muted }
-    }
-    
-    private func applyLocale() {
-        speechSynthesizers.forEach { $0.locale = locale }
-    }
-    
-    // MARK: - Public Methods
     
     public func prepareIncomingSpokenInstructions(_ instructions: [SpokenInstruction], locale: Locale? = nil) {
         speechSynthesizers.forEach { $0.prepareIncomingSpokenInstructions(instructions, locale: locale) }
@@ -107,6 +119,8 @@ open class MultiplexedSpeechSynthesizer: SpeechSynthesizing {
 }
 
 extension MultiplexedSpeechSynthesizer: SpeechSynthesizingDelegate {
+    
+    // MARK: SpeechSynthesizingDelegate Implementation
     
     public func speechSynthesizer(_ speechSynthesizer: SpeechSynthesizing, didSpeak instruction: SpokenInstruction, with error: SpeechError?) {
         if let error = error {

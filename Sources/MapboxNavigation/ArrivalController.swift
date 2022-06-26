@@ -1,15 +1,15 @@
 import UIKit
 import MapboxDirections
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxMobileEvents
 import MapboxMaps
 
 /// A component to encapsulate `EndOfRouteViewController` presenting logic such as enabling/disabling, handling autolayout, keyboard, positioning camera, etc.
 class ArrivalController: NavigationComponentDelegate {
     
-    typealias EndOfRouteDismissalHandler = (EndOfRouteFeedback?) -> ()
+    typealias EndOfRouteDismissalHandler = (EndOfRouteFeedback) -> ()
     
-    // MARK: - Properties
+    // MARK: Properties
     
     weak private(set) var navigationViewData: NavigationViewData!
     
@@ -33,7 +33,7 @@ class ArrivalController: NavigationComponentDelegate {
         return viewController
     }()
     
-    // MARK: - Public methods
+    // MARK: Public Methods
     
     init(_ navigationViewData: NavigationViewData) {
         self.navigationViewData = navigationViewData
@@ -43,7 +43,7 @@ class ArrivalController: NavigationComponentDelegate {
                                 advancesToNextLeg: Bool,
                                 duration: TimeInterval = 1.0,
                                 completion: ((Bool) -> Void)? = nil,
-                                onDismiss: EndOfRouteDismissalHandler? = nil) {
+                                onDismiss: @escaping EndOfRouteDismissalHandler) {
         guard navigationViewData.router.routeProgress.isFinalLeg &&
                 advancesToNextLeg &&
                 showsEndOfRoute else {
@@ -86,9 +86,9 @@ class ArrivalController: NavigationComponentDelegate {
         UIView.animate(withDuration: 0.3, animations: navigationViewData.containerViewController.view.layoutIfNeeded)
     }
     
-    // MARK: - Private methods
+    // MARK: Private Methods
     
-    private func embedEndOfRoute(into viewController: UIViewController, onDismiss: EndOfRouteDismissalHandler? = nil) {
+    private func embedEndOfRoute(into viewController: UIViewController, onDismiss: @escaping EndOfRouteDismissalHandler) {
         let endOfRoute = endOfRouteViewController
         viewController.addChild(endOfRoute)
         navigationViewData.navigationView.endOfRouteView = endOfRoute.view
@@ -97,7 +97,7 @@ class ArrivalController: NavigationComponentDelegate {
 
         endOfRoute.dismissHandler = { [weak self] (stars, comment) in
             guard let rating = self?.rating(for: stars) else { return }
-            onDismiss?(EndOfRouteFeedback(rating: rating, comment: comment))
+            onDismiss(EndOfRouteFeedback(rating: rating, comment: comment))
         }
     }
     
@@ -107,7 +107,7 @@ class ArrivalController: NavigationComponentDelegate {
         return (stars - 1) * 25
     }
     
-    // MARK: - Keyboard handling
+    // MARK: Keyboard Handling
     
     fileprivate func subscribeToKeyboardNotifications() {
         NotificationCenter.default.addObserver(self, selector: #selector(ArrivalController.keyboardWillShow(notification:)), name:UIResponder.keyboardWillShowNotification, object: nil)
@@ -146,7 +146,7 @@ class ArrivalController: NavigationComponentDelegate {
         UIView.animate(withDuration: duration, delay: 0, options: options, animations: navigationViewData.navigationView.layoutIfNeeded, completion: nil)
     }
     
-    // MARK: - NavigationComponentDelegate implementation
+    // MARK: NavigationComponentDelegate Implementation
     
     func navigationViewWillAppear(_: Bool) {
         subscribeToKeyboardNotifications()

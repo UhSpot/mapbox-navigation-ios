@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import TestHelper
 
 extension XCTestCase {
     enum NavigationTests {
@@ -42,7 +43,6 @@ extension XCTestCase {
     }
 
     func embed(parent:UIViewController, child: UIViewController, in container: UIView, constrainedBy constraints: ((UIViewController, UIViewController) -> [NSLayoutConstraint])?) {
-        child.willMove(toParent: parent)
         parent.addChild(child)
         container.addSubview(child.view)
         if let childConstraints: [NSLayoutConstraint] = constraints?(parent, child) {
