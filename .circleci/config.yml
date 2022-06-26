@@ -1,36 +1,197 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.4.2
+
+commands:
+  install-mbx-ci:
+    steps:
+      - run:
+          name: "Install MBX CI"
+          command: |
+            curl -Ls https://mapbox-release-engineering.s3.amazonaws.com/mbx-ci/latest/mbx-ci-darwin-amd64 > /usr/local/bin/mbx-ci
+            chmod 755 /usr/local/bin/mbx-ci
+  notify-build-finished:
+      parameters:
+        notify_success:
+          type: boolean
+          default: false
+      steps:
+        - when:
+            condition: << parameters.notify_success >>
+            steps:
+              - slack/notify:
+                  channel: mobile-bots
+                  event: pass
+                  template: basic_success_1
+                  branch_pattern: main
+        - slack/notify:
+            channel: mobile-bots
+            event: fail
+            template: basic_fail_1
+            branch_pattern: main
+            mentions: '@here'
+  install-gh-cli:
+      steps:
+        - run:
+            name: Install GitHub CLI
+            command: |
+              brew install gh
+  restore-carthage-cache:
+    parameters:
+      xcode:
+        type: string
+    steps:
+      - restore_cache:
+          key: carthage-cache-v1-{{ checksum "Cartfile.resolved" }}-<< parameters.xcode >>
+  save-carthage-cache:
+    parameters:
+      xcode:
+        type: string
+    steps:
+      - save_cache:
+          key: carthage-cache-v1-{{ checksum "Cartfile.resolved" }}-<< parameters.xcode >>
+          paths:
+            - Carthage
+
+  save-api-diff-cache:
+    parameters:
+      key:
+        type: string
+      is_template:
+        type: boolean
+        default: false
+    steps:
+      - when:
+          condition: << parameters.is_template >>
+          steps: 
+            - save_cache:
+                key: nav-sdk-diff-cache-v7-{{ << parameters.key >> }}
+                paths:
+                  - api_logs
+            - store_artifacts:
+                path: api_logs
+                destination: api_logs_base_api
+      - unless:
+          condition: << parameters.is_template >>
+          steps:
+            - save_cache:
+                key: nav-sdk-diff-cache-v7-<< parameters.key >>
+                paths:
+                  - api_logs
+            - store_artifacts:
+                path: api_logs
+                destination: api_logs_<< parameters.key >>
+  restore-api-diff-cache:
+    parameters:
+      key:
+        type: string
+      is_template:
+        type: boolean
+        default: false
+    steps:
+      - when:
+          condition: << parameters.is_template >>
+          steps: 
+            - restore_cache:
+                key: nav-sdk-diff-cache-v7-{{ << parameters.key >> }}
+      - unless:
+          condition: << parameters.is_template >>
+          steps:
+            - restore_cache:
+                key: nav-sdk-diff-cache-v7-<< parameters.key >>
+
+  build-api-diff-cli-tool:
+    description: "Builds CLI tool which produce diff reports"
+    parameters:
+      swift-api-diff-version:
+        type: string
+        default: "v2.0.0-rc.2"
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "8c:24:d5:99:22:42:45:8f:16:6f:8d:24:ee:08:97:13"
+      - restore_cache:
+          key: swift-api-diff-v1-<<parameters.swift-api-diff-version>>
+      - run:
+          name: Building API Diff Report if Needed
+          command: |
+            if [ ! -f "scripts/swift-api-diff/.build/release/swift-api-diff" ]; then 
+              cd scripts && git clone git@github.com:mapbox/swift-api-diff.git --branch <<parameters.swift-api-diff-version>> --depth 1
+              cd swift-api-diff && swift build --configuration release; 
+            fi
+      - save_cache:
+          key: swift-api-diff-v1-<<parameters.swift-api-diff-version>>
+          paths:
+            - scripts/swift-api-diff/.build/release/swift-api-diff
+
+  run_api_log_in_current_env:
+    parameters:
+      iOS:
+        type: string
+      device:
+        type: string
+    steps:
+      - run:
+          name: Generating MapboxCoreNavigation API Log
+          command: ./scripts/swift-api-diff/.build/release/swift-api-diff doc ./ $CIRCLE_WORKING_DIRECTORY/api_logs/core_navigation_log.json --module-name MapboxCoreNavigation -- -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -scheme MapboxNavigation-Package build
+      - run:
+          name: Generating MapboxNavigation API Log
+          command: ./scripts/swift-api-diff/.build/release/swift-api-diff doc ./ $CIRCLE_WORKING_DIRECTORY/api_logs/navigation_log.json --module-name MapboxNavigation -- -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -scheme MapboxNavigation-Package build
+  run_breaking_changes_detector:
+    parameters:
+      module_name:
+        type: string
+      base_api_path:
+        type: string
+      new_api_path:
+        type: string
+    steps:
+      - run:
+          name: Generating << parameters.module_name >> API Diff
+          command: |
+            export GITHUB_TOKEN=$(mbx-ci github issues public token)
+            LOG=$(./scripts/swift-api-diff/.build/release/swift-api-diff breaking_changes << parameters.base_api_path >> << parameters.new_api_path >> --ignore-undocumented true)
+            if [ ! -z "$CIRCLE_PULL_REQUEST" ]; then
+              if [ -z "$LOG" ]; then
+                echo "No breaking changes detected in << parameters.module_name >>"
+              else
+                PR_COMMENT=$'# Breaking Changes in << parameters.module_name >>\n\n'
+                PR_COMMENT+="$LOG"
+                gh pr comment -F - \<<< "$PR_COMMENT"
+              fi
+            fi
+
+  carthage-bootstrap:
+    steps:
+      - run:
+          name: Install Dependencies
+          command: carthage bootstrap --platform ios --cache-builds --configuration Debug --use-netrc --use-xcframeworks
+
 step-library:
   - &restore-cache
       restore_cache:
         keys:
-          - nav-cache-v5-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Cartfile.resolved" }}
-          - nav-cache-v5-{{ .Environment.CIRCLE_JOB }} # used if checksum fails
-
-  - &save-cache
-      save_cache:
-        key: nav-cache-v5-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Cartfile.resolved" }}
-        paths:
-          - Carthage
-
+          - nav-cache-v{{ .Environment.CARTHAGE_CACHE_VERSION }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Cartfile.resolved" }}
   - &restore-cache-cocoapods
       restore_cache:
         keys:
           - nav-cache-pod-v1-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Tests/CocoaPodsTest/PodInstall/Podfile.lock" }}
           - nav-cache-pod-v1
 
-  - &restore-cache-cocoapods-installation
+  - &restore-cache-gems
       restore_cache:
         keys:
           - 1-gems-{{ checksum "Gemfile.lock" }}
 
-  - &install-cocoapods-installation
+  - &install-gems
       run:
-        name: Install cocoapods
+        name: Install Gems
         command: |
-          bundle check || bundle install --path vendor/bundle --clean
+          bundle config set path 'vendor/bundle'
+          bundle check || bundle install
 
-  - &save-cache-cocoapods-installation
+  - &save-cache-gems
       save_cache:
           key: 1-gems-{{ checksum "Gemfile.lock" }}
           paths:
@@ -57,7 +218,7 @@ step-library:
       run:
         name: Prepare .mapbox file
         command: |
-          echo "foo" > ~/.mapbox
+          echo "${MAPBOX_ACCESS_TOKEN}" > ~/.mapbox
 
   - &prepare-netrc-file
       run:
@@ -66,12 +227,13 @@ step-library:
           echo "machine api.mapbox.com" >> ~/.netrc
           echo "login mapbox" >> ~/.netrc
           echo "password $SDK_REGISTRY_TOKEN" >> ~/.netrc
+          chmod 0600 ~/.netrc
 
   - &update-carthage-version
       run:
         name: Update Carthage version
         command: |
-          curl -OL "https://github.com/Carthage/Carthage/releases/download/0.36.0/Carthage.pkg"
+          curl -OL "https://github.com/Carthage/Carthage/releases/download/0.38.0/Carthage.pkg"
           sudo installer -pkg Carthage.pkg -target /
 
   - &verify-missing-localizable-strings
@@ -81,46 +243,18 @@ step-library:
           ./scripts/convert_string_files.sh
           git diff --exit-code -- */*/*.lproj
 
-  - &install-dependencies
-      unless:
-        condition:
-          or:
-            - equal: [ "12.1.0", << parameters.xcode >> ]
-            - equal: [ true, << parameters.spm >> ]
-        steps:
-          run:
-            name: Install Dependencies
-            command: |
-              carthage bootstrap --platform ios --cache-builds --configuration Debug --no-use-binaries --use-netrc
-              carthage outdated --xcode-warnings # prints warnings if there are outdated carthage dependencies
-
-  - &install-dependencies-12
-      when:
-        condition:
-          and:
-            - equal: [ "12.1.0", << parameters.xcode >> ]
-            - not: << parameters.spm >>
-        steps:
-          run:
-            name: Install Dependencies
-            command: |
-              ./scripts/wcarthage.sh bootstrap --platform ios --cache-builds --configuration Debug --no-use-binaries --use-netrc
-
-  - &build-Example
+  - &add-github-to-known-hosts
       run:
-        name: Build Example
+        name: Add GitHub to known hosts
         command: |
-          xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=13.4.1,name=iPhone 8 Plus' -project MapboxNavigation.xcodeproj -scheme Example clean build | xcpretty
+          for ip in $(dig @8.8.8.8 github.com +short); do ssh-keyscan github.com,$ip; ssh-keyscan $ip; done 2>/dev/null >> ~/.ssh/known_hosts
 
   - &trigger-metrics
       run:
         name: Trigger metrics
         command: |
-          if [ -n "${MOBILE_METRICS_TOKEN}" ]; then
-            bash -c "curl -X POST --header \"Content-Type: application/json\" --data '{\"parameters\": {\"run_ios_navigation_benchmark\": true, \"ci_ref\": $CIRCLE_BUILD_NUM }, \"target_branch\": \"main\" }' https://circleci.com/api/v2/project/github/mapbox/mobile-metrics/pipeline?circle-token=${MOBILE_METRICS_TOKEN}"
-          else
-            echo "MOBILE_METRICS_TOKEN not provided"
-          fi
+          pip3 install requests
+          python3 scripts/trigger-metrics.py
 
 jobs:
   pod-job:
@@ -130,11 +264,14 @@ jobs:
         default: false
       iOS:
         type: string
-        default: "13.4.1"
+        default: "15.2"
       xcode:
         type: string
-        default: "11.4.1"
+        default: "13.2.1"
       lint:
+        type: boolean
+        default: false
+      archive:
         type: boolean
         default: false
     macos:
@@ -143,13 +280,13 @@ jobs:
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
       - checkout
-      - *install-cocoapods-installation
+      - *restore-cache-gems
+      - *restore-cache-podmaster
+      - *restore-cache-cocoapods
+      - *install-gems
       - *prepare-mapbox-file
       - *prepare-netrc-file
       - *update-carthage-version
-      - *restore-cache-podmaster
-      - *restore-cache-cocoapods-installation
-      - *restore-cache-cocoapods
       - when:
           condition: << parameters.update >>
           steps:
@@ -158,7 +295,11 @@ jobs:
           condition: << parameters.update >>
           steps:
             - run: cd Tests/CocoaPodsTest/PodInstall && bundle exec pod install --repo-update
-      - run: cd Tests/CocoaPodsTest/PodInstall && xcodebuild -workspace PodInstall.xcworkspace -scheme PodInstall -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=iPhone 8 Plus' clean build | xcpretty
+      - run: cd Tests/CocoaPodsTest/PodInstall && xcodebuild -workspace PodInstall.xcworkspace -scheme PodInstall -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=iPhone 13 Pro Max' clean build
+      - when:
+          condition: << parameters.archive >>
+          steps:
+            - run: cd Tests/CocoaPodsTest/PodInstall && xcodebuild -workspace PodInstall.xcworkspace -scheme PodInstall -sdk iphoneos<< parameters.iOS >> -destination generic/platform=iOS clean archive CODE_SIGNING_ALLOWED="NO"
       - when:
           condition: << parameters.lint >>
           steps:
@@ -166,19 +307,21 @@ jobs:
             - run: bundle exec pod lib lint MapboxCoreNavigation.podspec
       - *save-cache-podmaster
       - *save-cache-cocoapods
-      - *save-cache-cocoapods-installation
+      - *save-cache-gems
+      - notify-build-finished
+
 
   build-job:
     parameters:
       xcode:
         type: string
-        default: "11.4.1"
+        default: "12.5.1"
       device:
         type: string
-        default: "iPhone 8 Plus"
+        default: "iPhone 12 Pro Max"
       iOS:
         type: string
-        default: "13.4.1"
+        default: "14.5"
       spm:
         type: boolean
         default: false
@@ -188,9 +331,12 @@ jobs:
       codecoverage:
         type: boolean
         default: false
-      delete_private_deps:
+      verify_localization:
         type: boolean
-        default: false
+        default: true
+      configuration:
+        type: string
+        default: "Debug"
     macos:
       xcode: << parameters.xcode >>
     environment:
@@ -199,60 +345,59 @@ jobs:
       - checkout
       - *prepare-mapbox-file
       - *prepare-netrc-file
-      - *update-carthage-version
-      - *restore-cache
-      - when:
-          condition: << parameters.delete_private_deps >>
-          steps:
-            - run: rm -rf Cartfile.private && rm -rf Cartfile.resolved
-      - *install-dependencies
-      - *install-dependencies-12
-      - *save-cache
       - run:
           name: Install prerequisites
           command: if [ $(xcversion simulators | grep -cF "iOS << parameters.iOS >> Simulator (installed)") -eq 0 ]; then xcversion simulators --install="iOS << parameters.iOS >>" || true; fi
-      - run:
-          name: pre-start simulator
-          command: xcrun instruments -w "<< parameters.device >> (<< parameters.iOS >>) [" || true
-      - *verify-missing-localizable-strings
+      - when: # Simulator is needed only for tests
+          condition: << parameters.test >>
+          steps:
+            - run:
+                name: pre-start simulator
+                command: xcrun instruments -w "<< parameters.device >> (<< parameters.iOS >>) [" || true
+      - when:
+          condition: << parameters.verify_localization >>
+          steps:
+            - *verify-missing-localizable-strings
+      - *add-github-to-known-hosts
       - when:
           condition:
             not: << parameters.spm >>
           steps:
+            - *update-carthage-version
+            - restore-carthage-cache:
+                xcode: << parameters.xcode >>
+            - carthage-bootstrap
+            - save-carthage-cache:
+                xcode: << parameters.xcode >>
             - run:
                 name: MapboxCoreNavigation
-                command: xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -project MapboxNavigation.xcodeproj -scheme MapboxCoreNavigation clean build <<# parameters.test >>test <</ parameters.test >> <<# parameters.codecoverage >>-enableCodeCoverage YES<</ parameters.codecoverage >>
+                command: xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -project MapboxNavigation.xcodeproj -scheme MapboxCoreNavigation -configuration << parameters.configuration >> clean build <<# parameters.test >>test <</ parameters.test >> <<# parameters.codecoverage >>-enableCodeCoverage YES<</ parameters.codecoverage >> ENABLE_TESTABILITY=YES
       - when:
           condition: << parameters.spm >>
           steps:
-            - run: for ip in $(dig @8.8.8.8 github.com +short); do ssh-keyscan github.com,$ip; ssh-keyscan $ip; done 2>/dev/null >> ~/.ssh/known_hosts
-            - run: mv MapboxNavigation.xcodeproj MapboxNavigation.xcodeproj-aside
-            - run: xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -scheme MapboxNavigation build <<# parameters.test >>test <</ parameters.test >> <<# parameters.codecoverage >>-enableCodeCoverage YES<</ parameters.codecoverage >>
-            - run: mv MapboxNavigation.xcodeproj-aside MapboxNavigation.xcodeproj
+            - run:
+                name: Move Xcode project aside
+                command: rm -rf *.xcodeproj
+            - run:
+                name: MapboxNavigation-Package
+                command: xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -scheme MapboxNavigation-Package -configuration << parameters.configuration >> build <<# parameters.test >>test <</ parameters.test >> <<# parameters.codecoverage >>-enableCodeCoverage YES<</ parameters.codecoverage >> ENABLE_TESTABILITY=YES
       - when:
           condition: << parameters.codecoverage >>
           steps:
-            - run: bash <(curl -s https://codecov.io/bash)
-      - when:
-          condition:
-            not: << parameters.spm >>
-          steps:
             - run:
-                name: MapboxNavigation
-                command: xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>' -project MapboxNavigation.xcodeproj -scheme MapboxNavigation clean build <<# parameters.test >>test <</ parameters.test >> <<# parameters.codecoverage >>-enableCodeCoverage YES<</ parameters.codecoverage >>
-            - when:
-                condition: << parameters.codecoverage >>
-                steps:
-                  - run: bash <(curl -s https://codecov.io/bash)
+                name: Send code coverage
+                command: bash <(curl -s https://codecov.io/bash)
+      - notify-build-finished
 
-  xcode-11-examples:
+
+  build-example:
     parameters:
       xcode:
         type: string
-        default: "11.4.1"
+        default: "13.2.1"
       spm:
         type: boolean
-        default: false
+        default: true
     macos:
       xcode: << parameters.xcode >>
     environment:
@@ -261,78 +406,372 @@ jobs:
       - checkout
       - *prepare-mapbox-file
       - *prepare-netrc-file
-      - *update-carthage-version
-      - *restore-cache
-      - *install-dependencies
-      - *build-Example
-      - *save-cache
+      - *add-github-to-known-hosts
+      - run:
+          name: Build Example app
+          command: xcodebuild -sdk iphonesimulator -destination 'platform=iOS Simulator,OS=15.2,name=iPhone 13 Pro Max' -project MapboxNavigation-SPM.xcodeproj -scheme Example clean build
+      - notify-build-finished
 
   ios-trigger-metrics:
     parameters:
       xcode:
         type: string
-        default: "11.4.1"
+        default: "12.5.1"
     macos:
       xcode: << parameters.xcode >>
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
+      - checkout
       - *trigger-metrics
+  
+  spm-test-job:
+    parameters:
+      xcode:
+        type: string
+        default: "12.5.1"
+      device:
+        type: string
+      iOS:
+        type: string
+        default: "14.5"
+      notify_success:
+        type: boolean
+        default: false
+    macos:
+      xcode: << parameters.xcode >>
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - *prepare-mapbox-file
+      - *prepare-netrc-file
+      - *add-github-to-known-hosts
+      - run:
+          name: Move Xcode project aside
+          command: rm -rf *.xcodeproj
+      - run:
+          name: Run xcodebuild for Package.swift
+          command: xcodebuild -scheme MapboxNavigation-Package test -destination "platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>"
+      - notify-build-finished:
+          notify_success: << parameters.notify_success >>
+
+  spm-test-host-job:
+    parameters:
+      xcode:
+        type: string
+        default: "13.3.1"
+      device:
+        type: string
+      iOS:
+        type: string
+        default: "15.4"
+      notify_success:
+        type: boolean
+        default: false
+    macos:
+      xcode: << parameters.xcode >>
+    resource_class: macos.x86.metal.gen1
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - *prepare-mapbox-file
+      - *prepare-netrc-file
+      - *add-github-to-known-hosts
+      - run:
+          name: Build test host application and execute tests
+          command: xcodebuild -project MapboxNavigation-SPM.xcodeproj -scheme MapboxNavigationTestHost -sdk iphonesimulator -configuration Release -destination "platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>" clean build test -enableCodeCoverage YES ENABLE_TESTABILITY=YES
+      - notify-build-finished
+
+  get-api-log-job:
+    parameters:
+      xcode:
+        type: string
+        default: "12.5.1"
+      device:
+        type: string
+        default: "iPhone 12 Pro Max"
+      iOS:
+        type: string
+        default: "14.5"
+      is_base_api:
+        type: boolean
+        default: false
+      commit_hash: 
+        description: "git hash of the commit to be used for generating logs in api_logs folder"
+        type: string
+    macos:
+      xcode: << parameters.xcode >>
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - when:
+          condition: << parameters.is_base_api >>
+          steps:
+            - restore-api-diff-cache:
+                is_template: true
+                key: checksum ".base_api"
+      - unless:
+          condition: << parameters.is_base_api >>
+          steps:
+            - restore-api-diff-cache:
+                key: << parameters.commit_hash >>
+      - run:
+          name: "Check if cache already exists"
+          command: |
+            API_LOGS_DIR=api_logs
+            if test -d "$API_LOGS_DIR"; then
+                echo "API logs cache at $API_LOGS_DIR exist. Finishing job."
+                circleci step halt
+            else
+                echo "API logs cache at $API_LOGS_DIR doesnt exist. Building from scratch."
+            fi
+      - *add-github-to-known-hosts
+      - *prepare-mapbox-file
+      - *prepare-netrc-file
+      - *update-carthage-version
+      - when:
+          condition: << parameters.is_base_api >>
+          steps:
+            - run:
+                name: Checking out base api
+                command: mv .base_api .base_api_keep && git checkout $(cat .base_api_keep)
+      - unless:
+          condition: << parameters.is_base_api >>
+          steps:
+            - run:
+                name: Checking out commit
+                command: git checkout << parameters.commit_hash >>
+      - build-api-diff-cli-tool
+      - run:
+          name: Move Xcode project aside
+          command: rm -rf *.xcodeproj
+      - run_api_log_in_current_env:
+          iOS: << parameters.iOS >>
+          device: << parameters.device >>
+      - when:
+          condition: << parameters.is_base_api >>
+          steps:
+            - save-api-diff-cache:
+                is_template: true
+                key: checksum ".base_api_keep"
+      - unless:
+          condition: << parameters.is_base_api >>
+          steps:
+            - save-api-diff-cache:
+                key: << parameters.commit_hash >>
+
+  api-diff-job:
+    parameters:
+      xcode:
+        type: string
+        default: "13.0.0"
+      device:
+        type: string
+        default: "iPhone 13 Pro Max"
+      iOS:
+        type: string
+        default: "15.0"
+    macos:
+      xcode: << parameters.xcode >>
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - *add-github-to-known-hosts
+      - *prepare-mapbox-file
+      - *prepare-netrc-file
+      - build-api-diff-cli-tool
+      - install-mbx-ci
+      - install-gh-cli
+      - restore-api-diff-cache:
+          key: .Environment.CIRCLE_SHA1
+          is_template: true
+      - run:
+          name: Pick current API
+          command: mv api_logs new_api
+      - restore-api-diff-cache:
+          is_template: true
+          key: checksum ".base_api"
+      - run:
+          name: Pick old API
+          command: mv api_logs old_api
+      - run_breaking_changes_detector:
+          module_name: MapboxCoreNavigation
+          base_api_path: $CIRCLE_WORKING_DIRECTORY/old_api/core_navigation_log.json
+          new_api_path: $CIRCLE_WORKING_DIRECTORY/new_api/core_navigation_log.json
+      - run_breaking_changes_detector:
+          module_name: MapboxNavigation
+          base_api_path: $CIRCLE_WORKING_DIRECTORY/old_api/navigation_log.json
+          new_api_path: $CIRCLE_WORKING_DIRECTORY/new_api/navigation_log.json
+
+  spm-core-integration-test-job:
+    macos:
+      xcode: "13.0.0"
+    steps:
+      - checkout
+      - *prepare-netrc-file
+      - *add-github-to-known-hosts
+      - run:
+          name: Build SPM Core integration test
+          command: cd Tests/SPMTest/CoreSPMTest && xcodebuild -scheme CoreSPMTest -destination "platform=iOS Simulator,OS=15.0,name=iPhone 13 Pro Max" build
+      
+  generate-docs-job:
+    parameters:
+      xcode:
+        type: string
+        default: "12.5.1"
+    macos:
+      xcode: << parameters.xcode >>
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout
+      - *restore-cache-gems
+      - *restore-cache-podmaster
+      - *install-gems
+      - *prepare-netrc-file
+      - *add-github-to-known-hosts
+      - install-mbx-ci
+      - run:
+          name: Generate docs
+          command: |
+            OUTPUT=$( echo << pipeline.git.tag >> | sed 's/^v//' )
+            export OUTPUT="${OUTPUT:-documentation}"
+            echo "export OUTPUT=$OUTPUT" >> $BASH_ENV
+            ./scripts/document.sh
+            cp -a "$OUTPUT" /tmp/generated-docs
+      - *save-cache-podmaster
+      - *save-cache-gems
+      - store_artifacts:
+          path: /tmp/generated-docs
+          destination: docs
+      - when:
+          condition: << pipeline.git.tag >>
+          steps:
+            - run:
+                name: Push docs to publisher-production
+                command: |
+                  git remote set-url origin "https://x-access-token:$(mbx-ci github writer public token)@github.com/mapbox/mapbox-navigation-ios.git"
+                  git config user.email "release-bot@mapbox.com"
+                  git config user.name "Mapbox Releases"
+                  VERSION="${OUTPUT}" scripts/publish-docs.sh
+            - notify-build-finished:
+                notify_success: true
+      - notify-build-finished
 
 workflows:
-  workflow:
+  extended-workflow:
     jobs:
-      - build-job:
-          name: "Xcode_12.1_iOS_14.1"
-          xcode: "12.1.0"
-          iOS: "14.1"
-          device: "iPhone 8 Plus"
-      - build-job:
-          name: "Xcode_12.0_iOS_14.0_SPM"
-          xcode: "12.0.0"
-          iOS: "14.0"
-          spm: true
-          device: "iPhone 8 Plus"
-      - build-job:
-          name: "Xcode_11.5_iOS_13.5"
-          xcode: "11.5.0"
-          iOS: "13.5"
-          device: "iPhone 8 Plus"
-      - build-job:
-          name: "Xcode_11.4.1_iOS_12.2"
-          xcode: "11.4.1"
-          iOS: "12.2"
-          codecoverage: false
-      - build-job:
-          name: "Xcode_11.4.1_iOS_10.3.1"
-          xcode: "11.4.1"
-          iOS: "10.3.1"
-          test: false
-          device: "iPhone 7 Plus"
-      - pod-job:
-          name: "Xcode_12.0_iOS_14.0_CP_install"
-          update: false
-          xcode: "12.0.0"
-          iOS: "14.0"
-      - pod-job:
-          name: "Xcode_12.0_iOS_14.0_CP_update"
-          update: true
-          xcode: "12.0.0"
-          iOS: "14.0"
-          lint: true
-      - pod-job:
-          name: "Xcode_11.4.1_iOS_12.2_CP_install"
-          update: false
-          xcode: "11.4.1"
-          iOS: "12.2"
-      - pod-job:
-          name: "Xcode_11.4.1_iOS_12.2_CP_update"
-          update: true
-          xcode: "11.4.1"
-          iOS: "12.2"
-          lint: true
-      - xcode-11-examples
-      - ios-trigger-metrics:
-          filters:
-            branches:
-              only: main
+      - spm-test-job:
+          name: "swift test; Xcode 12.5.1; iOS 14.5"
+          xcode: "12.5.1"
+          iOS: "14.5"
+          device: "iPhone 12 Pro Max"
+          context: Slack Orb
+          notify_success: true
+      - spm-test-job:
+          name: "swift test; Xcode 12.5.1; iOS 13.7"
+          xcode: "12.5.1"
+          iOS: "13.7"
+          device: "iPhone 11 Pro Max"
+          context: Slack Orb
+          notify_success: true
+    triggers:
+       - schedule:
+           cron: "0 0 * * *" # Once per day at 00:00
+           filters:
+             branches:
+               only:
+                 - main
+  api-diff-workflow:
+    jobs:
+      - get-api-log-job:
+          name: "Get old API logs"
+          is_base_api: true
+          commit_hash: ""
+      - get-api-log-job:
+          name: "Get new API logs"
+          commit_hash: << pipeline.git.revision >>
+      - api-diff-job:
+          name: "Create breaking changes PR comment"
+          requires:
+            - "Get old API logs"
+            - "Get new API logs"
+  test-host-workflow:
+    jobs:
+      - spm-test-host-job:
+          name: "swift test; Xcode 13.4.1; iOS 15.5"
+          xcode: "13.4.1"
+          iOS: "15.5"
+          device: "iPhone 13"
+          context: Slack Orb
+  main-workflow:
+      jobs:
+        - build-job:
+            name: "Xcode_13.2.1_iOS_15.2_Debug"
+            xcode: "13.2.1"
+            iOS: "15.2"
+            device: "iPhone 13 Pro Max"
+            context: Slack Orb
+        - build-job:
+            name: "Xcode_13.2.1_iOS_15.2_SPM_Debug"
+            xcode: "13.2.1"
+            iOS: "15.2"
+            device: "iPhone 13 Pro Max"
+            spm: true
+            codecoverage: false
+            context: Slack Orb
+        - build-job:
+            name: "Xcode_13.2.1_iOS_15.2_Release"
+            xcode: "13.2.1"
+            iOS: "15.2"
+            device: "iPhone 13 Pro Max"
+            context: Slack Orb
+            configuration: "Release"
+        - build-job:
+            name: "Xcode_13.2.1_iOS_15.2_SPM_Release"
+            xcode: "13.2.1"
+            iOS: "15.2"
+            device: "iPhone 13 Pro Max"
+            spm: true
+            codecoverage: false
+            context: Slack Orb
+            configuration: "Release"
+        - pod-job:
+            name: "Xcode_13.2.1_iOS_15.2_CP_install"
+            update: false
+            xcode: "13.2.1"
+            iOS: "15.2"
+            archive: true
+            context: Slack Orb
+        - pod-job:
+            name: "Xcode_13.2.1_iOS_15.2_CP_update"
+            update: true
+            xcode: "13.2.1"
+            iOS: "15.2"
+            lint: true
+            context: Slack Orb
+        - build-example:
+            name: "Build Example"
+            context: Slack Orb
+        - spm-test-job:
+            name: "swift test; Xcode 12.5; iOS 14.5"
+            xcode: "12.5.0"
+            iOS: "14.5"
+            device: "iPhone 12 Pro Max"
+            context: Slack Orb
+        - spm-core-integration-test-job:
+            name: "Xcode 13; iOS 15.0; SPM Core test"
+        - generate-docs-job:
+            name: Generate / Publish Documentation
+            context: Slack Orb
+            filters:
+              tags:
+                only: /^v\d+\.\d+\.\d+(-.+)?$/
+        - ios-trigger-metrics:
+            filters:
+              branches:
+                only: main

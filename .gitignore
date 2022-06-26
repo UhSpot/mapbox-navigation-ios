@@ -17,6 +17,9 @@ Carthage/Checkouts
 /documentation
 /build
 .build
+.swiftpm/
 
 Examples/Swift/Navigation_Example.mobileprovision
 Sources/UhSpotNavigation/NavigationViewController.swift
+
+*-pre.podspec
