@@ -1,5 +1,5 @@
 import Foundation
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 
 /**
  Customization options for the turn-by-turn navigation user experience in a `NavigationViewController`.
@@ -9,22 +9,14 @@ import UhSpotCoreNavigation
  - note: `NavigationOptions` is designed to be used with the `NavigationViewController` class to customize the user experience. To specify criteria when calculating routes, use the `NavigationRouteOptions` class. To modify user preferences that persist across navigation sessions, use the `NavigationSettings` class.
  */
 open class NavigationOptions: NavigationCustomizable {
+    
+    // MARK: Customizing Visualization
     /**
      The styles that the view controller’s internal `StyleManager` object can select from for display.
      
      If this property is set to `nil`, a `DayStyle` and a `NightStyle` are created to be used as the view controller’s styles. This property is set to `nil` by default.
      */
     open var styles: [Style]? = nil
-    
-    /**
-     The navigation service that manages navigation along the route.
-     */
-    open var navigationService: NavigationService?
-    
-    /**
-     The voice controller that manages the delivery of voice instructions during navigation.
-     */
-    open var voiceController: RouteVoiceController?
     
     /**
      The view controller to embed into the top section of the UI.
@@ -41,6 +33,25 @@ open class NavigationOptions: NavigationCustomizable {
     open var bottomBanner: ContainerViewController?
     
     /**
+     Custom `NavigationMapView` instance to be embedded in navigation UI.
+     
+     If set to `nil`, a default `NavigationMapView` instance will be created. When a custom instance is set, `NavigationView` will update its delegate and camera's `viewportDatasource` to function correctly. You may want to use this property for customization or optimization purposes.
+     */
+    open var navigationMapView: NavigationMapView?
+    
+    // MARK: Configuring the Data Services and Processing
+    
+    /**
+     The navigation service that manages navigation along the route.
+     */
+    open var navigationService: NavigationService?
+    
+    /**
+     The voice controller that manages the delivery of voice instructions during navigation.
+     */
+    open var voiceController: RouteVoiceController?
+    
+    /**
      Configuration for predictive caching.
      
      These options control how the `PredictiveCacheManager` will try to proactively fetch data related to the route. A `nil` value disables the feature.
@@ -48,11 +59,11 @@ open class NavigationOptions: NavigationCustomizable {
     open var predictiveCacheOptions: PredictiveCacheOptions?
 
     /**
-     Custom `NavigationMapView` instance to be embedded in navigation UI.
+     The simulation mode type. Used for setting the simulation mode of the navigation service.
      
-     If set to `nil`, a default `NavigationMapView` instance will be created. When a custom instance is set, `NavigationView` will update its delegate and camera's `viewportDatasource` to function correctly. You may want to use this property for customization or optimization purposes.
+     If set to `nil` will default to `.inTunnels`. This setting will be ignored if custom `navigationService` instance was provided.
      */
-    open var navigationMapView: NavigationMapView?
+    open var simulationMode: SimulationMode?
     
     // This makes the compiler happy.
     required public init() {
@@ -70,7 +81,7 @@ open class NavigationOptions: NavigationCustomizable {
      - parameter predictiveCacheOptions: Configuration for predictive caching. These options control how the `PredictiveCacheManager` will try to proactively fetch data related to the route. A `nil` value disables the feature.
      - parameter navigationMapView: Custom `NavigationMapView` instance to supersede the default one.
      */
-    public convenience init(styles: [Style]? = nil, navigationService: NavigationService? = nil, voiceController: RouteVoiceController? = nil, topBanner: ContainerViewController? = nil, bottomBanner: ContainerViewController? = nil, predictiveCacheOptions: PredictiveCacheOptions? = nil, navigationMapView: NavigationMapView? = nil) {
+    public convenience init(styles: [Style]? = nil, navigationService: NavigationService? = nil, voiceController: RouteVoiceController? = nil, topBanner: ContainerViewController? = nil, bottomBanner: ContainerViewController? = nil, predictiveCacheOptions: PredictiveCacheOptions? = nil, navigationMapView: NavigationMapView? = nil, simulationMode: SimulationMode? = nil) {
         self.init()
         self.styles = styles
         self.navigationService = navigationService
@@ -79,6 +90,7 @@ open class NavigationOptions: NavigationCustomizable {
         self.bottomBanner = bottomBanner
         self.predictiveCacheOptions = predictiveCacheOptions
         self.navigationMapView = navigationMapView
+        self.simulationMode = simulationMode
     }
     
     /**

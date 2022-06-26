@@ -4,7 +4,7 @@ title: "Navigation SDK for iOS"
 author_url: https://docs.mapbox.com/ios/navigation/
 github_url: https://github.com/mapbox/mapbox-navigation-ios
 dash_url: https://docs.mapbox.com/ios/docsets/MapboxNavigation.xml
-copyright: '© 2014–2021 [Mapbox](https://www.mapbox.com/). See [license](https://github.com/mapbox/mapbox-navigation-ios/blob/main/LICENSE.md) for more details.'
+copyright: '© 2014–2022 [Mapbox](https://www.mapbox.com/). See [license](https://github.com/mapbox/mapbox-navigation-ios/blob/main/LICENSE.md) for more details.'
 
 head: |
   <link rel='shortcut icon' href='https://www.mapbox.com/img/favicon.ico' type='image/x-icon' />
@@ -48,7 +48,8 @@ custom_categories:
       - VisualInstruction
       - VisualInstructionDelegate
       - NavigationEventsManager
-      - EventsManagerDataSource
+      - ActiveNavigationEventsManagerDataSource
+      - PassiveNavigationEventsManagerDataSource
       - NavigationLocationManager
       - ReplayLocationManager
       - SimulatedLocationManager
@@ -57,14 +58,12 @@ custom_categories:
       - NavigationMatchOptions
       - SimulationMode
       - PassiveLocationManager
+      - HistoryRecording
   - name: Maps
     children:
       - NavigationMapView
       - NavigationMapViewDelegate
       - MapView
-      - AccountManager
-      - PointAnnotation
-      - Style
       - PassiveLocationProvider
       - NavigationLocationProvider
       - WaypointStyle
@@ -95,7 +94,9 @@ custom_categories:
       - InstructionsCardViewController
       - InstructionsCardContainerView
       - InstructionsCardContainerViewDelegate
+      - InstructionsBannerView
       - InstructionsBannerViewDelegate
+      - BaseInstructionsBannerView
       - ManeuverView
       - JunctionView
       - GenericRouteShield
@@ -130,6 +131,7 @@ custom_categories:
       - RouteLineWidthByZoomLevel
       - NavigationMapViewMinimumDistanceForOverheadZooming
       - NavigationViewMinimumVolumeForWarning
+      - GradientCongestionFadingDistance
       - RouteControllerIncorrectCourseMultiplier
       - RouteControllerLinkedInstructionBufferMultiplier
       - RouteControllerMaximumSpeedForUsingCurrentStep
@@ -148,8 +150,9 @@ custom_categories:
       - FeedbackViewController
       - FeedbackViewControllerDelegate
       - FeedbackItem
-      - FeedbackType
-      - IncorrectVisualSubtype
+      - ActiveNavigationFeedbackType
+      - PassiveNavigationFeedbackType
+      - PassiveNavigationIncorrectVisualSubtype
       - ConfusingAudioSubtype
       - RouteQualitySubtype
       - IllegalRouteSubtype
@@ -177,12 +180,7 @@ custom_categories:
       - RoadObject
       - DistancedRoadObject
       - RoadObjectMatcher
-      - RoadObjectsStore
-      - RoadObjectLocation
-      - RoadObjectType
+      - RoadObjectStore
       - RoadObjectMatcherDelegate
-      - RoadObjectsStoreDelegate
-      - RoadObjectEdgeLocation
+      - RoadObjectStoreDelegate
       - RoadObjectMatcherError
-      - RoadObjectPosition
-      - RoadObjectIdentifier

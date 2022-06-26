@@ -3,7 +3,7 @@ import CoreLocation
 import MapboxDirections
 import Turf
 import UIKit.UIImage
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 public class Fixture: NSObject {
     public class var bundle: Bundle {
@@ -55,7 +55,7 @@ public class Fixture: NSObject {
     
     public class func downloadRouteFixture(coordinates: [CLLocationCoordinate2D], fileName: String, completion: @escaping () -> Void) {
         let accessToken = "<# Mapbox Access Token #>"
-        let credentials = DirectionsCredentials(accessToken: accessToken)
+        let credentials = Credentials(accessToken: accessToken)
         let directions = Directions(credentials: credentials)
         
         let options = RouteOptions(coordinates: coordinates, profileIdentifier: .automobileAvoidingTraffic)
@@ -177,39 +177,66 @@ public class Fixture: NSObject {
                                               profileIdentifier: .automobile))
     }
 
-    public static func route(between origin: CLLocationCoordinate2D,
-                             and destination: CLLocationCoordinate2D,
-                             profileIdentifier: DirectionsProfileIdentifier = .automobile,
+    public static func route(waypoints: [CLLocationCoordinate2D],
+                             profileIdentifier: ProfileIdentifier = .automobile,
                              transportType: TransportType = .automobile) -> (response: RouteResponse, route: Route) {
-        let distance = origin.distance(to: destination)
-        let shape = LineString([origin, destination])
-        let intersection = Intersection(location: destination,
-                                        headings: [origin.direction(to: destination)],
-                                        approachIndex: 0,
-                                        outletIndex: 0,
-                                        outletIndexes: .init(integer: 0), approachLanes: nil, usableApproachLanes: nil, preferredApproachLanes: nil, usableLaneIndication: nil)
+        precondition(waypoints.count >= 2)
+        func routeDistance(between waypoints: [CLLocationCoordinate2D]) -> CLLocationDistance {
+            var routeDistance: CLLocationDistance = 0
+            var origin = waypoints[0]
+            for waypointIdx in 1..<waypoints.count {
+                let destination = waypoints[waypointIdx]
+                routeDistance += origin.distance(to: destination)
+                origin = destination
+            }
+            return routeDistance
+        }
 
-        let arriveStep = RouteStep(transportType: transportType,
-                                   maneuverLocation: destination,
-                                   maneuverType: .arrive,
-                                   instructions: "arrive",
-                                   drivingSide: .right,
-                                   distance: distance,
-                                   expectedTravelTime: 0,
-                                   intersections: [intersection])
-        arriveStep.shape = shape
-        let leg = RouteLeg(steps: [arriveStep],
-                           name: "",
-                           distance: distance,
-                           expectedTravelTime: 0,
-                           profileIdentifier: profileIdentifier)
-        leg.destination = Waypoint(coordinate: destination)
-        let route = Route(legs: [leg], shape: shape, distance: distance, expectedTravelTime: 0)
+        let routeShape = LineString(waypoints)
+        var legs: [RouteLeg] = []
+
+        var legOrigin: CLLocationCoordinate2D = waypoints[0]
+        for waypointIdx in 1..<waypoints.count {
+            let legDestination = waypoints[waypointIdx]
+            let leg = generateLeg(between: legOrigin,
+                                  and: legDestination,
+                                  profileIdentifier: profileIdentifier,
+                                  transportType: transportType)
+            leg.source = legs.last?.destination
+            legs.append(leg)
+            legOrigin = legDestination
+        }
+
+        let route = Route(legs: legs,
+                          shape: routeShape,
+                          distance: routeDistance(between: waypoints),
+                          expectedTravelTime: 0)
         let response = RouteResponse(httpResponse: nil,
                                      routes: [route],
-                                     options: .route(.init(coordinates: [origin, destination])),
+                                     options: .route(.init(coordinates: waypoints)),
                                      credentials: .mocked)
         return (response: response, route: route)
+    }
+
+    public static func route(between origin: CLLocationCoordinate2D,
+                             and destination: CLLocationCoordinate2D,
+                             legsCount: Int = 1,
+                             profileIdentifier: ProfileIdentifier = .automobile,
+                             transportType: TransportType = .automobile) -> (response: RouteResponse, route: Route) {
+        precondition(legsCount > 0)
+        var waypoints: [CLLocationCoordinate2D] = [origin]
+        let routeDistance = origin.distance(to: destination)
+        let direction = origin.direction(to: destination)
+        let distancePerLeg = routeDistance / Double(legsCount)
+
+        var legOrigin: CLLocationCoordinate2D = origin
+        for _ in 0..<legsCount {
+            let legDestination = legOrigin.coordinate(at: distancePerLeg, facing: direction)
+            waypoints.append(legDestination)
+            legOrigin = legDestination
+        }
+
+        return route(waypoints: waypoints, profileIdentifier: profileIdentifier, transportType: transportType)
     }
 
     public static func generateCoordinates(between start: CLLocationCoordinate2D,
@@ -227,7 +254,42 @@ public class Fixture: NSObject {
 
         return coordinates
     }
-    public static let credentials: DirectionsCredentials = .mocked
+
+    public static func generateLeg(between origin: CLLocationCoordinate2D,
+                                   and destination: CLLocationCoordinate2D,
+                                   profileIdentifier: ProfileIdentifier = .automobile,
+                                   transportType: TransportType = .automobile) -> RouteLeg {
+        let distance = origin.distance(to: destination)
+        let shape = LineString([origin, destination])
+        let intersection = Intersection(location: destination,
+                                        headings: [origin.direction(to: destination)],
+                                        approachIndex: 0,
+                                        outletIndex: 0,
+                                        outletIndexes: .init(integer: 0),
+                                        approachLanes: nil,
+                                        usableApproachLanes: nil,
+                                        preferredApproachLanes: nil,
+                                        usableLaneIndication: nil)
+
+        let arriveStep = RouteStep(transportType: transportType,
+                                   maneuverLocation: destination,
+                                   maneuverType: .arrive,
+                                   instructions: "arrive",
+                                   drivingSide: .right,
+                                   distance: distance,
+                                   expectedTravelTime: 0,
+                                   intersections: [intersection])
+        arriveStep.shape = shape
+        let leg = RouteLeg(steps: [arriveStep],
+                           name: "",
+                           distance: distance,
+                           expectedTravelTime: 0,
+                           profileIdentifier: profileIdentifier)
+        leg.destination = Waypoint(coordinate: destination)
+        return leg
+    }
+
+    public static let credentials: Credentials = .mocked
 }
 
 class TraceCollector: NSObject, CLLocationManagerDelegate {

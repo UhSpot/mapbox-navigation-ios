@@ -2,7 +2,7 @@ import XCTest
 import TestHelper
 import MapboxDirections
 @testable import MapboxNavigation
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 func instructionsView(size: CGSize = .iPhone6Plus) -> InstructionsBannerView {
     let bannerHeight: CGFloat = 96
@@ -12,22 +12,34 @@ func instructionsView(size: CGSize = .iPhone6Plus) -> InstructionsBannerView {
 func makeVisualInstruction(_ maneuverType: ManeuverType = .arrive,
                            _ maneuverDirection: ManeuverDirection = .left,
                            primaryInstruction: [VisualInstruction.Component],
-                           secondaryInstruction: [VisualInstruction.Component]?) -> VisualInstructionBanner {
-    let primary = VisualInstruction(text: "Instruction", maneuverType: maneuverType, maneuverDirection: maneuverDirection, components: primaryInstruction)
+                           secondaryInstruction: [VisualInstruction.Component]?,
+                           drivingSide: DrivingSide = .right) -> VisualInstructionBanner {
+    let primary = VisualInstruction(text: "Instruction",
+                                    maneuverType: maneuverType,
+                                    maneuverDirection: maneuverDirection,
+                                    components: primaryInstruction)
     var secondary: VisualInstruction? = nil
     if let secondaryInstruction = secondaryInstruction {
-        secondary = VisualInstruction(text: "Instruction", maneuverType: maneuverType, maneuverDirection: maneuverDirection, components: secondaryInstruction)
+        secondary = VisualInstruction(text: "Instruction",
+                                      maneuverType: maneuverType,
+                                      maneuverDirection: maneuverDirection,
+                                      components: secondaryInstruction)
     }
     
-    return VisualInstructionBanner(distanceAlongStep: 482.803, primary: primary, secondary: secondary, tertiary: nil, quaternary: nil, drivingSide: .right)
+    return VisualInstructionBanner(distanceAlongStep: 482.803,
+                                   primary: primary,
+                                   secondary: secondary,
+                                   tertiary: nil,
+                                   quaternary: nil,
+                                   drivingSide: drivingSide)
 }
 
 class InstructionsBannerViewIntegrationTests: TestCase {
     private lazy var reverseDelegate = TextReversingDelegate()
     private lazy var silentDelegate = DefaultBehaviorDelegate()
     
-    lazy var imageRepository: ImageRepository = {
-        let repo = ImageRepository.shared
+    lazy var spriteRepository: SpriteRepository = {
+        let repo = SpriteRepository.shared
         repo.sessionConfiguration = URLSessionConfiguration.default
         return repo
     }()
@@ -47,36 +59,24 @@ class InstructionsBannerViewIntegrationTests: TestCase {
     ]
     
     lazy var typicalInstruction: VisualInstructionBanner = makeVisualInstruction(primaryInstruction: [.text(text: .init(text: "Main Street", abbreviation: "Main St", abbreviationPriority: 0))], secondaryInstruction: nil)
-    
-    private func resetImageCache() {
-        let semaphore = DispatchSemaphore(value: 0)
-        imageRepository.resetImageCache {
-            semaphore.signal()
-        }
-        let semaphoreResult = semaphore.wait(timeout: XCTestCase.NavigationTests.timeout)
-        XCTAssert(semaphoreResult == .success, "Semaphore timed out")
-    }
 
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
-
-        imageRepository.disableDiskCache()
-        resetImageCache()
-
-        ImageDownloadOperationSpy.reset()
-        imageRepository.imageDownloader.setOperationType(ImageDownloadOperationSpy.self)
+        spriteRepository.spriteCache.store(ShieldImage.shieldDay.image, forKey: spriteRepository.styleID!, toDisk: false, completion: nil)
+        spriteRepository.imageDownloader.setOperationType(ImageDownloadOperationSpy.self)
     }
 
     override func tearDown() {
-        imageRepository.imageDownloader.setOperationType(nil)
-
         super.tearDown()
+        spriteRepository.resetCache()
+        spriteRepository.imageDownloader.setOperationType(nil)
+        ImageDownloadOperationSpy.reset()
     }
     
     func testCustomVisualInstructionDelegate() {
         let view = instructionsView()
-        view.instructionDelegate = reverseDelegate
+        view.delegate = reverseDelegate
         
         view.update(for: typicalInstruction)
         
@@ -85,7 +85,7 @@ class InstructionsBannerViewIntegrationTests: TestCase {
     
     func testCustomDelegateReturningNilTriggersDefaultBehavior() {
         let view = instructionsView()
-        view.instructionDelegate = silentDelegate
+        view.delegate = silentDelegate
         
         view.update(for: typicalInstruction)
         
@@ -105,8 +105,8 @@ class InstructionsBannerViewIntegrationTests: TestCase {
         let instruction1 = VisualInstruction.Component.image(image: .init(imageBaseURL: ShieldImage.i280.baseURL), alternativeText: .init(text: "I 280", abbreviation: nil, abbreviationPriority: 0))
         let instruction2 = VisualInstruction.Component.image(image: .init(imageBaseURL: ShieldImage.us101.baseURL), alternativeText: .init(text: "US 101", abbreviation: nil, abbreviationPriority: 0))
 
-        imageRepository.storeImage(ShieldImage.i280.image, forKey: instruction1.cacheKey!, toDisk: false)
-        imageRepository.storeImage(ShieldImage.us101.image, forKey: instruction2.cacheKey!, toDisk: false)
+        spriteRepository.legacyCache.store(ShieldImage.i280.image, forKey: instruction1.cacheKey!, toDisk: false, completion: nil)
+        spriteRepository.legacyCache.store(ShieldImage.us101.image, forKey: instruction2.cacheKey!, toDisk: false, completion: nil)
 
         let view = instructionsView()
         view.update(for: makeVisualInstruction(primaryInstruction: instructions, secondaryInstruction: nil))
@@ -115,7 +115,7 @@ class InstructionsBannerViewIntegrationTests: TestCase {
         XCTAssertNil(view.primaryLabel.text!.firstIndex(of: "/"))
 
         //explicitly reset the cache
-        resetImageCache()
+        spriteRepository.resetCache()
     }
 
     func testDelimiterDisappearsOnlyWhenAllShieldsHaveLoaded() {
@@ -287,11 +287,20 @@ class InstructionsBannerViewIntegrationTests: TestCase {
         
         label.availableBounds = { return label.frame }
         
-        let presenter = InstructionPresenter(exitInstruction, dataSource: label, downloadCompletion: nil)
+        let traitCollection = UITraitCollection(userInterfaceIdiom: .phone)
+        
+        let presenter = InstructionPresenter(exitInstruction,
+                                             dataSource: label,
+                                             traitCollection: traitCollection,
+                                             downloadCompletion: nil)
+        
         let attributed = presenter.attributedText()
         
-        let key = [exitCodeAttribute.cacheKey!, ExitView.criticalHash(side: .right, dataSource: label)].joined(separator: "-")
-        XCTAssertNotNil(imageRepository.cachedImageForKey(key), "Expected cached image")
+        let key = [
+            exitCodeAttribute.cacheKey!,
+            ExitView.criticalHash(side: .right, styleID: spriteRepository.styleID, dataSource: label, traitCollection: traitCollection)
+        ].joined(separator: "-")
+        XCTAssertNotNil(spriteRepository.getLegacyShield(with: key), "Expected cached image")
         
         let spaceRange = NSMakeRange(1, 1)
         let space = attributed.attributedSubstring(from: spaceRange)
@@ -308,17 +317,18 @@ class InstructionsBannerViewIntegrationTests: TestCase {
 
     private func simulateDownloadingShieldForComponent(_ component: VisualInstruction.Component) {
         var imageURL: URL!
-        if case let VisualInstruction.Component.image(image: imageRepresentation, alternativeText: _) = component, let imageBaseURL = imageRepresentation.imageURL(format: .png) {
+        if case let VisualInstruction.Component.image(image: imageRepresentation, alternativeText: _) = component,
+           let imageBaseURL = imageRepresentation.imageURL(scale: VisualInstruction.Component.scale, format: .png) {
             imageURL = imageBaseURL
         }
         let operation: ImageDownloadOperationSpy = ImageDownloadOperationSpy.operationForURL(imageURL)!
         operation.fireAllCompletions(ShieldImage.i280.image, data: ShieldImage.i280.image.pngData(), error: nil)
 
-        XCTAssertNotNil(imageRepository.cachedImageForKey(component.cacheKey!))
+        XCTAssertNotNil(spriteRepository.legacyCache.image(forKey: component.cacheKey!))
     }
 }
 
-private class TextReversingDelegate: VisualInstructionDelegate {
+private class TextReversingDelegate: InstructionsBannerViewDelegate {
     func label(_ label: InstructionLabel, willPresent instruction: VisualInstruction, as presented: NSAttributedString) -> NSAttributedString? {
         let forwards = Array(presented.string)
         let reverse = String(forwards.reversed())
@@ -328,7 +338,7 @@ private class TextReversingDelegate: VisualInstructionDelegate {
     }
 }
 
-private class DefaultBehaviorDelegate: VisualInstructionDelegate {
+private class DefaultBehaviorDelegate: InstructionsBannerViewDelegate {
     func label(_ label: InstructionLabel, willPresent instruction: VisualInstruction, as presented: NSAttributedString) -> NSAttributedString? {
         return nil
     }

@@ -1,75 +1,12 @@
 import UIKit
-import Solar
-import UhSpotCoreNavigation
 import CoreLocation
-
-/**
- The `StyleManagerDelegate` protocol defines a set of methods used for controlling the style.
- */
-public protocol StyleManagerDelegate: AnyObject, UnimplementedLogging {
-    /**
-     Asks the delegate for a location to use when calculating sunset and sunrise
-     */
-    func location(for styleManager: StyleManager) -> CLLocation?
-    
-    /**
-     Asks the delegate for the view to be used when refreshing appearance. 
-     
-     The default implementation of this method will attempt to cast the delegate to type
-     `UIViewController` and use its `view` property.
-     */
-    func styleManager(_ styleManager: StyleManager, viewForApplying currentStyle: Style?) -> UIView?
-    
-    /**
-     Informs the delegate that a style was applied.
-     
-     This delegate method is the equivalent of `Notification.Name.styleManagerDidApplyStyle`.
-     */
-    func styleManager(_ styleManager: StyleManager, didApply style: Style)
-    
-    /**
-     Informs the delegate that the manager forcefully refreshed UIAppearance.
-     */
-    func styleManagerDidRefreshAppearance(_ styleManager: StyleManager)
-}
-
-public extension StyleManagerDelegate {
-    /**
-     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
-     */
-    func location(for styleManager: StyleManager) -> CLLocation? {
-        logUnimplemented(protocolType: StyleManagerDelegate.self, level: .debug)
-        return nil
-    }
-    
-    /**
-     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
-     */
-    func styleManager(_ styleManager: StyleManager, didApply style: Style) {
-        logUnimplemented(protocolType: StyleManagerDelegate.self, level: .debug)
-    }
-    
-    /**
-     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
-     */
-    func styleManagerDidRefreshAppearance(_ styleManager: StyleManager) {
-        logUnimplemented(protocolType: StyleManagerDelegate.self, level: .debug)
-    }
-    
-    func styleManager(_ styleManager: StyleManager, viewForApplying currentStyle: Style?) -> UIView? {
-        // Short-circuit refresh logic if the view hasn't yet loaded since we don't want the `self.view` 
-        // call to trigger `loadView`.
-        if let vc = self as? UIViewController, vc.isViewLoaded { 
-            return vc.view
-        }
-        
-        return nil
-    }
-}
+import Solar
+import MapboxCoreNavigation
+import CarPlay
 
 /**
  A manager that handles `Style` objects. The manager listens for significant time changes
- and changes to the content size to apply an approriate style for the given condition.
+ and changes to the content size to apply an appropriate style for the given condition.
  */
 open class StyleManager {
     /**
@@ -122,7 +59,23 @@ open class StyleManager {
         }
     }
     
+    /**
+     Trait collection that contains user interface idiom value, so that `StyleManager` can
+     update style whenever it changes only for that specific user interface idiom (e.g. when changing
+     style on CarPlay, style on iOS should remain unchanged).
+     */
+    var traitCollection: UITraitCollection!
+    
     public init() {
+        commonInit()
+    }
+    
+    init(traitCollection: UITraitCollection = UITraitCollection(userInterfaceIdiom: .phone)) {
+        self.traitCollection = traitCollection
+        commonInit()
+    }
+    
+    func commonInit() {
         resumeNotifications()
         resetTimeOfDayTimer()
     }
@@ -155,7 +108,7 @@ open class StyleManager {
         }
         
         guard let interval = solar.date.intervalUntilTimeOfDayChanges(sunrise: sunrise, sunset: sunset) else {
-            print("Unable to get sunrise or sunset. Automatic style switching has been disabled.")
+            Log.error("Unable to get sunrise or sunset. Automatic style switching has been disabled.", category: .navigationUI)
             return
         }
 
@@ -177,9 +130,9 @@ open class StyleManager {
      Applies the `Style` with type matching `type`and notifies `StyleManager.delegate` upon completion. 
      */
     public func applyStyle(type styleType: StyleType) {
-        guard currentStyleType != styleType else { return }
-        
-        NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(timeOfDayChanged), object: nil)
+        if currentStyleType != styleType {
+            NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(timeOfDayChanged), object: nil)
+        }
         
         for style in styles {
             if style.styleType == styleType {
@@ -202,6 +155,7 @@ open class StyleManager {
                 currentStyleType = style.styleType
                 currentStyle = style
                 delegate?.styleManager(self, didApply: style)
+                forceRefreshAppearance()
             }
             return
         }
@@ -213,6 +167,7 @@ open class StyleManager {
                 currentStyleType = style.styleType
                 currentStyle = style
                 delegate?.styleManager(self, didApply: style)
+                forceRefreshAppearance()
             }
             return
         }
@@ -255,60 +210,40 @@ open class StyleManager {
         forceRefreshAppearance()
     }
     
-    // workaround to refresh appearance by removing the view and then adding it again
     func forceRefreshAppearance() {
-        if 
-            let view = delegate?.styleManager(self, viewForApplying: currentStyle), 
-            let superview = view.superview, 
-            let index = superview.subviews.firstIndex(of: view) 
-        {
-            view.removeFromSuperview()
-            superview.insertSubview(view, at: index)
+        // Use trait collection to detect what window should be updated.
+        if #available(iOS 13.0, *) {
+            UIApplication.shared.connectedScenes.forEach {
+                if let windowScene = $0 as? UIWindowScene,
+                   windowScene.traitCollection.userInterfaceIdiom == .phone {
+                    refreshAppearance(for: windowScene.windows)
+                } else if let templateApplicationScene = $0 as? CPTemplateApplicationScene,
+                          traitCollection?.userInterfaceIdiom == .carPlay {
+                    let window = templateApplicationScene.carWindow
+                    refreshAppearance(for: [window])
+                }
+            }
+        } else {
+            refreshAppearance(for: UIApplication.shared.windows)
         }
         
         delegate?.styleManagerDidRefreshAppearance(self)
     }
-}
-
-extension Date {
-    func intervalUntilTimeOfDayChanges(sunrise: Date, sunset: Date) -> TimeInterval? {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute, .second], from: self)
-        guard let date = calendar.date(from: components) else {
-            return nil
-        }
-        
-        if isNighttime(sunrise: sunrise, sunset: sunset) {
-            let sunriseComponents = calendar.dateComponents([.hour, .minute, .second], from: sunrise)
-            guard let sunriseDate = calendar.date(from: sunriseComponents) else {
-                return nil
-            }
-            let interval = sunriseDate.timeIntervalSince(date)
-            return interval >= 0 ? interval : (interval + 24 * 3600)
-        } else {
-            let sunsetComponents = calendar.dateComponents([.hour, .minute, .second], from: sunset)
-            guard let sunsetDate = calendar.date(from: sunsetComponents) else {
-                return nil
-            }
-            return sunsetDate.timeIntervalSince(date)
-        }
-    }
     
-    fileprivate func isNighttime(sunrise: Date, sunset: Date) -> Bool {
-        let calendar = Calendar.current
-        let currentSecondsFromMidnight = calendar.component(.hour, from: self) * 3600 + calendar.component(.minute, from: self) * 60 + calendar.component(.second, from: self)
-        let sunriseSecondsFromMidnight = calendar.component(.hour, from: sunrise) * 3600 + calendar.component(.minute, from: sunrise) * 60 + calendar.component(.second, from: sunrise)
-        let sunsetSecondsFromMidnight = calendar.component(.hour, from: sunset) * 3600 + calendar.component(.minute, from: sunset) * 60 + calendar.component(.second, from: sunset)
-        return currentSecondsFromMidnight < sunriseSecondsFromMidnight || currentSecondsFromMidnight > sunsetSecondsFromMidnight
-    }
-}
-
-extension Solar {
-    init?(date: Date?, coordinate: CLLocationCoordinate2D) {
-        if let date = date {
-            self.init(for: date, coordinate: coordinate)
-        } else {
-            self.init(coordinate: coordinate)
+    /**
+     Workaround to refresh appearance by removing all views and then adding them again.
+     UITextEffectsWindow will be created when system keyboard is shown and cannot be safely removed.
+     */
+    func refreshAppearance(for windows: [UIWindow]) {
+        for window in windows {
+            if window.isKind(of: NSClassFromString("UITextEffectsWindow") ?? NSString.classForCoder()) {
+                continue
+            }
+            
+            for view in window.subviews {
+                view.removeFromSuperview()
+                window.addSubview(view)
+            }
         }
     }
 }

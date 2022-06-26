@@ -5,7 +5,7 @@ import TestHelper
 import CoreLocation
 import MapboxMaps
 @testable import MapboxNavigation
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 class ManeuverArrowSnapshotTests: TestCase {
     let waypointRoute = Fixture.route(from: "waypoint-after-turn", options: NavigationRouteOptions(coordinates: [

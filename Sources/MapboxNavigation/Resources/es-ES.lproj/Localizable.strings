@@ -55,8 +55,8 @@
 /* Specific route feedback that audio guidance was provided too late for a maneuever. */
 "CONFUSING_AUDIO_GUIDANCE_TOO_LATE_FEEDBACK" = "Instrucciones tardes";
 
-/* Specific route feedback that an audio guidance problem was encountered but not listed as a choice. */
-"CONFUSING_AUDIO_OTHER_FEEDBACK" = "Otro";
+/* Specific route feedback that audio guidance instruction is missing */
+"CONFUSING_AUDIO_INSTRUCTION_MISSING_FEEDBACK" = "Faltan instrucciones";
 
 /* Specific route feedback that audio guidance used incorrect pronunciation. */
 "CONFUSING_AUDIO_PRONUNCIATION_INCORRECT_FEEDBACK" = "Pronunciación incorrecta";
@@ -85,9 +85,6 @@
 /* Title of view controller for sending feedback */
 "FEEDBACK_TITLE" = "Reportar un problema";
 
-/* Specific route feedback that a illegal route problem was encountered but not listed as a choice. */
-"ILLEGAL_ROUTE_OTHER_FEEDBACK" = "Otro";
-
 /* Label indicating the device volume is too low to hear spoken instructions and needs to be manually increased */
 "INAUDIBLE_INSTRUCTIONS_CTA" = "Ajustar el volumen para escuchar las instrucciones";
 
@@ -112,12 +109,6 @@
 /* Specific route feedback that a maneuver specified was incorrect. */
 "INCORRECT_VISUAL_MANEUVER_INCORRECT_FEEDBACK" = "Maniobra incorrecta";
 
-/* Specific route feedback that a visual instruction problem was encountered but not listed as a choice. */
-"INCORRECT_VISUAL_OTHER_FEEDBACK" = "Otro";
-
-/* Specific route feedback that a road is known by another name. */
-"INCORRECT_VISUAL_ROAD_NAME_DIFFERENT_FEEDBACK" = "Calle conocida con un nombre diferente";
-
 /* Specific route feedback for incorrect street name. */
 "INCORRECT_VISUAL_STREET_NAME_INCORRECT_FEEDBACK" = "Nombre de calle incorrecto";
 
@@ -139,11 +130,29 @@
 /* Accessibility value of label indicating the absence of a rating */
 "NO_RATING" = "No hay calificación.";
 
+/* General category of feedback where something looks incorrect. */
+"PASSIVE_NAVIGATION_FEEDBACK_INCORRECT_VISUAL" = "Parece incorrecto";
+
+/* Specific route feedback that a speed limit is incorrect. */
+"PASSIVE_NAVIGATION_FEEDBACK_INCORRECT_VISUAL_INCORRECT_SPEED_LIMIT" = "Límite de velocidad incorrecto";
+
+/* Specific route feedback for incorrect street name. */
+"PASSIVE_NAVIGATION_FEEDBACK_INCORRECT_VISUAL_STREET_NAME_INCORRECT" = "Nombre de calle incorrecto";
+
+/* General category of feedback where there is an issue on the road. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE" = "Problema del camino";
+
+/* Feedback that map shows a non-existant road. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE_MISSING_ROAD" = "Falta camino";
+
+/* Feedback that a street is permanently blocked off. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE_STREET_PERMANENTLY_BLOCKED_OFF" = "Calle cerrada permanentemente";
+
+/* Feedback that a street is temporary blocked off. */
+"PASSIVE_NAVIGATION_FEEDBACK_ROAD_ISSUE_STREET_TEMPORARILY_BLOCKED_OFF" = "Calle cerrada temporalmente";
+
 /* General category of route feedback where user position is incorrect. */
 "POSITIONING" = "Posicionamiento";
-
-/* Specific route feedback that user positioning is incorrect. */
-"POSITIONING_USER" = "Tu posición";
 
 /* Rating Reset To Zero Accessability Hint */
 "RATING_ACCESSIBILITY_RESET" = "Tocar para volver la calificación a cero.";
@@ -159,9 +168,6 @@
 
 /* Button title for resume tracking */
 "RESUME" = "Continuar";
-
-/* Specific route feedback that a road closure type was encountered but not listed as a choice. */
-"ROAD_CLOSURE_OTHER_FEEDBACK" = "Otro";
 
 /* This route does not have tolls */
 "ROUTE_HAS_NO_TOLLS" = "Sin peaje";
@@ -187,9 +193,6 @@
 /* Specific route feedback that route suggested an illegal turn. */
 "ROUTE_QUALITY_ILLEGAL_ROUTE_TURN_NOT_ALLOWED_FEEDBACK" = "No se permite girar";
 
-/* Specific route feedback that route suggested an illegal unprotected turn. */
-"ROUTE_QUALITY_ILLEGAL_ROUTE_UNPROTECTED_TURN_FEEDBACK" = "La intersección es peligrosa";
-
 /* Specific route feedback that route contained non-existant roads. */
 "ROUTE_QUALITY_INCLUDED_MISSING_ROADS_FEEDBACK" = "La ruta incluye calles faltantes";
 
@@ -199,17 +202,11 @@
 /* Specific route feedback that route was not ideal according to user. */
 "ROUTE_QUALITY_NOT_PREFERRED_FEEDBACK" = "No es la ruta preferida";
 
-/* Specific route feedback that a route quality problem was encountered but not listed as a choice. */
-"ROUTE_QUALITY_OTHER_FEEDBACK" = "Otro";
-
 /* General route feedback that route contained closed road. */
 "ROUTE_QUALITY_ROAD_CLOSURE_FEEDBACK" = "Camino cerrado";
 
 /* Specifc route feedback that route contained road that is permanently closed. */
 "ROUTE_QUALITY_ROAD_CLOSURE_PERMANENT_FEEDBACK" = "Calle cerrada permanentemente";
-
-/* Specifc route feedback that route contained road not shown on map. */
-"ROUTE_QUALITY_ROAD_MISSING_FROM_MAP_FEEDBACK" = "Calle ausente del mapa";
 
 /* Specific route feedback that route contained impassible, narrow roads. */
 "ROUTE_QUALITY_ROADS_TOO_NARROW_FEEDBACK" = "La ruta tiene caminos angostos al tránsito";

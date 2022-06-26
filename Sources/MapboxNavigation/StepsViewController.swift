@@ -1,31 +1,16 @@
 import UIKit
 import MapboxDirections
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import Turf
 
 /// :nodoc:
 open class StepsBackgroundView: UIView { }
 
-/**
- `StepsViewControllerDelegate` provides methods for user interactions in a `StepsViewController`.
- */
-public protocol StepsViewControllerDelegate: AnyObject {
-    /**
-     Called when the user selects a step in a `StepsViewController`.
-     */
-    func stepsViewController(_ viewController: StepsViewController, didSelect legIndex: Int, stepIndex: Int, cell: StepTableViewCell)
-
-    /**
-     Called when the user dismisses the `StepsViewController`.
-     */
-    func didDismissStepsViewController(_ viewController: StepsViewController)
-}
-
 /// :nodoc:
 public class StepsViewController: UIViewController {
     weak var tableView: UITableView!
-    weak var backgroundView: UIView!
-    weak var bottomView: UIView!
+    weak var backgroundView: StepsBackgroundView!
+    weak var bottomView: StepsBackgroundView!
     weak var separatorBottomView: SeparatorView!
     weak var dismissButton: DismissButton!
     public weak var delegate: StepsViewControllerDelegate?
@@ -124,7 +109,6 @@ public class StepsViewController: UIViewController {
 
         let tableView = UITableView(frame: view.bounds, style: .plain)
         tableView.separatorColor = .clear
-        tableView.backgroundColor = .clear
         tableView.backgroundView = nil
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.delegate = self
@@ -140,9 +124,8 @@ public class StepsViewController: UIViewController {
         view.addSubview(dismissButton)
         self.dismissButton = dismissButton
 
-        let bottomView = UIView()
+        let bottomView = StepsBackgroundView()
         bottomView.translatesAutoresizingMaskIntoConstraints = false
-        bottomView.backgroundColor = DismissButton.appearance().backgroundColor
         view.addSubview(bottomView)
         self.bottomView = bottomView
 
@@ -192,18 +175,23 @@ public class StepsViewController: UIViewController {
 extension StepsViewController: UITableViewDelegate {
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        let legIndex = indexPath.section
         let cell = tableView.cellForRow(at: indexPath) as! StepTableViewCell
         // Since as we progress, steps are removed from the list, we need to map the row the user tapped to the actual step on the leg.
         // If the user selects a step on future leg, all steps are going to be there.
         var stepIndex: Int
-        if indexPath.section > 0 {
+        if legIndex > 0 {
             stepIndex = indexPath.row
         } else {
             stepIndex = indexPath.row + routeProgress.currentLegProgress.stepIndex
             // For the current leg, we need to know the upcoming step.
-            stepIndex += indexPath.row + 1 > sections[indexPath.section].count ? 0 : 1
+            if sections[legIndex].indices.contains(indexPath.row) {
+                stepIndex += 1
+            }
         }
-        delegate?.stepsViewController(self, didSelect: indexPath.section, stepIndex: stepIndex, cell: cell)
+        
+        guard routeProgress.route.containsStep(at: legIndex, stepIndex: stepIndex) else { return }
+        delegate?.stepsViewController(self, didSelect: legIndex, stepIndex: stepIndex, cell: cell)
     }
 }
 
@@ -249,7 +237,7 @@ extension StepsViewController: UITableViewDataSource {
         cell.separatorView.isHidden = isLastRowInSection
     }
 
-    public func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func titleForHeader(in section: Int) -> String? {
         if section == 0 {
             return nil
         }
@@ -268,54 +256,23 @@ extension StepsViewController: UITableViewDataSource {
             return leg.name
         }
     }
+    
+    public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return (section == 0) ? 0.0 : tableView.sectionHeaderHeight
+    }
+    
+    public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard section != 0 else { return nil }
+        let view = StepsTableHeaderView()
+        view.textLabel?.text = titleForHeader(in: section)
+        return view
+    }
 }
 
-/// :nodoc:
-open class StepInstructionsView: BaseInstructionsBannerView { }
-
-/// :nodoc:
-open class StepTableViewCell: UITableViewCell {
-    weak var instructionsView: StepInstructionsView!
-    weak var separatorView: SeparatorView!
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        commonInit()
-    }
-
-    required public init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        commonInit()
-    }
-
-    func commonInit() {
-        selectionStyle = .none
-
-        let instructionsView = StepInstructionsView()
-        instructionsView.translatesAutoresizingMaskIntoConstraints = false
-        instructionsView.separatorView.isHidden = true
-        instructionsView.isUserInteractionEnabled = false
-        addSubview(instructionsView)
-        self.instructionsView = instructionsView
-
-        instructionsView.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        instructionsView.leadingAnchor.constraint(equalTo: safeLeadingAnchor).isActive = true
-        instructionsView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        instructionsView.trailingAnchor.constraint(equalTo: safeTrailingAnchor).isActive = true
-
-        let separatorView = SeparatorView()
-        separatorView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(separatorView)
-        self.separatorView = separatorView
-
-        separatorView.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale).isActive = true
-        separatorView.leadingAnchor.constraint(equalTo: instructionsView.primaryLabel.leadingAnchor).isActive = true
-        separatorView.bottomAnchor.constraint(equalTo: instructionsView.bottomAnchor).isActive = true
-        separatorView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18).isActive = true
-    }
-
-    open override func prepareForReuse() {
-        super.prepareForReuse()
-        instructionsView.update(for:nil)
+class StepsTableHeaderView: UITableViewHeaderFooterView {
+    @objc dynamic var normalTextColor: UIColor = .black {
+        didSet {
+            self.textLabel?.textColor = normalTextColor
+        }
     }
 }

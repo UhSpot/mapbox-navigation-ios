@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-@_spi(MapboxInternal) import UhSpotCoreNavigation
+@_spi(MapboxInternal) import MapboxCoreNavigation
 
 /// An idle timer which is managed by `IdleTimerManager`.
 protocol IdleTimer {

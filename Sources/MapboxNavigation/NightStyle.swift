@@ -5,10 +5,11 @@ import MapboxMaps
  `NightStyle` is the default night style for Mapbox Navigation SDK. Only will be applied when necessary and if `automaticallyAdjustStyleForSunPosition`.
  */
 open class NightStyle: DayStyle {
+    
     public required init() {
         super.init()
         
-        mapStyleURL = MapboxMaps.Style.navigationNightStyleURL
+        mapStyleURL = URL(string: StyleURI.navigationNight.rawValue)!
         previewMapStyleURL = mapStyleURL
         styleType = .night
         statusBarStyle = .lightContent
@@ -32,6 +33,10 @@ open class NightStyle: DayStyle {
         DistanceLabel.appearance(whenContainedInInstancesOf: [InstructionsBannerView.self]).valueTextColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
         DistanceLabel.appearance(whenContainedInInstancesOf: [StepInstructionsView.self]).unitTextColor = #colorLiteral(red: 0.7991961837, green: 0.8232284188, blue: 0.8481693864, alpha: 1)
         DistanceLabel.appearance(whenContainedInInstancesOf: [StepInstructionsView.self]).valueTextColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
+        DistanceLabel.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).unitTextColor = #colorLiteral(red: 0.7991961837, green: 0.8232284188, blue: 0.8481693864, alpha: 1)
+        DistanceLabel.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).valueTextColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
+
+
         DistanceRemainingLabel.appearance().normalTextColor = #colorLiteral(red: 0.7991961837, green: 0.8232284188, blue: 0.8481693864, alpha: 1)
         EndOfRouteButton.appearance().textColor = .white
         EndOfRouteCommentView.appearance().backgroundColor = #colorLiteral(red: 0.1875049942, green: 0.2981707989, blue: 0.4181857639, alpha: 1)
@@ -40,11 +45,21 @@ open class NightStyle: DayStyle {
         EndOfRouteStaticLabel.appearance().alpha = 1.0
         EndOfRouteStaticLabel.appearance().textColor = UIColor.white.withAlphaComponent(0.9)
         EndOfRouteTitleLabel.appearance().textColor = .white
+        
+        // On iOS, for Night style, regardless of currently used `UIUserInterfaceStyle`, `ExitView` and
+        // `GenericRouteShield` use white color as a default one.
         ExitView.appearance().foregroundColor = .white
+        ExitView.appearance().borderColor = .white
+        
+        GenericRouteShield.appearance().foregroundColor = .white
+        GenericRouteShield.appearance().borderColor = .white
+        
         FloatingButton.appearance().backgroundColor = backgroundColor
         FloatingButton.appearance().tintColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
-        GenericRouteShield.appearance().foregroundColor = .white
         InstructionsBannerView.appearance().backgroundColor = backgroundColor
+        InstructionsCardContainerView.appearance(whenContainedInInstancesOf: [InstructionsCardCell.self]).customBackgroundColor = backgroundColor
+        InstructionsCardContainerView.appearance(whenContainedInInstancesOf: [InstructionsCardCell.self]).separatorColor = #colorLiteral(red: 0.3764705882, green: 0.4901960784, blue: 0.6117647059, alpha: 0.796599912)
+        InstructionsCardContainerView.appearance(whenContainedInInstancesOf: [InstructionsCardCell.self]).highlightedSeparatorColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         LaneView.appearance().primaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         LaneView.appearance().secondaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0.3)
         LaneView.appearance(whenContainedInInstancesOf: [LanesView.self]).primaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
@@ -57,32 +72,65 @@ open class NightStyle: DayStyle {
         ManeuverView.appearance(whenContainedInInstancesOf: [NextBannerView.self]).secondaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0.3)
         ManeuverView.appearance(whenContainedInInstancesOf: [StepInstructionsView.self]).primaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         ManeuverView.appearance(whenContainedInInstancesOf: [StepInstructionsView.self]).secondaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0.3)
+        ManeuverView.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).primaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        ManeuverView.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).secondaryColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0.3)
+
         NavigationMapView.appearance().routeAlternateColor = #colorLiteral(red: 0.7991961837, green: 0.8232284188, blue: 0.8481693864, alpha: 1)
         NavigationMapView.appearance().buildingDefaultColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         NavigationMapView.appearance().buildingHighlightColor = #colorLiteral(red: 0.9254902005, green: 0.2352941185, blue: 0.1019607857, alpha: 1)
         NavigationView.appearance().backgroundColor = #colorLiteral(red: 0.0470588, green: 0.0509804, blue: 0.054902, alpha: 1)
         NextBannerView.appearance().backgroundColor = #colorLiteral(red: 0.103291966, green: 0.1482483149, blue: 0.2006777823, alpha: 1)
-        NextInstructionLabel.appearance().normalTextColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
+        NextInstructionLabel.appearance().normalTextColor = #colorLiteral(red: 0.984, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
+        NextInstructionLabel.appearance(whenContainedInInstancesOf: [NextBannerView.self]).normalTextColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+
         PrimaryLabel.appearance(whenContainedInInstancesOf: [InstructionsBannerView.self]).normalTextColor = #colorLiteral(red: 0.9996390939, green: 1, blue: 0.9997561574, alpha: 1)
         PrimaryLabel.appearance(whenContainedInInstancesOf: [StepInstructionsView.self]).normalTextColor = #colorLiteral(red: 0.9996390939, green: 1, blue: 0.9997561574, alpha: 1)
-        ProgressBar.appearance().barColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
+        PrimaryLabel.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).normalTextColor = #colorLiteral(red: 0.9996390939, green: 1, blue: 0.9997561574, alpha: 1)
+
         RatingControl.appearance().normalColor = #colorLiteral(red: 0.149668334, green: 0.1680230035, blue: 0.1472480238, alpha: 1)
         RatingControl.appearance().selectedColor = #colorLiteral(red: 0.9803059896, green: 0.9978019022, blue: 1, alpha: 1)
-        ReportButton.appearance().backgroundColor = backgroundColor
-        ReportButton.appearance().textColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
         ResumeButton.appearance().backgroundColor = backgroundColor
         ResumeButton.appearance().tintColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
+        SecondaryLabel.appearance().normalFont = UIFont.systemFont(ofSize: 26, weight: .medium).adjustedFont
+        SecondaryLabel.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).normalTextColor = #colorLiteral(red: 0.7349056005, green: 0.7675836682, blue: 0.8063536286, alpha: 1)
         SecondaryLabel.appearance(whenContainedInInstancesOf: [InstructionsBannerView.self]).normalTextColor = #colorLiteral(red: 0.7349056005, green: 0.7675836682, blue: 0.8063536286, alpha: 1)
         SecondaryLabel.appearance(whenContainedInInstancesOf: [StepInstructionsView.self]).normalTextColor = #colorLiteral(red: 0.7349056005, green: 0.7675836682, blue: 0.8063536286, alpha: 1)
         SeparatorView.appearance().backgroundColor = #colorLiteral(red: 0.3764705882, green: 0.4901960784, blue: 0.6117647059, alpha: 0.796599912)
+        SeparatorView.appearance(whenContainedInInstancesOf: [InstructionsCardView.self]).backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
         SpeedLimitView.appearance().signBackColor = #colorLiteral(red: 0.7991961837, green: 0.8232284188, blue: 0.8481693864, alpha: 1)
         StepInstructionsView.appearance().backgroundColor = #colorLiteral(red: 0.103291966, green: 0.1482483149, blue: 0.2006777823, alpha: 1)
         StepTableViewCell.appearance().backgroundColor = #colorLiteral(red: 0.103291966, green: 0.1482483149, blue: 0.2006777823, alpha: 1)
-        StepsBackgroundView.appearance().backgroundColor = #colorLiteral(red: 0.103291966, green: 0.1482483149, blue: 0.2006777823, alpha: 1)
+        UITableView.appearance(whenContainedInInstancesOf: [StepsViewController.self]).backgroundColor = #colorLiteral(red: 0.103291966, green: 0.1482483149, blue: 0.2006777823, alpha: 1)
+        StepsBackgroundView.appearance().backgroundColor = backgroundColor
         StylableLabel.appearance(whenContainedInInstancesOf: [CarPlayCompassView.self]).normalTextColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
         TimeRemainingLabel.appearance().normalTextColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
         TimeRemainingLabel.appearance().trafficUnknownColor = #colorLiteral(red: 0.9842069745, green: 0.9843751788, blue: 0.9841964841, alpha: 1)
         TopBannerView.appearance().backgroundColor = backgroundColor
+        StepsTableHeaderView.appearance().tintColor = #colorLiteral(red: 0.103291966, green: 0.1482483149, blue: 0.2006777823, alpha: 1)
+        StepsTableHeaderView.appearance().normalTextColor = #colorLiteral(red: 0.9996390939, green: 1, blue: 0.9997561574, alpha: 1)
+        UILabel.appearance(whenContainedInInstancesOf: [FeedbackViewController.self]).backgroundColor = .black
+        UILabel.appearance(whenContainedInInstancesOf: [FeedbackViewController.self]).textColor = .white
+        FeedbackStyleView.appearance(whenContainedInInstancesOf: [FeedbackViewController.self]).backgroundColor = .black
+        FeedbackCollectionView.appearance().backgroundColor = .black
+        FeedbackCollectionView.appearance().cellColor = .white
+        FeedbackSubtypeCollectionViewCell.appearance().normalCircleColor = .black
+        FeedbackSubtypeCollectionViewCell.appearance().normalCircleOutlineColor = .lightText
+        
         WayNameView.appearance().borderColor = #colorLiteral(red: 0.2802129388, green: 0.3988235593, blue: 0.5260632038, alpha: 1)
+        WayNameLabel.appearance().roadShieldBlackColor = #colorLiteral(red: 0.08, green: 0.09, blue: 0.12, alpha: 1)
+        WayNameLabel.appearance().roadShieldBlueColor = #colorLiteral(red: 0.18, green: 0.26, blue: 0.66, alpha: 1)
+        WayNameLabel.appearance().roadShieldGreenColor = #colorLiteral(red: 0.07, green: 0.51, blue: 0.22, alpha: 1)
+        WayNameLabel.appearance().roadShieldRedColor = #colorLiteral(red: 0.86, green: 0.06, blue: 0.06, alpha: 1)
+        WayNameLabel.appearance().roadShieldWhiteColor = #colorLiteral(red: 0.78, green: 0.78, blue: 0.78, alpha: 1)
+        WayNameLabel.appearance().roadShieldYellowColor = #colorLiteral(red: 1.0, green: 0.85, blue: 0.08, alpha: 1)
+        WayNameLabel.appearance().roadShieldDefaultColor = #colorLiteral(red: 0.08, green: 0.09, blue: 0.12, alpha: 1)
+        
+        InstructionLabel.appearance().roadShieldBlackColor = #colorLiteral(red: 0.08, green: 0.09, blue: 0.12, alpha: 1)
+        InstructionLabel.appearance().roadShieldBlueColor = #colorLiteral(red: 0.18, green: 0.26, blue: 0.66, alpha: 1)
+        InstructionLabel.appearance().roadShieldGreenColor = #colorLiteral(red: 0.07, green: 0.51, blue: 0.22, alpha: 1)
+        InstructionLabel.appearance().roadShieldRedColor = #colorLiteral(red: 0.86, green: 0.06, blue: 0.06, alpha: 1)
+        InstructionLabel.appearance().roadShieldWhiteColor = #colorLiteral(red: 0.78, green: 0.78, blue: 0.78, alpha: 1)
+        InstructionLabel.appearance().roadShieldYellowColor = #colorLiteral(red: 1.0, green: 0.85, blue: 0.08, alpha: 1)
+        InstructionLabel.appearance().roadShieldDefaultColor = #colorLiteral(red: 0.08, green: 0.09, blue: 0.12, alpha: 1)
     }
 }

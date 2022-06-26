@@ -10,6 +10,8 @@ extension CarPlaySearchController: CPSearchTemplateDelegate {
     static var MaximumInitialSearchResults: UInt = 5
     static var MaximumExtendedSearchResults: UInt = 10
     
+    // MARK: CPSearchTemplateDelegate Implementation
+    
     public func searchTemplateSearchButtonPressed(_ searchTemplate: CPSearchTemplate) {
         guard let recentSearchItems = delegate?.recentSearchItems,
               let extendedItems = delegate?.searchResults(with: recentSearchItems,
@@ -62,17 +64,20 @@ extension CarPlaySearchController: CPSearchTemplateDelegate {
 @available(iOS 12.0, *)
 extension CarPlaySearchController: CPListTemplateDelegate {
     
+    // MARK: CPListTemplateDelegate Implementation
+    
     public func listTemplate(_ listTemplate: CPListTemplate,
                              didSelect item: CPListItem,
                              completionHandler: @escaping () -> Void) {
         // Selected a search item from the extended list?
-        if let userInfo = item.userInfo as? [String: Any],
-           let placemark = userInfo[CarPlaySearchController.CarPlayGeocodedPlacemarkKey] as? NavigationGeocodedPlacemark,
-           let location = placemark.location {
-            let destinationWaypoint = Waypoint(location: location)
-            delegate?.popTemplate(animated: false)
-            delegate?.previewRoutes(to: destinationWaypoint, completionHandler: completionHandler)
-            return
-        }
+        guard let userInfo = item.userInfo as? CarPlayUserInfo,
+              let placemark = userInfo[CarPlaySearchController.CarPlayGeocodedPlacemarkKey] as? NavigationGeocodedPlacemark,
+              let location = placemark.location else {
+                  return
+              }
+        
+        let destinationWaypoint = Waypoint(location: location)
+        delegate?.popTemplate(animated: false)
+        delegate?.previewRoutes(to: destinationWaypoint, completionHandler: completionHandler)
     }
 }

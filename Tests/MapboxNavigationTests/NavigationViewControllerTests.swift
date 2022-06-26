@@ -3,7 +3,7 @@ import Turf
 import MapboxMaps
 @testable import MapboxDirections
 @testable import TestHelper
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 @testable import MapboxNavigation
 
 let otherResponse = Fixture.JSONFromFileNamed(name: "route-for-lane-testing")
@@ -53,8 +53,6 @@ class NavigationViewControllerTests: TestCase {
     var customRoadName = [CLLocationCoordinate2D: String?]()
     
     var updatedStyleNumberOfTimes = 0
-    var dependencies: (navigationViewController: NavigationViewController, navigationService: NavigationService, startLocation: CLLocation, poi: [CLLocation], endLocation: CLLocation, voice: RouteVoiceController)?
-    
     var initialRoute: Route!
     var initialRouteResponse: RouteResponse!
     
@@ -63,16 +61,23 @@ class NavigationViewControllerTests: TestCase {
     
     override func setUp() {
         super.setUp()
+        UNUserNotificationCenter.replaceWithMock()
         customRoadName.removeAll()
         initialRoute = Fixture.route(from: jsonFileName, options: routeOptions)
         initialRouteResponse = Fixture.routeResponse(from: jsonFileName, options: routeOptions)
         newRoute = Fixture.route(from: "route-with-banner-instructions", options: routeOptions)
         newRouteResponse = Fixture.routeResponse(from: "route-with-banner-instructions", options: routeOptions)
+    }
 
-        dependencies = {
-            UNUserNotificationCenter.replaceWithMock()
-
-            let fakeService = MapboxNavigationService(routeResponse: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, locationSource: NavigationLocationManagerStub(), simulating: .never)
+    private func createDependencies() -> (navigationViewController: NavigationViewController, navigationService: NavigationService, startLocation: CLLocation, poi: [CLLocation], endLocation: CLLocation, voice: RouteVoiceController)? {
+        return {
+            let fakeService = MapboxNavigationService(routeResponse: initialRouteResponse,
+                                                      routeIndex: 0,
+                                                      routeOptions: routeOptions,
+                                                      customRoutingProvider: MapboxRoutingProvider(.offline),
+                                                      credentials: Fixture.credentials,
+                                                      locationSource: NavigationLocationManagerStub(),
+                                                      simulating: .never)
             let fakeVoice: RouteVoiceController = RouteVoiceControllerStub(navigationService: fakeService)
             let options = NavigationOptions(navigationService: fakeService, voiceController: fakeVoice)
             let navigationViewController = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
@@ -83,6 +88,7 @@ class NavigationViewControllerTests: TestCase {
                 XCTFail("Navigation Service is nil"); return nil
             }
             let router = navigationService.router
+            router.reroutesProactively = false
             guard let firstCoord = router.routeProgress.nearbyShape.coordinates.first else {
                 XCTFail("First Coordinate is nil"); return nil
             }
@@ -116,13 +122,12 @@ class NavigationViewControllerTests: TestCase {
         initialRouteResponse = nil
         newRoute = nil
         newRouteResponse = nil
-        dependencies = nil
         Navigator._recreateNavigator()
         UNUserNotificationCenter.removeMock()
     }
     
     func testDefaultUserInterfaceUsage() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let navigationViewController = dependencies.navigationViewController
         let service = dependencies.navigationService
         XCTAssertTrue(service.eventsManager.usesDefaultUserInterface, "MapboxNavigationTests should run inside the Example application target.")
@@ -132,7 +137,7 @@ class NavigationViewControllerTests: TestCase {
     // Brief: navigationViewController(_:roadNameAt:) delegate method is implemented,
     //        with a road name provided and wayNameView label is visible.
     func testNavigationViewControllerDelegateRoadNameAtLocationImplemented() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let navigationViewController = dependencies.navigationViewController
         let service = dependencies.navigationService
         
@@ -146,13 +151,13 @@ class NavigationViewControllerTests: TestCase {
             navigationViewController.navigationView.wayNameView.text == roadName
         }
         expectation(description: "WayNameView is visible") {
-            navigationViewController.navigationView.wayNameView.isHidden == false
+            navigationViewController.navigationView.wayNameView.containerView.isHidden == false
         }
         waitForExpectations(timeout: 3, handler: nil)
     }
     
     func testNavigationShouldNotCallStyleManagerDidRefreshAppearanceMoreThanOnceWithOneStyle() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let options = NavigationOptions(styles: [DayStyle()], navigationService: dependencies.navigationService, voiceController: dependencies.voice)
         let navigationViewController = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
         let service = dependencies.navigationService
@@ -170,7 +175,7 @@ class NavigationViewControllerTests: TestCase {
     }
 
     func testCompleteRoute() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let navigationViewController = dependencies.navigationViewController
         let service = dependencies.navigationService
         
@@ -187,7 +192,7 @@ class NavigationViewControllerTests: TestCase {
         
         for location in locations {
             service.locationManager!(service.locationManager, didUpdateLocations: [location])
-            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         }
 
         XCTAssertTrue(delegate.recentMessages.contains("navigationService(_:willArriveAt:after:distance:)"), "Pre-arrival delegate message not fired.")
@@ -196,7 +201,7 @@ class NavigationViewControllerTests: TestCase {
     
     // If tunnel flags are enabled and we need to switch styles, we should not force refresh the map style because we have only 1 style.
     func testNavigationShouldNotCallStyleManagerDidRefreshAppearanceWhenOnlyOneStyle() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let options = NavigationOptions(styles:[NightStyle()], navigationService: dependencies.navigationService, voiceController: dependencies.voice)
         let navigationViewController = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
         let service = dependencies.navigationService
@@ -215,7 +220,7 @@ class NavigationViewControllerTests: TestCase {
     }
     
     func testNavigationShouldNotCallStyleManagerDidRefreshAppearanceMoreThanOnceWithTwoStyles() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let options = NavigationOptions(styles: [DayStyle(), NightStyle()], navigationService: dependencies.navigationService, voiceController: dependencies.voice)
         let navigationViewController = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
         let service = dependencies.navigationService
@@ -236,7 +241,7 @@ class NavigationViewControllerTests: TestCase {
     // Brief: navigationViewController(_:roadNameAt:) delegate method is implemented,
     //        with a blank road name (empty string) provided and wayNameView label is hidden.
     func testNavigationViewControllerDelegateRoadNameAtLocationEmptyString() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let navigationViewController = dependencies.navigationViewController
         let service = dependencies.navigationService
 
@@ -244,7 +249,7 @@ class NavigationViewControllerTests: TestCase {
         customRoadName[dependencies.poi[0].coordinate] = "Taylor Swift Street"
         service.locationManager!(service.locationManager, didUpdateLocations: [dependencies.poi[0]])
         expectation {
-            !navigationViewController.navigationView.wayNameView.isHidden
+            !navigationViewController.navigationView.wayNameView.containerView.isHidden
         }
         waitForExpectations(timeout: 3, handler: nil)
 
@@ -256,13 +261,13 @@ class NavigationViewControllerTests: TestCase {
         
         service.locationManager!(service.locationManager, didUpdateLocations: [turkStreetLocation])
         expectation {
-            navigationViewController.navigationView.wayNameView.isHidden
+            navigationViewController.navigationView.wayNameView.containerView.isHidden
         }
         waitForExpectations(timeout: 3, handler: nil)
     }
     
     func testNavigationViewControllerDelegateRoadNameAtLocationUmimplemented() {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return }
         let navigationViewController = dependencies.navigationViewController
         _ = navigationViewController.view // trigger view load
         let service = dependencies.navigationService
@@ -278,20 +283,25 @@ class NavigationViewControllerTests: TestCase {
     }
     
     func testDestinationAnnotationUpdatesUponReroute() {
-        let service = MapboxNavigationService(routeResponse: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, simulating: .never)
+        let service = MapboxNavigationService(routeResponse: initialRouteResponse,
+                                              routeIndex: 0,
+                                              routeOptions: routeOptions,
+                                              customRoutingProvider: MapboxRoutingProvider(.offline),
+                                              credentials: Fixture.credentials,
+                                              simulating: .never)
         let options = NavigationOptions(styles: [TestableDayStyle()], navigationService: service)
         let navigationViewController = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
         expectation(description: "Style Loaded") {
             navigationViewController.navigationMapView?.pointAnnotationManager != nil
         }
         waitForExpectations(timeout: 5, handler: nil)
-        navigationViewController.navigationService.router.updateRoute(with: .init(routeResponse: initialRouteResponse, routeIndex: 0), routeOptions: nil)
-        expectation(description: "Annotations loaded") {
-            !navigationViewController.navigationMapView!.pointAnnotationManager!.annotations.isEmpty
-        }
-        waitForExpectations(timeout: 5, handler: nil)
+        navigationViewController.navigationService.router
+            .updateRoute(with: .init(routeResponse: initialRouteResponse, routeIndex: 0), routeOptions: nil) {
+                success in
+                XCTAssertTrue(success)
+                XCTAssertFalse(navigationViewController.navigationMapView!.pointAnnotationManager!.annotations.isEmpty)
+            }
         XCTAssertEqual(navigationViewController.routeResponse.identifier, initialRouteResponse.identifier)
-
 
         let annotations = navigationViewController.navigationMapView!.pointAnnotationManager!.annotations
 
@@ -299,14 +309,17 @@ class NavigationViewControllerTests: TestCase {
             return XCTFail("PointAnnotation is not valid.")
         }
 
-        XCTAssert(annotations
-                    .compactMap { $0.geometry.value as? Turf.Point }
-                    .contains { $0.coordinates.distance(to: firstDestination) < 1 },
+        XCTAssert(annotations.contains { $0.point.coordinates.distance(to: firstDestination) < 1 },
                   "Destination annotation does not exist on map")
-        
+
+        let routeUpdated = expectation(description: "Route updated")
         // Set the second route.
-        navigationViewController.navigationService.router.updateRoute(with: .init(routeResponse: newRouteResponse, routeIndex: 0), routeOptions: nil)
-        
+        navigationViewController.navigationService.router
+            .updateRoute(with: .init(routeResponse: newRouteResponse, routeIndex: 0), routeOptions: nil) { success in
+                XCTAssertTrue(success)
+                routeUpdated.fulfill()
+            }
+        wait(for: [routeUpdated], timeout: 5)
         let newAnnotations = navigationViewController.navigationMapView!.pointAnnotationManager!.annotations
         
         guard let secondDestination = newRoute.legs.last?.destination?.coordinate else {
@@ -314,46 +327,10 @@ class NavigationViewControllerTests: TestCase {
         }
         
         // Verify that there is a destination on the second route.
-        XCTAssert(newAnnotations
-                    .compactMap { $0.geometry.value as? Turf.Point }
-                    .contains { $0.coordinates.distance(to: secondDestination) < 1 },
+        XCTAssert(newAnnotations.contains { $0.point.coordinates.distance(to: secondDestination) < 1 },
                   "New destination annotation does not exist on map")
         XCTAssertEqual(navigationViewController.routeResponse.identifier,
                        newRouteResponse.identifier)
-    }
-    
-    func testPuck3DLayerPosition() {
-        let service = MapboxNavigationService(routeResponse: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, simulating: .never)
-        let options = NavigationOptions(styles: [TestableDayStyle()], navigationService: service)
-        let navigationViewController = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: options)
-        
-        let model = MapboxMaps.Model()
-        let puck3DConfiguration = Puck3DConfiguration(model: model)
-        navigationViewController.navigationMapView?.userLocationStyle = .puck3D(configuration: puck3DConfiguration)
-        
-        guard let instantLayerIds = navigationViewController.navigationMapView?.mapView.mapboxMap.style.allLayerIdentifiers.map({ $0.id }),
-              instantLayerIds.contains(NavigationMapView.LayerIdentifier.puck3DLayer) else {
-            XCTFail("Failed to set up 3D puck instantly"); return
-        }
-        
-        navigationViewController.navigationMapView?.show([initialRoute])
-        navigationViewController.navigationMapView?.addArrow(route: initialRoute, legIndex: 0, stepIndex: 4)
-        
-        guard let allLayerIds = navigationViewController.navigationMapView?.mapView.mapboxMap.style.allLayerIdentifiers
-                .map({ $0.id }),
-              let indexOfArrowLayer = allLayerIds.firstIndex(of: NavigationMapView.LayerIdentifier.arrowLayer),
-              let indexOfMainRouteLayer = allLayerIds.firstIndex(of: initialRoute.identifier(.route(isMainRoute: true))),
-              let indexOfArrowStrokeLayer = allLayerIds.firstIndex(of: NavigationMapView.LayerIdentifier.arrowStrokeLayer),
-              let indexOfArrowSymbolLayer = allLayerIds.firstIndex(of: NavigationMapView.LayerIdentifier.arrowSymbolLayer),
-              let indexOfPuck3DLayer = allLayerIds.firstIndex(of: NavigationMapView.LayerIdentifier.puck3DLayer) else {
-            XCTFail("Failed to find all the layers"); return
-        }
-        
-        // Since `NavigationViewController` presents route line after its presentation it is expected
-        // that maneuver arrow stroke layer will be added above main route line layer.
-        XCTAssert(indexOfMainRouteLayer < indexOfArrowStrokeLayer, "Arrow stroke layer should be above main route layer")
-        XCTAssert(indexOfArrowLayer < indexOfArrowSymbolLayer, "Arrow symbol layer is below arrow layer")
-        XCTAssert(indexOfArrowSymbolLayer < indexOfPuck3DLayer, "Puck 3D layer is below arrow symbol layer")
     }
     
     func testBlankBanner() {
@@ -387,7 +364,11 @@ class NavigationViewControllerTests: TestCase {
             CLLocationCoordinate2D(latitude: 38.910736, longitude: -76.966906),
         ])
 
-        let navService = MapboxNavigationService(routeResponse: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions)
+        let navService = MapboxNavigationService(routeResponse: initialRouteResponse,
+                                                 routeIndex: 0,
+                                                 routeOptions: routeOptions,
+                                                 customRoutingProvider: nil,
+                                                 credentials: Fixture.credentials)
         let navOptions = NavigationOptions(navigationService: navService, topBanner: top, bottomBanner: bottom)
 
         let subject = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: navOptions)
@@ -408,7 +389,11 @@ class NavigationViewControllerTests: TestCase {
             CLLocationCoordinate2D(latitude: 38.910736, longitude: -76.966906),
         ])
 
-        let navService = MapboxNavigationService(routeResponse: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions)
+        let navService = MapboxNavigationService(routeResponse: initialRouteResponse,
+                                                 routeIndex: 0,
+                                                 routeOptions: routeOptions,
+                                                 customRoutingProvider: nil,
+                                                 credentials: Fixture.credentials)
         let navOptions = NavigationOptions(navigationService: navService, navigationMapView: injected)
 
         let subject = NavigationViewController(for: initialRouteResponse, routeIndex: 0, routeOptions: routeOptions, navigationOptions: navOptions)
@@ -417,12 +402,121 @@ class NavigationViewControllerTests: TestCase {
         XCTAssert(subject.navigationMapView == injected, "NavigtionMapView not injected properly.")
         XCTAssert(subject.view.subviews.contains(injected), "NavigtionMapView not injected in view hierarchy.")
     }
+    
+    func navigationViewControllerMock() -> NavigationViewController {
+        let navigationRouteOptions = NavigationRouteOptions(coordinates: [
+            CLLocationCoordinate2D(latitude: 38.853108, longitude: -77.043331),
+            CLLocationCoordinate2D(latitude: 38.910736, longitude: -76.966906),
+        ])
+        
+        let navigationService = MapboxNavigationService(routeResponse: initialRouteResponse,
+                                                        routeIndex: 0,
+                                                        routeOptions: navigationRouteOptions,
+                                                        customRoutingProvider: nil,
+                                                        credentials: Fixture.credentials)
+        
+        let navigationOptions = NavigationOptions(navigationService: navigationService)
+        
+        let navigationViewController = NavigationViewController(for: initialRouteResponse,
+                                                                   routeIndex: 0,
+                                                                   routeOptions: routeOptions,
+                                                                   navigationOptions: navigationOptions)
+        
+        return navigationViewController
+    }
+    
+    func testShowsReportFeedback() {
+        let navigationViewController = navigationViewControllerMock()
+        
+        XCTAssertEqual(navigationViewController.showsReportFeedback,
+                       true,
+                       "Button that allows drivers to report feedback should be shown by default.")
+        
+        navigationViewController.showsReportFeedback = false
+        
+        XCTAssertEqual(navigationViewController.showsReportFeedback,
+                       false,
+                       "Button that allows drivers to report feedback should not be shown.")
+    }
+    
+    func testShowsSpeedLimits() {
+        let navigationViewController = navigationViewControllerMock()
+        
+        XCTAssertEqual(navigationViewController.showsSpeedLimits,
+                       true,
+                       "Speed limit should be shown by default.")
+        
+        navigationViewController.showsSpeedLimits = false
+        
+        XCTAssertEqual(navigationViewController.showsSpeedLimits,
+                       false,
+                       "Speed limit should not be shown.")
+    }
+    
+    func testDetailedFeedbackEnabled() {
+        let navigationViewController = navigationViewControllerMock()
+        
+        XCTAssertEqual(navigationViewController.detailedFeedbackEnabled,
+                       false,
+                       "Second level of detail for feedback items should not be enabled by default.")
+        
+        navigationViewController.showsSpeedLimits = true
+        
+        XCTAssertEqual(navigationViewController.showsSpeedLimits,
+                       true,
+                       "Second level of detail for feedback items should be enabled.")
+    }
+    
+    func testFloatingButtonsPosition() {
+        let navigationViewController = navigationViewControllerMock()
+        
+        XCTAssertEqual(navigationViewController.floatingButtonsPosition,
+                       .topTrailing,
+                       "The position of the floating buttons should be topTrailing by default.")
+        
+        navigationViewController.floatingButtonsPosition = .topLeading
+        
+        XCTAssertEqual(navigationViewController.floatingButtonsPosition,
+                       .topLeading,
+                       "The position of the floating buttons should be topLeading.")
+    }
+    
+    func testFloatingButtons() {
+        let navigationViewController = navigationViewControllerMock()
+        
+        XCTAssertEqual(navigationViewController.floatingButtons?.count,
+                       3,
+                       "There should be three floating buttons by default.")
+        XCTAssertEqual(navigationViewController.floatingButtons?[0],
+                       navigationViewController.navigationView.overviewButton,
+                       "Unexpected floating button.")
+        XCTAssertEqual(navigationViewController.floatingButtons?[1],
+                       navigationViewController.navigationView.muteButton,
+                       "Unexpected floating button.")
+        XCTAssertEqual(navigationViewController.floatingButtons?[2],
+                       navigationViewController.navigationView.reportButton,
+                       "Unexpected floating button.")
+        
+        navigationViewController.floatingButtons = []
+        XCTAssertEqual(navigationViewController.floatingButtons?.count,
+                       0,
+                       "There should be zero floating buttons after modification.")
+        
+        let floatingButton = UIButton()
+        navigationViewController.floatingButtons = [floatingButton]
+        XCTAssertEqual(navigationViewController.floatingButtons?.count,
+                       1,
+                       "There should be one floating button after modification.")
+        XCTAssertEqual(navigationViewController.floatingButtons?.first,
+                       floatingButton,
+                       "Unexpected floating button.")
+    }
 }
 
 extension NavigationViewControllerTests: NavigationViewControllerDelegate, StyleManagerDelegate {
     
     func location(for styleManager: MapboxNavigation.StyleManager) -> CLLocation? {
-        guard let dependencies = dependencies else { XCTFail("Dependencies are nil"); return nil }
+        guard let dependencies = createDependencies() else { XCTFail("Dependencies are nil"); return nil }
         return dependencies.poi.first!
     }
     

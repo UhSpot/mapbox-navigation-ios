@@ -40,15 +40,17 @@ public struct RecentItem: Equatable, Codable {
      Loads a list of `RecentItem`s, which is serialized into a file stored in `recentItemsPathURL`.
      */
     public static func loadDefaults() -> [RecentItem] {
-        guard let recentItemsPathURL = RecentItem.recentItemsPathURL else { return [] }
-        
+        guard let recentItemsPathURL = RecentItem.recentItemsPathURL,
+              FileManager.default.fileExists(atPath: recentItemsPathURL.path)
+        else { return [] }
+
         do {
             let data = try Data(contentsOf: recentItemsPathURL)
             let recentItems = try JSONDecoder().decode([RecentItem].self, from: data)
             
             return recentItems.sorted(by: { $0.timestamp > $1.timestamp })
         } catch {
-            NSLog("Failed to load recent items with error: \(error.localizedDescription)")
+            Log.error("Failed to load recent items with error: \(error.localizedDescription)", category: .navigationUI)
             return []
         }
     }
@@ -82,7 +84,7 @@ extension Array where Element == RecentItem {
             let data = try JSONEncoder().encode(self)
             try data.write(to: recentItemsPathURL)
         } catch {
-            NSLog("Failed to save recent items with error: \(error.localizedDescription)")
+            Log.error("Failed to save recent items with error: \(error.localizedDescription)", category: .navigationUI)
             return false
         }
         

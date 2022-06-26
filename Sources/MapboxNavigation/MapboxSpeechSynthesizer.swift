@@ -1,5 +1,5 @@
 import AVFoundation
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxDirections
 import MapboxSpeech
 
@@ -8,9 +8,10 @@ import MapboxSpeech
  */
 open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
     
-    // MARK: - Properties
+    // MARK: Speech Configuration
     
     public weak var delegate: SpeechSynthesizingDelegate?
+    
     public var muted: Bool = false {
         didSet {
             updatePlayerVolume(audioPlayer)
@@ -21,9 +22,7 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
             audioPlayer?.volume = volume
         }
     }
-    public var isSpeaking: Bool {
-        return audioPlayer?.isPlaying ?? false
-    }
+    
     public var locale: Locale? = Locale.autoupdatingCurrent
     
     /// Number of upcoming `Instructions` to be pre-fetched.
@@ -36,10 +35,15 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
      */
     public var audioPlayer: AVAudioPlayer?
     
+    /// Controls if this speech synthesizer is allowed to manage the shared `AVAudioSession`.
+    /// Set this field to `false` if you want to manage the session yourself, for example if your app has background music.
+    /// Default value is `true`.
+    public var managesAudioSession = true
+    
     /**
      Mapbox speech engine instance.
      
-     The speech synthesizer uses this object it to convert instruction text to audio.
+     The speech synthesizer uses this object to convert instruction text to audio.
      */
     public private(set) var remoteSpeechSynthesizer: SpeechSynthesizer
     
@@ -48,8 +52,18 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
     
     private var previousInstruction: SpokenInstruction?
     
-    // MARK: - Lifecycle
+    // MARK: Instructions vocalization
     
+    /// Checks if speech synthesizer is now pronouncing an instruction.
+    public var isSpeaking: Bool {
+        return audioPlayer?.isPlaying ?? false
+    }
+    
+    
+    /// Creates new `MapboxSpeechSynthesizer` with standard `SpeechSynthesizer` for converting text to audio.
+    ///
+    /// - parameter accessToken: A Mapbox [access token](https://www.mapbox.com/help/define-access-token/) used to authorize Mapbox Voice API requests. If an access token is not specified when initializing the speech synthesizer object, it should be specified in the `MBXAccessToken` key in the main application bundle’s Info.plist.
+    /// - parameter host: An optional hostname to the server API. The Mapbox Voice API endpoint is used by default.
     public init(accessToken: String? = nil, host: String? = nil) {
         self.cache = DataCache()
         
@@ -61,11 +75,17 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
         self.remoteSpeechSynthesizer = SpeechSynthesizer(accessToken: accessToken, host: hostString)
     }
     
+    /// Creates new `MapboxSpeechSynthesizer` with provided `SpeechSynthesizer` instance for converting text to audio.
+    ///
+    /// - parameter remoteSpeechSynthesizer: Custom `SpeechSynthesizer` used to provide voice data.
+    public init(remoteSpeechSynthesizer: SpeechSynthesizer) {
+        self.cache = DataCache()
+        self.remoteSpeechSynthesizer = remoteSpeechSynthesizer
+    }
+    
     deinit {
         deinitAudioPlayer()
     }
-    
-    // MARK: - Public methods
     
     open func prepareIncomingSpokenInstructions(_ instructions: [SpokenInstruction], locale: Locale? = nil) {
         
@@ -91,13 +111,17 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
             return
         }
         
-        if let data = cachedDataForKey(instruction.ssmlText, with: locale) {
-            safeDuckAudio(instruction: instruction)
-            speak(instruction,
-                  data: data)
-        }
-        else {
+        guard let data = cachedDataForKey(instruction.ssmlText, with: locale) else {
             fetchAndSpeak(instruction: instruction, locale: locale)
+            return
+        }
+        
+        if let modifiedInstruction = delegate?.speechSynthesizer(self, willSpeak: instruction), modifiedInstruction != instruction {
+            // Application changed the instruction, we need to refetch and cache it
+            fetchAndSpeak(instruction: modifiedInstruction, locale: locale)
+        } else {
+            safeDuckAudio(instruction: instruction)
+            speak(instruction, data: data)
         }
     }
     
@@ -142,7 +166,7 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
         }
     }
     
-    // MARK: - Private methods
+    // MARK: Private Methods
     
     /**
      Fetches and plays an instruction.
@@ -189,8 +213,7 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
     }
     
     private func downloadAndCacheSpokenInstruction(instruction: SpokenInstruction, locale: Locale) {
-        let modifiedInstruction = delegate?.speechSynthesizer(self, willSpeak: instruction) ?? instruction
-        let ssmlText = modifiedInstruction.ssmlText
+        let ssmlText = instruction.ssmlText
         let options = SpeechOptions(ssml: ssmlText)
         options.locale = locale
         
@@ -203,6 +226,7 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
     }
     
     func safeDuckAudio(instruction: SpokenInstruction?){
+        guard managesAudioSession else { return }
         if let error = AVAudioSession.sharedInstance().tryDuckAudio() {
             delegate?.speechSynthesizer(self,
                                         encounteredError: SpeechError.unableToControlAudio(instruction: instruction,
@@ -212,6 +236,7 @@ open class MapboxSpeechSynthesizer: NSObject, SpeechSynthesizing {
     }
     
     func safeUnduckAudio(instruction: SpokenInstruction?) {
+        guard managesAudioSession else { return }
         if let error = AVAudioSession.sharedInstance().tryUnduckAudio() {
             delegate?.speechSynthesizer(self,
                                         encounteredError: SpeechError.unableToControlAudio(instruction: instruction,

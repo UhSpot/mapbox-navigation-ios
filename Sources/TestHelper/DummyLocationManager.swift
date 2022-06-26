@@ -1,5 +1,5 @@
 import CoreLocation
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 
 public class DummyLocationManager: NavigationLocationManager {
     override public func startUpdatingLocation() {

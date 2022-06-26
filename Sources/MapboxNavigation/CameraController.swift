@@ -1,5 +1,5 @@
 import MapboxDirections
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxMaps
 
 /// A component to ease camera manipulation logic.
@@ -7,7 +7,7 @@ import MapboxMaps
 /// This class manages various scenarious from moving camera to a specific region on demand and handling device rotation, up to reacting to active guidance events.
 class CameraController: NavigationComponent, NavigationComponentDelegate {
     
-    // MARK: - Properties
+    // MARK: Properties
     
     weak private(set) var navigationViewData: NavigationViewData!
     
@@ -25,7 +25,7 @@ class CameraController: NavigationComponent, NavigationComponentDelegate {
         return navigationViewData.navigationView.bottomBannerContainerView
     }
     
-    // MARK: - Methods
+    // MARK: Methods
     
     init(_ navigationViewData: NavigationViewData) {
         self.navigationViewData = navigationViewData
@@ -113,13 +113,13 @@ class CameraController: NavigationComponent, NavigationComponentDelegate {
             navigationViewData.navigationView.overviewButton.isHidden = false
             navigationViewData.navigationView.resumeButton.isHidden = true
             if let _ = navigationViewData.navigationView.wayNameView.text?.nonEmptyString {
-                navigationViewData.navigationView.wayNameView.isHidden = false
+                navigationViewData.navigationView.wayNameView.containerView.isHidden = false
             }
             break
         case .idle, .transitionToOverview, .overview:
             navigationViewData.navigationView.overviewButton.isHidden = true
             navigationViewData.navigationView.resumeButton.isHidden = false
-            navigationViewData.navigationView.wayNameView.isHidden = true
+            navigationViewData.navigationView.wayNameView.containerView.isHidden = true
             break
         }
     }
@@ -134,26 +134,41 @@ class CameraController: NavigationComponent, NavigationComponentDelegate {
         let courseViewMinimumInsets = UIEdgeInsets(top: 75.0, left: 75.0, bottom: 75.0, right: 75.0)
         var insets = navigationMapView.mapView.safeArea
         insets += courseViewMinimumInsets
-        insets.top += topBannerContainerView.bounds.height
-        insets.bottom += bottomBannerContainerView.bounds.height + 10.0
+        
+        switch navigationViewData.navigationView.traitCollection.verticalSizeClass {
+        case .unspecified:
+            fallthrough
+        case .regular:
+            insets.top += topBannerContainerView.bounds.height
+            insets.bottom += bottomBannerContainerView.bounds.height + 10.0
+        case .compact:
+            let inset = navigationViewData.navigationView.topBannerContainerView.frame.width + 10.0
+            if UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft {
+                insets.right += inset
+            } else {
+                insets.left += inset
+            }
+        @unknown default:
+            break
+        }
     
         return insets
     }
     
-    // MARK: - NavigationComponent implementation
+    // MARK: NavigationComponent Implementation
     
     func navigationService(_ service: NavigationService, didUpdate progress: RouteProgress, with location: CLLocation, rawLocation: CLLocation) {
         updateNavigationCameraViewport()
     }
     
-    // MARK: - NavigationComponentDelegate implementation
+    // MARK: NavigationComponentDelegate Implementation
     
     func navigationViewDidLoad(_: UIView) {
         navigationViewData.navigationView.overviewButton.addTarget(self, action: #selector(overview(_:)), for: .touchUpInside)
         navigationViewData.navigationView.resumeButton.addTarget(self, action: #selector(recenter(_:)), for: .touchUpInside)
         
-        self.navigationMapView.userCourseView.isHidden = false
-        self.navigationViewData.navigationView.resumeButton.isHidden = true
+        navigationMapView.userLocationStyle = .courseView()
+        navigationViewData.navigationView.resumeButton.isHidden = true
     }
     
     func navigationViewWillAppear(_: Bool) {

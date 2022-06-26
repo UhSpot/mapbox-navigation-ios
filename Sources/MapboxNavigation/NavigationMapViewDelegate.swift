@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import MapboxDirections
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxMaps
 import Turf
 
@@ -9,6 +9,8 @@ import Turf
  The `NavigationMapViewDelegate` provides methods for configuring the `NavigationMapView`, as well as responding to events triggered by the `NavigationMapView`.
  */
 public protocol NavigationMapViewDelegate: AnyObject, UnimplementedLogging {
+    
+    // MARK: Supplying Route Line(s) Data
     
     /**
      Asks the receiver to return a `LineLayer` for the route line, given a layer identifier and a source identifier.
@@ -18,6 +20,9 @@ public protocol NavigationMapViewDelegate: AnyObject, UnimplementedLogging {
      - parameter identifier: The `LineLayer` identifier.
      - parameter sourceIdentifier: Identifier of the source, which contains the route data that this method would style.
      - returns: A `LineLayer` that is applied to the route line.
+     
+     - seealso: `CarPlayManagerDelegate.carPlayManager(_:routeLineLayerWithIdentifier:sourceIdentifier:for:)`,
+     `NavigationViewControllerDelegate.navigationViewController(_:routeLineLayerWithIdentifier:sourceIdentifier:)`.
      */
     func navigationMapView(_ navigationMapView: NavigationMapView, routeLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer?
     
@@ -29,8 +34,22 @@ public protocol NavigationMapViewDelegate: AnyObject, UnimplementedLogging {
      - parameter identifier: The `LineLayer` identifier.
      - parameter sourceIdentifier: Identifier of the source, which contains the route data that this method would style.
      - returns: A `LineLayer` that is applied as a casing around the route line.
+     
+     - seealso: `CarPlayManagerDelegate.carPlayManager(_:routeCasingLineLayerWithIdentifier:sourceIdentifier:for:)`,
+     `NavigationViewControllerDelegate.navigationViewController(_:routeCasingLineLayerWithIdentifier:sourceIdentifier:)`.
      */
     func navigationMapView(_ navigationMapView: NavigationMapView, routeCasingLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer?
+    
+    /**
+     Asks the receiver to return a `LineLayer` for highlighting restricted areas portions of the route, given a layer identifier and a source identifier.
+     This method is invoked when `showsRestrictedAreasOnRoute` is enabled, the map view loads and any time routes are added.
+     
+     - parameter navigationMapView: The `NavigationMapView` object.
+     - parameter identifier: The `LineLayer` identifier.
+     - parameter sourceIdentifier: Identifier of the source, which contains the route data that this method would style.
+     - returns: A `LineLayer` that is applied as restricted areas on the route line.
+     */
+    func navigationMapView(_ navigationMapView: NavigationMapView, routeRestrictedAreasLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer?
     
     /**
      Asks the receiver to return an `LineString` that describes the geometry of the route.
@@ -51,6 +70,18 @@ public protocol NavigationMapViewDelegate: AnyObject, UnimplementedLogging {
      - returns: A `LineString` object that defines the shape of the route casing, or `nil` in case of default behavior.
      */
     func navigationMapView(_ navigationMapView: NavigationMapView, casingShapeFor route: Route) -> LineString?
+    
+    /**
+     Asks the receiver to return an `LineString` that describes the geometry of the route restricted areas.
+     Resulting `LineString` will then be styled using `NavigationMapView.navigationMapView(_:routeRestrictedAreasLineLayerWithIdentifier:sourceIdentifier:)` provided style or a default style if above delegate method was not implemented.
+     
+     - parameter navigationMapView: The `NavigationMapView`.
+     - parameter route: The route that the sender is asking about.
+     - returns: A `LineString` object that defines the shape of the route restricted areas, or `nil` in case of default behavior.
+     */
+    func navigationMapView(_ navigationMapView: NavigationMapView, restrictedAreasShapeFor route: Route) -> LineString?
+    
+    // MARK: Supplying Waypoint(s) Data
     
     /**
      Asks the receiver to return a `CircleLayer` for waypoints, given an identifier and source.
@@ -84,6 +115,8 @@ public protocol NavigationMapViewDelegate: AnyObject, UnimplementedLogging {
      */
     func navigationMapView(_ navigationMapView: NavigationMapView, shapeFor waypoints: [Waypoint], legIndex: Int) -> FeatureCollection?
     
+    // MARK: Responding to Object Interaction
+    
     /**
      Tells the receiver that the user has selected a route by interacting with the map view.
      
@@ -91,6 +124,16 @@ public protocol NavigationMapViewDelegate: AnyObject, UnimplementedLogging {
      - parameter route: The route that was selected.
      */
     func navigationMapView(_ navigationMapView: NavigationMapView, didSelect route: Route)
+    
+    /**
+     Tells the receiver that the user has selected a continuous alternative route by interacting with the map view.
+     
+     Continuous alternatives are all non-primary routes, reported during the navigation session.
+     
+     - parameter navigationMapView: The `NavigationMapView`.
+     - parameter continuousAlternative: The route that was selected.
+     */
+    func navigationMapView(_ navigationMapView: NavigationMapView, didSelect continuousAlternative: AlternativeRoute)
     
     /**
      Tells the receiver that a waypoint was selected.
@@ -127,6 +170,14 @@ public extension NavigationMapViewDelegate {
         logUnimplemented(protocolType: NavigationMapViewDelegate.self, level: .debug)
         return nil
     }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationMapView(_ navigationMapView: NavigationMapView, routeRestrictedAreasLineLayerWithIdentifier identifier: String, sourceIdentifier: String) -> LineLayer? {
+        logUnimplemented(protocolType: NavigationMapViewDelegate.self, level: .debug)
+        return nil
+    }
 
     /**
      `UnimplementedLogging` prints a warning to standard output the first time this method is called.
@@ -144,6 +195,13 @@ public extension NavigationMapViewDelegate {
         return nil
     }
     
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationMapView(_ navigationMapView: NavigationMapView, restrictedAreasShapeFor route: Route) -> LineString? {
+        logUnimplemented(protocolType: NavigationMapViewDelegate.self, level: .debug)
+        return nil
+    }
     /**
      `UnimplementedLogging` prints a warning to standard output the first time this method is called.
      */
@@ -172,6 +230,13 @@ public extension NavigationMapViewDelegate {
      `UnimplementedLogging` prints a warning to standard output the first time this method is called.
      */
     func navigationMapView(_ navigationMapView: NavigationMapView, didSelect route: Route) {
+        logUnimplemented(protocolType: NavigationMapViewDelegate.self, level: .debug)
+    }
+    
+    /**
+     `UnimplementedLogging` prints a warning to standard output the first time this method is called.
+     */
+    func navigationMapView(_ navigationMapView: NavigationMapView, didSelect continuousAlternative: AlternativeRoute) {
         logUnimplemented(protocolType: NavigationMapViewDelegate.self, level: .debug)
     }
     

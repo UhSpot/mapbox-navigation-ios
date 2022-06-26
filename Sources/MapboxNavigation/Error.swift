@@ -1,5 +1,5 @@
 import Foundation
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxDirections
 import MapboxSpeech
 import AVKit

@@ -6,7 +6,7 @@ import MapboxNavigation
 import MapboxDirections
 import MapboxSpeech
 
-
+#if DEBUG
 class TokenTestViewController: UIViewController {
     
     var mapViewToken: String?
@@ -23,8 +23,9 @@ class TokenTestViewController: UIViewController {
         
         HTTPStubs.stubRequests(passingTest: { (request) -> Bool in
             let isMapboxStyleURL = request.url?.isMapboxAPIURL ?? false
-            guard isMapboxStyleURL else { return true }
-            self.mapViewToken = request.url?.queryItem("sku")?.value
+            let mapViewToken = request.url?.queryItem("sku")?.value
+            guard isMapboxStyleURL, mapViewToken?.isEmpty == .some(false) else { return true }
+            self.mapViewToken = mapViewToken
             self.semaphore.signal()
             return true
         }) { (_) -> HTTPStubsResponse in
@@ -48,8 +49,8 @@ class TokenTestViewController: UIViewController {
             // waiting for MapView token to be extracted from a style request
             _ = self.semaphore.wait(timeout: .now() + 4)
 
-            self.directionsToken = Directions.skuToken
-            self.speechSynthesizerToken = SpeechSynthesizer.skuToken
+            self.directionsToken = Directions.shared.skuToken
+            self.speechSynthesizerToken = SpeechSynthesizer(accessToken: .mockedAccessToken).skuToken
             
             DispatchQueue.main.async {
                 HTTPStubs.removeAllStubs()
@@ -60,3 +61,4 @@ class TokenTestViewController: UIViewController {
         }
     }
 }
+#endif

@@ -1,7 +1,8 @@
 import Foundation
 import CoreLocation
-import UhSpotCoreNavigation
+import MapboxCoreNavigation
 import MapboxDirections
+import Turf
 
 public class RouteControllerDataSourceFake: RouterDataSource {
     let manager = NavigationLocationManager()
@@ -30,7 +31,7 @@ public class NavigationServiceDelegateSpy: NavigationServiceDelegate {
     public func navigationService(_ service: NavigationService, willRerouteFrom location: CLLocation) {
         recentMessages.append(#function)
     }
-
+    
     public func navigationService(_ service: NavigationService, shouldDiscard location: CLLocation) -> Bool {
         recentMessages.append(#function)
         return false

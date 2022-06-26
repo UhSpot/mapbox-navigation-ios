@@ -3,7 +3,7 @@ import SnapshotTesting
 import MapboxDirections
 @testable import TestHelper
 @testable import MapboxNavigation
-@testable import UhSpotCoreNavigation
+@testable import MapboxCoreNavigation
 
 class LaneSnapshotTests: TestCase {
     override func setUp() {

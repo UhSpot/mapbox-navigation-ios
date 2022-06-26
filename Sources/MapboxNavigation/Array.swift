@@ -89,9 +89,41 @@ extension Array where Iterator.Element == CLLocationCoordinate2D {
             }
             
             if segments.last?.1 == overriddenCongestionLevel {
-                segments[segments.count - 1].0 += coordinates
+                segments[segments.count - 1].0 += [firstSegment.1]
             } else {
                 segments.append((coordinates, overriddenCongestionLevel))
+            }
+            
+            index += 1
+        }
+        
+        return segments
+    }
+    
+    /**
+     Returns an array of road segments by associating road classes of corresponding line segments.
+     
+     Adjacent segments with the same `combiningRoadClasses` will be merged together.
+     
+     - parameter roadClasses: An array of `RoadClasses`along given segment. There should be one fewer congestion levels than coordinates.
+     - parameter combiningRoadClasses: `RoadClasses` which will be joined if they are neighbouring each other.
+     - returns: A list of `RoadClassesSegment` tuples with coordinate and road class.
+     */
+    func combined(_ roadClasses: [RoadClasses?],
+                  combiningRoadClasses: RoadClasses? = nil) -> [RoadClassesSegment] {
+        var segments: [RoadClassesSegment] = []
+        segments.reserveCapacity(roadClasses.count)
+        
+        var index = 0
+        for (firstSegment, currentRoadClass) in zip(zip(self, self.suffix(from: 1)), roadClasses) {
+            let coordinates = [firstSegment.0, firstSegment.1]
+            var definedRoadClass = currentRoadClass ?? RoadClasses()
+            definedRoadClass = combiningRoadClasses?.intersection(definedRoadClass) ?? definedRoadClass
+            
+            if segments.last?.1 == definedRoadClass {
+                segments[segments.count - 1].0 += [firstSegment.1]
+            } else {
+                segments.append((coordinates, definedRoadClass))
             }
             
             index += 1
